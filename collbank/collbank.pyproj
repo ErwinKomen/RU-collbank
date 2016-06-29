@@ -91,11 +91,6 @@
     <Content Include="requirements.txt" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="readme.mht">
-      <SubType>WebBrowser</SubType>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
     <Interpreter Include="..\..\..\..\..\env\collbank\">
       <Id>{e1c631de-6f59-43df-8e1f-2a68a8c63803}</Id>
       <BaseInterpreter>{2af0f10d-7135-4994-9156-5d01c9c11b7e}</BaseInterpreter>
