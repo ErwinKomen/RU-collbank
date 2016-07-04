@@ -1,9 +1,14 @@
 from django.contrib import admin
 from collbank.collection.models import *
+from django.core import serializers
+from django.contrib.contenttypes.models import ContentType
+from lxml.etree import ElementTree, Element, SubElement
 
 #class TitleInline(admin.TabularInline):
 #    model = Collection.title.through
 #    extra = 1
+
+
 
 class CollectionAdmin(admin.ModelAdmin):
 #    inlines = (TitleInline,)
@@ -11,6 +16,19 @@ class CollectionAdmin(admin.ModelAdmin):
     fieldsets = ( ('Searchable', {'fields': ('title', 'resource', 'provenance', 'linguality','language', 'languageDisorder', 'relation', 'speechCorpus',)}),
                   ('Other',      {'fields': ('description', 'owner', 'genre', 'domain', 'clarinCentre', 'access', 'totalSize', 'pid', 'version', 'resourceCreator', 'documentation', 'validation', 'project', 'writtenCorpus',)}),
                 )
+    actions = ['export_xml']
+
+    def export_xml(self, request, queryset):
+        # Export this object to XML
+        oSerializer = serializers.get_serializer("xml")
+        xml_serializer = oSerializer()
+        with open("collbank-file.xml", "w") as out:
+            sFullPath = out.name
+            xml_serializer.serialize(queryset, stream=out)
+        # TODO: make the file available for download and provide a link to it
+    export_xml.short_description = "Export in XML format"
+
+
 
 
 class ProvenanceAdmin(admin.ModelAdmin):

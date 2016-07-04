@@ -4,7 +4,7 @@
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
     <Name>collbank</Name>
     <RootNamespace>collbank</RootNamespace>
-    <InterpreterId>{e1c631de-6f59-43df-8e1f-2a68a8c63803}</InterpreterId>
+    <InterpreterId>{1ce273cd-ba04-44e3-9113-4399cc1f3b89}</InterpreterId>
     <InterpreterVersion>3.5</InterpreterVersion>
   </PropertyGroup>
   <PropertyGroup>
@@ -91,11 +91,11 @@
     <Content Include="requirements.txt" />
   </ItemGroup>
   <ItemGroup>
-    <Interpreter Include="..\..\..\..\..\env\collbank\">
-      <Id>{e1c631de-6f59-43df-8e1f-2a68a8c63803}</Id>
+    <Interpreter Include="..\..\..\..\..\env\collbank2\">
+      <Id>{1ce273cd-ba04-44e3-9113-4399cc1f3b89}</Id>
       <BaseInterpreter>{2af0f10d-7135-4994-9156-5d01c9c11b7e}</BaseInterpreter>
       <Version>3.5</Version>
-      <Description>collbank (Python 3.5)</Description>
+      <Description>collbank2 (Python 3.5)</Description>
       <InterpreterPath>Scripts\python.exe</InterpreterPath>
       <WindowsInterpreterPath>Scripts\pythonw.exe</WindowsInterpreterPath>
       <LibraryPath>Lib\</LibraryPath>
