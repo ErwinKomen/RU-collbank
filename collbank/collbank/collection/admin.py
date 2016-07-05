@@ -12,7 +12,7 @@ from django.contrib.contenttypes.models import ContentType
 
 class CollectionAdmin(admin.ModelAdmin):
 #    inlines = (TitleInline,)
-    filter_horizontal = ('title', 'owner', 'resource', 'genre', 'language', 'languageDisorder', 'relation', 'domain',)
+    filter_horizontal = ('title', 'owner', 'resource', 'genre', 'language', 'languageDisorder', 'relation', 'domain', 'totalSize', 'pid', 'resourceCreator', 'project',)
     fieldsets = ( ('Searchable', {'fields': ('title', 'resource', 'provenance', 'linguality','language', 'languageDisorder', 'relation', 'speechCorpus',)}),
                   ('Other',      {'fields': ('description', 'owner', 'genre', 'domain', 'clarinCentre', 'access', 'totalSize', 'pid', 'version', 'resourceCreator', 'documentation', 'validation', 'project', 'writtenCorpus',)}),
                 )
