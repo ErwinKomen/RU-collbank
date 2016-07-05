@@ -2,7 +2,7 @@ from django.contrib import admin
 from collbank.collection.models import *
 from django.core import serializers
 from django.contrib.contenttypes.models import ContentType
-from lxml.etree import ElementTree, Element, SubElement
+# from lxml.etree import ElementTree, Element, SubElement
 
 #class TitleInline(admin.TabularInline):
 #    model = Collection.title.through
@@ -132,9 +132,33 @@ class SpeechCorpusAdmin(admin.ModelAdmin):
                   ('Other',      {'fields': ('recordingEnvironment', 'channel', 'conversationalType', 'recordingConditions', 'durationOfEffectiveSpeech', 'durationOfFullDatabase', 'numberOfSpeakers', 'speakerDemographics', 'socialContext', 'planningType', 'interactivity', 'involvement', 'audience',)}),
                 )
 
+class FieldChoiceAdmin(admin.ModelAdmin):
+    readonly_fields=['machine_value']
+    list_display = ['english_name','dutch_name','machine_value','field']
+    list_filter = ['field']
+
+    def save_model(self, request, obj, form, change):
+
+        if obj.machine_value == None:
+            # Check out the query-set and make sure that it exists
+            qs = FieldChoice.objects.filter(field=obj.field)
+            if len(qs) == 0:
+                # The field does not yet occur within FieldChoice
+                # Future: ask user if that is what he wants (don't know how...)
+                # For now: assume user wants to add a new field (e.g: wordClass)
+                # NOTE: start with '0'
+                obj.machine_value = 0
+            else:
+                # Calculate highest currently occurring value
+                highest_machine_value = max([field_choice.machine_value for field_choice in qs])
+                # The automatic machine value we calculate is 1 higher
+                obj.machine_value= highest_machine_value+1
+
+        obj.save()
+
 
 # Models that serve others
-admin.site.register(FieldChoice)
+admin.site.register(FieldChoice, FieldChoiceAdmin)
 admin.site.register(HelpChoice)
 
 # Models for the collection record
