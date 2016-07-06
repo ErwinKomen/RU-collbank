@@ -9,6 +9,8 @@ from django.db import models
 from django.contrib.auth.models import User
 from datetime import datetime
 
+MAX_IDENTIFIER_LEN = 10
+
 RESOURCE_TYPE = "resource.type"
 GENRE_NAME = "genre.name"
 MEDIA_FORMAT = "resource.media.format"
@@ -198,9 +200,21 @@ class Annotation(models.Model):
             choice_english(ANNOTATION_FORMAT,self.format))
 
 
+class TotalSize(models.Model):
+    """Total size of the collection"""
+
+    size = models.IntegerField("Size of the collection", default=0)
+    sizeUnit = models.CharField("Units", help_text=get_help(SIZEUNIT), max_length=50, default='MB')
+
+    def __str__(self):
+        return "{} {}".format(self.size,self.sizeUnit)
+
+
 class Resource(models.Model):
     """A resource is part of a collection"""
 
+    # (0-1)
+    description = models.TextField("Description of this resource", blank=True)
     # (1;c)
     type = models.CharField("Type of this resource", choices=build_choice_list(RESOURCE_TYPE), max_length=5,
                             help_text=get_help(RESOURCE_TYPE))
@@ -208,6 +222,8 @@ class Resource(models.Model):
     annotation = models.ManyToManyField(Annotation)
     # (0-1)
     media = models.ForeignKey(Media, blank=True, null=True)
+    # == totalSize (0-n)
+    totalSize = models.ManyToManyField(TotalSize, blank=True)
 
     def __str__(self):
         return "{}: {}".format(
@@ -495,15 +511,6 @@ class Access(models.Model):
         sName = self.name
         return sName
 
-
-class TotalSize(models.Model):
-    """Total size of the collection"""
-
-    size = models.IntegerField("Size of the collection", default=0)
-    sizeUnit = models.CharField("Units", choices=build_choice_list(SIZEUNIT), max_length=5, help_text=get_help(SIZEUNIT), default='0')
-
-    def __str__(self):
-        return "{} {}".format(self.size, choice_english(SIZEUNIT, self.sizeUnit))
 
 
 class PID(models.Model):
@@ -796,6 +803,8 @@ class SpeechCorpus(models.Model):
 class Collection(models.Model):
     """Characteristics of the collection as a whole"""
 
+    # INTERNAL FIELD: identifier (1)
+    identifier = models.CharField("Unique short collection identifier (10 characters max)", max_length=MAX_IDENTIFIER_LEN, default='-')
     # title (1-n;f) 
     title = models.ManyToManyField(Title, blank=False)
     # == description (0-1;f) 
@@ -841,6 +850,8 @@ class Collection(models.Model):
     # speechCorpus (0-1)
     speechCorpus = models.ForeignKey(SpeechCorpus, blank=True, null=True)
 
+    def get_identifier(self):
+        return self.identifier.value_to_string()
 
     def __str__(self):
         return m2m_combi(self.title)

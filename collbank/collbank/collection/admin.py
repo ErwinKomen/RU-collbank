@@ -2,21 +2,75 @@ from django.contrib import admin
 from collbank.collection.models import *
 from django.core import serializers
 from django.contrib.contenttypes.models import ContentType
+import logging
 # from lxml.etree import ElementTree, Element, SubElement
 
 #class TitleInline(admin.TabularInline):
 #    model = Collection.title.through
 #    extra = 1
 
+MAX_IDENTIFIER_LEN = 10
+logger = logging.getLogger(__name__)
 
+def remove_from_fieldsets(fieldsets, fields):
+    for fieldset in fieldsets:
+        for field in fields:
+            if field in fieldset[1]['fields']:
+                logging.debug("'%s' field found in %s, hiding." % (field, fieldset[1]['fields']))
+                newfields = []
+                for myfield in fieldset[1]['fields']:
+                    if not myfield in fields:
+                        newfields.append(myfield)
+
+                fieldset[1]['fields'] = tuple(newfields)
+                logger.debug('Setting newfields to: %s' % newfields)
+
+                break
 
 class CollectionAdmin(admin.ModelAdmin):
 #    inlines = (TitleInline,)
     filter_horizontal = ('title', 'owner', 'resource', 'genre', 'language', 'languageDisorder', 'relation', 'domain', 'totalSize', 'pid', 'resourceCreator', 'project',)
-    fieldsets = ( ('Searchable', {'fields': ('title', 'resource', 'provenance', 'linguality','language', 'languageDisorder', 'relation', 'speechCorpus',)}),
+    fieldsets = ( ('Searchable', {'fields': ('title', 'identifier', 'resource', 'provenance', 'linguality','language', 'languageDisorder', 'relation', 'speechCorpus',)}),
                   ('Other',      {'fields': ('description', 'owner', 'genre', 'domain', 'clarinCentre', 'access', 'totalSize', 'pid', 'version', 'resourceCreator', 'documentation', 'validation', 'project', 'writtenCorpus',)}),
                 )
     actions = ['export_xml']
+
+    def get_form(self, request, obj=None, **kwargs):
+        form = super(CollectionAdmin, self).get_form(request, obj, **kwargs)
+        bDelField = False
+        # Check if the 'identifier' field has been defined
+        if obj != None:
+            # Try to get the value of this instance
+            sValue = obj.identifier
+            # Check this value
+            if sValue == "" or sValue == "-":
+                # Try to create a better value: get the shortest title
+                if obj.title != None:
+                    # Sort all the many-to-many titles for this object
+                    oTitles = obj.title.extra(select={'length': 'Length(name)'}).order_by('length')
+                    # get the shortest title
+                    smallest = oTitles.first().name
+                    # check if the length is okay
+                    if smallest != "" and smallest != "-" and len(smallest) <= MAX_IDENTIFIER_LEN:
+                        # The identifier is large enough
+                        bDelField = True
+                        # Make sure that the 'identifier' field is set
+                        obj.identifier = smallest
+                        # And make sure it is written to the database
+                        obj.save()
+            else:
+                # the [sValue] is not empty, so the field is not needed in this instance
+                bDelField = True
+
+        if bDelField:
+            # Delete the field
+            # del form.base_fields['identifier']
+            # Remove it from the fieldsets
+            remove_from_fieldsets(self.fieldsets, ('identifier',))
+            
+
+        # return the form
+        return form
 
     def export_xml(self, request, queryset):
         # Export this object to XML
@@ -52,9 +106,9 @@ class GeographicProvenanceAdmin(admin.ModelAdmin):
 
 
 class ResourceAdmin(admin.ModelAdmin):
-    filter_horizontal = ('annotation',)
+    filter_horizontal = ('annotation','totalSize',)
     fieldsets = ( ('Searchable', {'fields': ('type', 'annotation', 'media',)}),
-                  ('Other',      {'fields': ()}),
+                  ('Other',      {'fields': ('description', 'totalSize',)}),
                 )
 
 
