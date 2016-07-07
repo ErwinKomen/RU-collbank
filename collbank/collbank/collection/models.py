@@ -106,6 +106,14 @@ def m2m_combi(items):
         qs = items.all()
         sBack = '-'.join([str(thing) for thing in qs])
     return sBack
+
+def m2m_identifier(items):
+    if items == None:
+        sBack = ''
+    else:
+        qs = items.all()
+        sBack = "-".join([thing.identifier for thing in qs])
+    return sBack
   
 
 class HelpChoice(models.Model):
@@ -155,7 +163,8 @@ class Title(models.Model):
     name = models.TextField("Title used for the collection as a whole", help_text=get_help('title'))
 
     def __str__(self):
-        return self.name
+        idt = m2m_identifier(self.collection_set)
+        return "[{}] {}".format(idt,self.name)
 
 
 class Owner(models.Model):
@@ -164,7 +173,8 @@ class Owner(models.Model):
     name = models.TextField("One of the collection or resource owners", help_text=get_help('owner'))
 
     def __str__(self):
-        return self.name
+        idt = m2m_identifier(self.collection_set)
+        return "[{}] {}".format(idt,self.name)
 
 
 class MediaFormat(models.Model):
@@ -194,7 +204,15 @@ class Annotation(models.Model):
     format = models.CharField("Annotation format", choices=build_choice_list(ANNOTATION_FORMAT), max_length=5, help_text=get_help(ANNOTATION_FORMAT), default='0')
 
     def __str__(self):
-        return "{}: {}, {}".format(
+        qs = self.resource_set
+        if qs == None:
+            idt = ""
+        else:
+            qs = qs.all()[0].collection_set
+            idt = m2m_identifier(qs)
+
+        return "[{}] {}: {}, {}".format(
+            idt,
             choice_english(ANNOTATION_TYPE, self.type), 
             choice_english(ANNOTATION_MODE,self.mode), 
             choice_english(ANNOTATION_FORMAT,self.format))
@@ -207,7 +225,8 @@ class TotalSize(models.Model):
     sizeUnit = models.CharField("Units", help_text=get_help(SIZEUNIT), max_length=50, default='MB')
 
     def __str__(self):
-        return "{} {}".format(self.size,self.sizeUnit)
+        idt = m2m_identifier(self.collection_set)
+        return "[{}] {} {}".format(idt,self.size,self.sizeUnit)
 
 
 class Resource(models.Model):
@@ -226,9 +245,11 @@ class Resource(models.Model):
     totalSize = models.ManyToManyField(TotalSize, blank=True)
 
     def __str__(self):
-        return "{}: {}".format(
+        idt = m2m_identifier(self.collection_set)
+        return "[{}] {}: {}".format(
+            idt,
             choice_english(RESOURCE_TYPE, self.type),
-            self.annotation)
+            m2m_combi(self.annotation))
 
 
 class TemporalProvenance(models.Model):
@@ -288,7 +309,8 @@ class Genre(models.Model):
     name = models.CharField("Collection genre", choices=build_choice_list(GENRE_NAME), max_length=5, help_text=get_help(GENRE_NAME), default='0')
 
     def __str__(self):
-        return choice_english(GENRE_NAME, self.name)
+        idt = m2m_identifier(self.collection_set)
+        return "[{}] {}".format(idt,choice_english(GENRE_NAME, self.name))
 
 
 class LingualityType(models.Model):
@@ -377,16 +399,23 @@ class Language(models.Model):
     name = models.CharField("Language in collection", choices=build_choice_list("language.name"), max_length=5, help_text=get_help("language.name"), default='0')
 
     def __str__(self):
-        return choice_english("language.name", self.name)
+        idt = m2m_identifier(self.collection_set)
+        if idt == "" or idt == "-":
+            sBack = "[DOC] " + choice_english("language.name", self.name)
+        else:
+            sBack = "[{}] {}".format(idt,choice_english("language.name", self.name))
+        return sBack
 
 
 class LanguageDisorder(models.Model):
     """Language that is used in this collection"""
 
-    name = models.CharField("Language disorder", choices=build_choice_list("languagedisorder.name"), max_length=5, help_text=get_help("languagedisorder.name"), default='0')
+    name = models.CharField("Language disorder", max_length=50, help_text=get_help("languagedisorder.name"), default='unknown')
 
     def __str__(self):
-        return choice_english("languagedisorder.name", self.name)
+        idt = m2m_identifier(self.collection_set)
+        sName = self.name
+        return "[{}] {}".format(idt, sName)
 
 
 class Relation(models.Model):
@@ -395,7 +424,8 @@ class Relation(models.Model):
     name = models.CharField("Relation with something else", choices=build_choice_list(RELATION_NAME ), max_length=5, help_text=get_help(RELATION_NAME ), default='0')
 
     def __str__(self):
-        return choice_english(RELATION_NAME, self.name)
+        idt = m2m_identifier(self.collection_set)
+        return "[{}] {}".format(idt,choice_english(RELATION_NAME, self.name))
 
 
 class DomainDescription(models.Model):
@@ -415,7 +445,9 @@ class Domain(models.Model):
     name = models.ManyToManyField(DomainDescription, blank=True)
 
     def __str__(self):
-        return m2m_combi(self.name)
+        idt = m2m_identifier(self.collection_set)
+        sName = m2m_combi(self.name)
+        return "[{}] {}".format(idt,sName)
 
 
 class AccessAvailability(models.Model):
@@ -519,7 +551,8 @@ class PID(models.Model):
     code = models.TextField("Persistent identifier of the collection", help_text=get_help('PID'))
 
     def __str__(self):
-        return self.code
+        idt = m2m_identifier(self.collection_set)
+        return "[{}] {}".format(idt,self.code)
 
 
 class Organization(models.Model):
@@ -547,7 +580,9 @@ class ResourceCreator(models.Model):
     person = models.ManyToManyField(Person, blank=False)
 
     def __str__(self):
-        return "o:{}|p:{}".format(
+        idt = m2m_identifier(self.collection_set)
+        return "[{}] o:{}|p:{}".format(
+            idt,
             m2m_combi(self.organization),
             m2m_combi(self.person))
 
@@ -658,9 +693,10 @@ class Project(models.Model):
     URL = models.ForeignKey(ProjectUrl, blank=True, null=True)
 
     def __str__(self):
+        idt = m2m_identifier(self.collection_set)
         sName = self.title
         if sName == "": sName = self.URL
-        return sName
+        return "[{}] {}".format(idt,sName)
 
 
 class CharacterEncoding(models.Model):
