@@ -8,7 +8,7 @@ from django.core import urlresolvers
 import django.contrib.auth.views
 
 import collbank.collection.forms
-import collbank.collection.views
+from collbank.collection.views import *
 
 # Uncomment the next lines to enable the admin:
 from django.conf.urls import include
@@ -23,9 +23,9 @@ admin.site.site_header = 'Collection Bank Admin'
 admin.site.site_title = 'Collection Bank Site Admin'
 
 # define a site prefix: SET this for the production environment
-# pfx = "ru/"
+pfx = "ru/"
 # SET this one for the development environment
-pfx = ""
+# pfx = ""
 
 urlpatterns = [
     # Examples:
@@ -34,6 +34,9 @@ urlpatterns = [
     url(r'^about', collbank.collection.views.about, name='about'),
     url(r'^definitions$', RedirectView.as_view(url='/'+pfx+'admin/'), name='definitions'),
     url(r'^collections$', RedirectView.as_view(url='/'+pfx+'admin/collection/collection/'), name='collections'),
+    url(r'^overview$', collbank.collection.views.overview, name='overview'),
+    # url(r'^output/(?P<collection_id>[0-9]+)/$', CollectionDetailView.as_view(), name='output'),
+    url(r'^output/(?P<pk>\d+)', CollectionDetailView.as_view(), name='output'),
 
     url(r'^login/$',
         django.contrib.auth.views.login,

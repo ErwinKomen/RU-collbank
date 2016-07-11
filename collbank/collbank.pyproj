@@ -88,6 +88,8 @@
     <Content Include="collbank\collection\templates\collection\layout.html" />
     <Content Include="collbank\collection\templates\collection\login.html" />
     <Content Include="collbank\collection\templates\collection\loginpartial.html" />
+    <Content Include="collbank\collection\templates\collection\output.xml" />
+    <Content Include="collbank\collection\templates\collection\overview.html" />
     <Content Include="requirements.txt" />
   </ItemGroup>
   <ItemGroup>

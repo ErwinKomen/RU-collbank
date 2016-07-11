@@ -40,3 +40,11 @@ input[type="checkbox"].input-validation-error {
 .validation-summary-valid {
     display: none;
 }
+
+/* My own modifications */
+a.list-group-item-info:hover {
+  background-color: lightyellow !important;
+}
+table tbody tr:hover {
+  background-color: lightyellow !important;
+}

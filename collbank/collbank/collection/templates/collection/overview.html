@@ -1,5 +1,6 @@
 ﻿<!DOCTYPE html>
-<html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -34,19 +35,28 @@
             </div>
         </div>
     </div>
-
     <div class="container body-content">
-{% block content %}{% endblock %}
-        <hr/>
-        <footer>
-            <p>&copy; {{ year }} - RU Collection Bank</p>
-        </footer>
+    {% if overview_list %}
+      <h3>Available collections</h3>
+      <table class="table table-hover">
+        <thead><tr><th>id</th><th>Identifier</th><th>Description</th></tr></thead>
+        <tbody>
+        {% for coll in overview_list %}
+          <tr>
+            <td> {{ coll.id }} </td>
+            <td><a href="/output/{{coll.pk}}">{{ coll.identifier}}</a></td>
+            <td>{{coll.description}}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p>No collections are available.</p>
+    {% endif %}
     </div>
-
     <script src="{% static 'collection/scripts/jquery-1.10.2.js' %}"></script>
-    <script src="{% static 'collection/scripts/bootstrap.js' %}"></script>
+    <script src="{% static 'collection/scripts/bootstrap.min.js' %}"></script>
     <script src="{% static 'collection/scripts/respond.js' %}"></script>
 {% block scripts %}{% endblock %}
-
 </body>
 </html>

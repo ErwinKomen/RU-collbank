@@ -590,7 +590,7 @@ class ResourceCreator(models.Model):
 class DocumentationType(models.Model):
     """Kind of documentation"""
 
-    format = models.CharField("RKind of documentation", choices=build_choice_list(DOCUMENTATION_TYPE ), max_length=5, help_text=get_help(DOCUMENTATION_TYPE ), default='0')
+    format = models.CharField("Kind of documentation", choices=build_choice_list(DOCUMENTATION_TYPE ), max_length=5, help_text=get_help(DOCUMENTATION_TYPE ), default='0')
 
     def __str__(self):
         return choice_english(DOCUMENTATION_TYPE, self.format)

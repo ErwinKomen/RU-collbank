@@ -20,6 +20,7 @@ if "RU-collbank\\writable" in WRITABLE_DIR:
     # Need another string
     WRITABLE_DIR = os.path.abspath(os.path.join(BASE_DIR, "../../../writable/database/"))
 
+OUTPUT_XML = os.path.abspath(os.path.join(WRITABLE_DIR, "../collbank-file.xml"))
 
 # publishing on a sub-url
 # NOTE: possibly remove this for the production environment...
