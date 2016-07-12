@@ -44,7 +44,7 @@
         {% for coll in overview_list %}
           <tr>
             <td> {{ coll.id }} </td>
-            <td><a href="/output/{{coll.pk}}">{{ coll.identifier}}</a></td>
+            <td><a href="/{{app_prefix }}output/{{coll.pk}}">{{ coll.identifier}}</a></td>
             <td>{{coll.description}}</td>
           </tr>
         {% endfor %}

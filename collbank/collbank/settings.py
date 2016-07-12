@@ -22,6 +22,10 @@ if "RU-collbank\\writable" in WRITABLE_DIR:
 
 OUTPUT_XML = os.path.abspath(os.path.join(WRITABLE_DIR, "../collbank-file.xml"))
 
+APP_PREFIX = "ru/"
+if "d:" in WRITABLE_DIR or "D:" in WRITABLE_DIR:
+    APP_PREFIX = ""
+
 # publishing on a sub-url
 # NOTE: possibly remove this for the production environment...
 # FORCE_SCRIPT_NAME = "/ru"

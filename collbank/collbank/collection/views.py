@@ -10,7 +10,7 @@ from datetime import datetime
 from xml.dom import minidom
 import xml.etree.ElementTree as ET
 from collbank.collection.models import *
-from collbank.settings import OUTPUT_XML
+from collbank.settings import OUTPUT_XML, APP_PREFIX
 
 # General help functions
 def add_element(optionality, col_this, el_name, crp, **kwargs):
@@ -96,6 +96,7 @@ def overview(request):
     template = loader.get_template('collection/overview.html')
     context = {
         'overview_list': overview_list,
+        'app_prefix': APP_PREFIX,
     }
     return HttpResponse(template.render(context, request))
 
@@ -308,12 +309,13 @@ class CollectionDetailView(DetailView):
 
 
         # Export this object to XML
-        xmlstr = minidom.parseString(ET.tostring(top,'utf-8')).toprettyxml(indent="  ")
+        # xmlstr = minidom.parseString(ET.tostring(top,'utf-8')).toprettyxml(indent="  ")
+        xmlstr = minidom.parseString(ET.tostring(top,encoding='utf-8')).toprettyxml(indent="  ")
         sFullPath = ""
-        with open(OUTPUT_XML, "w") as f:
+        with open(OUTPUT_XML, encoding="utf-8", mode="w+") as f:
             sFullPath = f.name
             f.write(xmlstr)
 
 
         # TODO: make the file available for download and provide a link to it
-        return HttpResponse(open(sFullPath).read(), content_type='text/xml')
+        return HttpResponse(open(sFullPath, encoding="utf-8").read(), content_type='text/xml')

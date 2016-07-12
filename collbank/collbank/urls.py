@@ -16,6 +16,7 @@ from django.shortcuts import redirect
 from django.core.urlresolvers import reverse, reverse_lazy
 from django.views.generic.base import RedirectView
 from django.contrib import admin
+from collbank.settings import APP_PREFIX
 admin.autodiscover()
 
 # set admin site names
@@ -23,9 +24,10 @@ admin.site.site_header = 'Collection Bank Admin'
 admin.site.site_title = 'Collection Bank Site Admin'
 
 # define a site prefix: SET this for the production environment
-pfx = "ru/"
+# pfx = "ru/"
 # SET this one for the development environment
 # pfx = ""
+pfx = APP_PREFIX
 
 urlpatterns = [
     # Examples:
