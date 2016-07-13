@@ -9,8 +9,9 @@ from django.template import RequestContext, loader
 from datetime import datetime
 from xml.dom import minidom
 import xml.etree.ElementTree as ET
+import os
 from collbank.collection.models import *
-from collbank.settings import OUTPUT_XML, APP_PREFIX
+from collbank.settings import OUTPUT_XML, APP_PREFIX, WSGI_FILE
 
 # General help functions
 def add_element(optionality, col_this, el_name, crp, **kwargs):
@@ -99,6 +100,26 @@ def overview(request):
         'app_prefix': APP_PREFIX,
     }
     return HttpResponse(template.render(context, request))
+
+def reload_collbank(request=None):
+    """Clear the Apache cache by touching the WSGI file"""
+
+    # Refresh the wsgi script
+    os.utime(WSGI_FILE,None)
+
+    # Use the obj.refresh_from_db() function (since Django 1.8)
+    #for obj in Collection.objects.all():
+    #    obj.refresh_from_db()
+    #for obj in FieldChoice.objects.all():
+    #    obj.refresh_from_db()
+    #for obj in Genre.objects.all():
+    #    obj.refresh_from_db()
+
+    # If this is a HTTP request, give an appropriate response
+    if request != None:
+        from django.shortcuts import render_to_response
+        return render_to_response('collection/index.html')
+
 
 class CollectionDetailView(DetailView):
     """Details of a selected collection"""
