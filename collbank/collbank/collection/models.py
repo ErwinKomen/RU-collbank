@@ -421,11 +421,11 @@ class LanguageDisorder(models.Model):
 class Relation(models.Model):
     """Language that is used in this collection"""
 
-    name = models.CharField("Relation with something else", choices=build_choice_list(RELATION_NAME ), max_length=5, help_text=get_help(RELATION_NAME ), default='0')
+    name = models.CharField("Relation with something else", max_length=80, help_text=get_help(RELATION_NAME ), default='-')
 
     def __str__(self):
         idt = m2m_identifier(self.collection_set)
-        return "[{}] {}".format(idt,choice_english(RELATION_NAME, self.name))
+        return "[{}] {}".format(idt,self.name)
 
 
 class DomainDescription(models.Model):
