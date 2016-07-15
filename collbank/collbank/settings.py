@@ -26,6 +26,9 @@ APP_PREFIX = "ru/"
 if "d:" in WRITABLE_DIR or "D:" in WRITABLE_DIR:
     APP_PREFIX = ""
 
+# Not the location of the wsgi.py file for "reload_collbank"
+WSGI_FILE = os.path.abspath(os.path.join(BASE_DIR,"collbank/wsgi.py"))
+
 # publishing on a sub-url
 # NOTE: possibly remove this for the production environment...
 # FORCE_SCRIPT_NAME = "/ru"
