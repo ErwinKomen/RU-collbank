@@ -114,6 +114,19 @@ def m2m_identifier(items):
         qs = items.all()
         sBack = "-".join([thing.identifier for thing in qs])
     return sBack
+
+def get_ident(qs):
+    if qs == None:
+        idt = ""
+    else:
+        lst = qs.all()
+        if len(lst) == 0:
+            idt = "(empty)"
+        else:
+            qs = lst[0].collection_set
+            idt = m2m_identifier(qs)
+    return idt
+
   
 
 class HelpChoice(models.Model):
@@ -208,8 +221,12 @@ class Annotation(models.Model):
         if qs == None:
             idt = ""
         else:
-            qs = qs.all()[0].collection_set
-            idt = m2m_identifier(qs)
+            lst = qs.all()
+            if len(lst) == 0:
+                idt = "(empty)"
+            else:
+                qs = lst[0].collection_set
+                idt = m2m_identifier(qs)
 
         return "[{}] {}: {}, {}".format(
             idt,
