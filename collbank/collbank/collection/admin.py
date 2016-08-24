@@ -29,7 +29,7 @@ def remove_from_fieldsets(fieldsets, fields):
 
 class CollectionAdmin(admin.ModelAdmin):
 #    inlines = (TitleInline,)
-    filter_horizontal = ('title', 'identifier', 'owner', 'resource', 'genre', 'language', 'languageDisorder', 'relation', 'domain', 'totalSize', 'pid', 'resourceCreator', 'project',)
+    filter_horizontal = ('title', 'owner', 'resource', 'genre', 'language', 'languageDisorder', 'relation', 'domain', 'totalSize', 'pid', 'resourceCreator', 'project',)
     fieldsets = ( ('Searchable', {'fields': ('title', 'identifier', 'resource', 'provenance', 'linguality','language', 'languageDisorder', 'relation', 'speechCorpus',)}),
                   ('Other',      {'fields': ('description', 'owner', 'genre', 'domain', 'clarinCentre', 'access', 'totalSize', 'pid', 'version', 'resourceCreator', 'documentation', 'validation', 'project', 'writtenCorpus',)}),
                 )
@@ -38,6 +38,7 @@ class CollectionAdmin(admin.ModelAdmin):
     def get_form(self, request, obj=None, **kwargs):
         form = super(CollectionAdmin, self).get_form(request, obj, **kwargs)
         bDelField = False
+        bKeepIdentifier = True
         # Check if the 'identifier' field has been defined
         if obj != None:
             # Try to get the value of this instance
@@ -62,9 +63,7 @@ class CollectionAdmin(admin.ModelAdmin):
                 # the [sValue] is not empty, so the field is not needed in this instance
                 bDelField = True
 
-        if bDelField:
-            # Delete the field
-            # del form.base_fields['identifier']
+        if bDelField and not bKeepIdentifier:
             # Remove it from the fieldsets
             remove_from_fieldsets(self.fieldsets, ('identifier',))
             
