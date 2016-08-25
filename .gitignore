@@ -243,9 +243,14 @@ ModelManifest.xml
 
 # FAKE - F# Make
 .fake/
-/collbank/collbank-file.xml
-/collbank/collbank-test.xml
 
 # Python Tools for Visual Studio (PTVS)
 __pycache__/
 *.pyc
+*.pyproj
+web.debug.config
+
+# Specific COLLBANK
+/collbank/collbank-file.xml
+/collbank/collbank-test.xml
+migrations/
