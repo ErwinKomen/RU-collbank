@@ -195,12 +195,13 @@ class CollectionDetailView(DetailView):
                 add_element("1", size_this, "sizeUnit", tot)
         # genre (0-n)
         add_element("0-n", col_this, "genre", crp, foreign="name", fieldchoice=GENRE_NAME)
-        # provenance (0-1)
-        if col_this.provenance != None:
+        # provenance (0-n)
+        for prov_this in col_this.provenance.all():
+        # if col_this.provenance != None:
             # Set the provenance sub-element
             prov = ET.SubElement(crp, "provenance")
             # Get the provenance element
-            prov_this = col_this.provenance
+            # prov_this = col_this.provenance
             # temporal provenance (0-1)
             if prov_this.temporalProvenance != None:
                 # Create a sub-element

@@ -25,6 +25,8 @@ OUTPUT_XML = os.path.abspath(os.path.join(WRITABLE_DIR, "../collbank-file.xml"))
 APP_PREFIX = "ru/"
 if "d:" in WRITABLE_DIR or "D:" in WRITABLE_DIR:
     APP_PREFIX = ""
+elif "/scratch" in WRITABLE_DIR:
+    APP_PREFIX = "collbank/"
 
 # Not the location of the wsgi.py file for "reload_collbank"
 WSGI_FILE = os.path.abspath(os.path.join(BASE_DIR,"collbank/wsgi.py"))
@@ -139,5 +141,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.9/howto/static-files/
 
 STATIC_URL = '/static/'
+if ("/scratch" in WRITABLE_DIR):
+    STATIC_URL = '/'+APP_PREFIX+'static/'
 
 STATIC_ROOT = posixpath.join(*(BASE_DIR.split(os.path.sep) + ['static']))

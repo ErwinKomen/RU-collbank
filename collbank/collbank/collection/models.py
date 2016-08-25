@@ -314,7 +314,9 @@ class Provenance(models.Model):
     geographicProvenance = models.ManyToManyField(GeographicProvenance, blank=True)
 
     def __str__(self):
-        return "t:{}, g:{}".format(
+        idt = m2m_identifier(self.collection_set)
+        return "[{}] t:{}, g:{}".format(
+          idt,
           self.temporalProvenance, 
           m2m_combi(self.geographicProvenance))
 
@@ -869,8 +871,9 @@ class Collection(models.Model):
     resource = models.ManyToManyField(Resource, blank=False)
     # == genre (0-n; c:)  
     genre = models.ManyToManyField(Genre, blank=True)
-    # provenance (0-1) 
-    provenance = models.ForeignKey(Provenance, blank=True, null=True)
+    # provenance (0-n) 
+    provenance = models.ManyToManyField(Provenance, blank=True)
+    # provenance = models.ForeignKey(Provenance, blank=True, null=True)
     # linguality (0-1)
     linguality = models.ForeignKey(Linguality, blank=True, null=True)
     # language (1-n; c)
