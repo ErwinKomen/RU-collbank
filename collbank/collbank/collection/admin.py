@@ -207,6 +207,22 @@ class DocumentationTypeAdmin(admin.ModelAdmin):
     form = DocumentationTypeForm
 
 
+class AudioFormatForm(forms.ModelForm):
+
+    class Meta:
+        model = AudioFormat
+        fields = ['speechCoding', 'samplingFrequency', 'compression', 'bitResolution']
+
+    def __init__(self, *args, **kwargs):
+        super(AudioFormatForm, self).__init__(*args, **kwargs)
+        if (self.fields != None):
+            self.fields['speechCoding'].choices = build_choice_list("audioformat.speechcoding")
+
+
+class AudioFormatAdmin(admin.ModelAdmin):
+    form = AudioFormatForm
+
+
 class DomainAdmin(admin.ModelAdmin):
     filter_horizontal = ('name',)
     fieldsets = ( ('Searchable', {'fields': ()}),
@@ -263,9 +279,9 @@ class ProjectAdmin(admin.ModelAdmin):
 
 
 class SpeechCorpusAdmin(admin.ModelAdmin):
-    filter_horizontal = ('recordingEnvironment', 'channel', 'conversationalType', 'recordingConditions', 'socialContext', 'planningType', 'interactivity', 'involvement', 'audience',)
+    filter_horizontal = ('recordingEnvironment', 'channel', 'conversationalType', 'recordingConditions', 'socialContext', 'planningType', 'interactivity', 'involvement', 'audience', 'audioFormat')
     fieldsets = ( ('Searchable', {'fields': ()}),
-                  ('Other',      {'fields': ('recordingEnvironment', 'channel', 'conversationalType', 'recordingConditions', 'durationOfEffectiveSpeech', 'durationOfFullDatabase', 'numberOfSpeakers', 'speakerDemographics', 'socialContext', 'planningType', 'interactivity', 'involvement', 'audience',)}),
+                  ('Other',      {'fields': ('recordingEnvironment', 'channel', 'conversationalType', 'recordingConditions', 'durationOfEffectiveSpeech', 'durationOfFullDatabase', 'numberOfSpeakers', 'speakerDemographics', 'socialContext', 'planningType', 'interactivity', 'involvement', 'audience', 'audioFormat')}),
                 )
 
 class FieldChoiceAdmin(admin.ModelAdmin):
@@ -373,6 +389,7 @@ admin.site.register(PlanningType)
 admin.site.register(Interactivity)
 admin.site.register(Involvement)
 admin.site.register(Audience)
+admin.site.register(AudioFormat, AudioFormatAdmin)
 admin.site.register(SpeechCorpus, SpeechCorpusAdmin)
 
 # -- collection as a whole
