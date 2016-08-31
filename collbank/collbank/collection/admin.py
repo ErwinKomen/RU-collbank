@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django import forms
 from collbank.collection.models import *
 from django.core import serializers
 from django.contrib.contenttypes.models import ContentType
@@ -124,6 +125,88 @@ class MediaAdmin(admin.ModelAdmin):
                 )
 
 
+class LanguageForm(forms.ModelForm):
+
+    class Meta:
+        model = Language
+        fields = ['name']
+
+    def __init__(self, *args, **kwargs):
+        super(LanguageForm, self).__init__(*args, **kwargs)
+        if (self.fields != None):
+            self.fields['name'].choices = build_choice_list("language.name")
+
+
+class LanguageAdmin(admin.ModelAdmin):
+    form = LanguageForm
+
+
+class AccessAvailabilityForm(forms.ModelForm):
+
+    class Meta:
+        model = AccessAvailability
+        fields = ['name']
+
+    def __init__(self, *args, **kwargs):
+        super(AccessAvailabilityForm, self).__init__(*args, **kwargs)
+        if (self.fields != None):
+            self.fields['name'].choices = build_choice_list("access.availability")
+
+
+class AccessAvailabilityAdmin(admin.ModelAdmin):
+    form = AccessAvailabilityForm
+
+
+class AccessMediumForm(forms.ModelForm):
+
+    class Meta:
+        model = AccessMedium
+        fields = ['format']
+
+    def __init__(self, *args, **kwargs):
+        super(AccessMediumForm, self).__init__(*args, **kwargs)
+        if (self.fields != None):
+            self.fields['format'].choices = build_choice_list("access.medium.format")
+
+
+class AccessMediumAdmin(admin.ModelAdmin):
+    form = AccessMediumForm
+
+
+
+class NonCommercialUsageOnlyForm(forms.ModelForm):
+
+    class Meta:
+        model = NonCommercialUsageOnly
+        fields = ['name']
+
+    def __init__(self, *args, **kwargs):
+        super(NonCommercialUsageOnlyForm, self).__init__(*args, **kwargs)
+        if (self.fields != None):
+            self.fields['name'].choices = build_choice_list("access.nonCommercialUsageOnly")
+
+
+class NonCommercialUsageOnlyAdmin(admin.ModelAdmin):
+    form = NonCommercialUsageOnlyForm
+
+
+
+class DocumentationTypeForm(forms.ModelForm):
+
+    class Meta:
+        model = DocumentationType
+        fields = ['format']
+
+    def __init__(self, *args, **kwargs):
+        super(DocumentationTypeForm, self).__init__(*args, **kwargs)
+        if (self.fields != None):
+            self.fields['format'].choices = build_choice_list("documentation.type")
+
+
+class DocumentationTypeAdmin(admin.ModelAdmin):
+    form = DocumentationTypeForm
+
+
 class DomainAdmin(admin.ModelAdmin):
     filter_horizontal = ('name',)
     fieldsets = ( ('Searchable', {'fields': ()}),
@@ -238,7 +321,7 @@ admin.site.register(LingualityVariant)
 admin.site.register(MultilingualityType)
 admin.site.register(Linguality, LingualityAdmin)
 # -- language
-admin.site.register(Language)
+admin.site.register(Language, LanguageAdmin)
 # -- languageDisorder
 admin.site.register(LanguageDisorder)
 # -- relation
@@ -247,13 +330,13 @@ admin.site.register(Relation)
 admin.site.register(DomainDescription)
 admin.site.register(Domain, DomainAdmin)
 # -- access
-admin.site.register(AccessAvailability)
+admin.site.register(AccessAvailability, AccessAvailabilityAdmin)
 admin.site.register(LicenseName)
 admin.site.register(LicenseUrl)
-admin.site.register(NonCommercialUsageOnly)
+admin.site.register(NonCommercialUsageOnly, NonCommercialUsageOnlyAdmin)
 admin.site.register(AccessContact)
 admin.site.register(AccessWebsite)
-admin.site.register(AccessMedium)
+admin.site.register(AccessMedium, AccessMediumAdmin)
 admin.site.register(Access, AccessAdmin)
 # -- totalSize
 admin.site.register(TotalSize, TotalSizeAdmin)
@@ -265,7 +348,7 @@ admin.site.register(Person)
 admin.site.register(ResourceCreator, ResourceCreatorAdmin)
 # -- documentation
 admin.site.register(DocumentationFile)
-admin.site.register(DocumentationType)
+admin.site.register(DocumentationType, DocumentationTypeAdmin)
 admin.site.register(DocumentationUrl)
 admin.site.register(Documentation, DocumentationAdmin)
 # -- validation

@@ -108,7 +108,12 @@ def reload_collbank(request=None):
     os.utime(WSGI_FILE,None)
 
     # Use the obj.refresh_from_db() function (since Django 1.8)
+    # NOTE: doesn't really seem to work.
+    #       what does work: add __init__ function to the form that is shown
+    #                       re-load "choices" in this __init__ function
     #for obj in Collection.objects.all():
+    #    obj.refresh_from_db()
+    #for obj in Language.objects.all():
     #    obj.refresh_from_db()
     #for obj in FieldChoice.objects.all():
     #    obj.refresh_from_db()
