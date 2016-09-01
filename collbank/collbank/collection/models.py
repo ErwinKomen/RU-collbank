@@ -822,14 +822,15 @@ class Audience(models.Model):
 class AudioFormat(models.Model):
     """AudioFormat"""
 
-    # speechCoding (0-1; c)
-    speechCoding = models.CharField("Speech coding", choices=build_choice_list(AUDIOFORMAT_SPEECHCODING), max_length=5, help_text=get_help(AUDIOFORMAT_SPEECHCODING), default='0')
+    # speechCoding (0-1; f)
+    # speechCoding = models.CharField("Speech coding", choices=build_choice_list(AUDIOFORMAT_SPEECHCODING), max_length=5, help_text=get_help(AUDIOFORMAT_SPEECHCODING), default='0')
+    speechCoding = models.CharField("Speech coding", blank=True, help_text=get_help(AUDIOFORMAT_SPEECHCODING), max_length=25, default='unknown')
     # samplingFrequency (0-1; f)
-    samplingFrequency = models.CharField("Sampling frequency", blank=True, help_text=get_help('audioformat.samplingFrequency'), max_length=20, default='unknown')
+    samplingFrequency = models.CharField("Sampling frequency", blank=True, help_text=get_help('audioformat.samplingFrequency'), max_length=25, default='unknown')
     # compression  (0-1; f)
-    compression = models.CharField("Compression", blank=True, help_text=get_help('audioformat.compression'), max_length=20, default='unknown')
+    compression = models.CharField("Compression", blank=True, help_text=get_help('audioformat.compression'), max_length=25, default='unknown')
     # bitResolution  (0-1; f)
-    bitResolution = models.CharField("Bit resolution", blank=True, help_text=get_help('audioformat.bitResolution'), max_length=20, default='unknown')
+    bitResolution = models.CharField("Bit resolution", blank=True, help_text=get_help('audioformat.bitResolution'), max_length=25, default='unknown')
 
     def __str__(self):
         sc = choice_english(AUDIOFORMAT_SPEECHCODING, self.speechCoding)
