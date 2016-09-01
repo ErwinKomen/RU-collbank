@@ -833,7 +833,7 @@ class AudioFormat(models.Model):
     bitResolution = models.CharField("Bit resolution", blank=True, help_text=get_help('audioformat.bitResolution'), max_length=25, default='unknown')
 
     def __str__(self):
-        sc = choice_english(AUDIOFORMAT_SPEECHCODING, self.speechCoding)
+        sc = self.speechCoding
         sf = self.samplingFrequency
         cmp = self.compression
         br = self.bitResolution
