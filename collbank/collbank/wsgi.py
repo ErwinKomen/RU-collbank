@@ -17,7 +17,7 @@ import os
 # import sys
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "collbank.settings")
-os.environ['SCRIPT_NAME'] = 'ru'
+# os.environ['SCRIPT_NAME'] = 'ru'
 
 # Append the django project root directory to the python path
 # sys.path.append('/var/www/collbank/live/repo/collbank')

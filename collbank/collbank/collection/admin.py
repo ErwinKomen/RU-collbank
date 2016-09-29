@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django import forms
 from collbank.collection.models import *
 from django.core import serializers
 from django.contrib.contenttypes.models import ContentType
@@ -124,6 +125,104 @@ class MediaAdmin(admin.ModelAdmin):
                 )
 
 
+class LanguageForm(forms.ModelForm):
+
+    class Meta:
+        model = Language
+        fields = ['name']
+
+    def __init__(self, *args, **kwargs):
+        super(LanguageForm, self).__init__(*args, **kwargs)
+        if (self.fields != None):
+            self.fields['name'].choices = build_choice_list("language.name")
+
+
+class LanguageAdmin(admin.ModelAdmin):
+    form = LanguageForm
+
+
+class AccessAvailabilityForm(forms.ModelForm):
+
+    class Meta:
+        model = AccessAvailability
+        fields = ['name']
+
+    def __init__(self, *args, **kwargs):
+        super(AccessAvailabilityForm, self).__init__(*args, **kwargs)
+        if (self.fields != None):
+            self.fields['name'].choices = build_choice_list("access.availability")
+
+
+class AccessAvailabilityAdmin(admin.ModelAdmin):
+    form = AccessAvailabilityForm
+
+
+class AccessMediumForm(forms.ModelForm):
+
+    class Meta:
+        model = AccessMedium
+        fields = ['format']
+
+    def __init__(self, *args, **kwargs):
+        super(AccessMediumForm, self).__init__(*args, **kwargs)
+        if (self.fields != None):
+            self.fields['format'].choices = build_choice_list("access.medium.format")
+
+
+class AccessMediumAdmin(admin.ModelAdmin):
+    form = AccessMediumForm
+
+
+
+class NonCommercialUsageOnlyForm(forms.ModelForm):
+
+    class Meta:
+        model = NonCommercialUsageOnly
+        fields = ['name']
+
+    def __init__(self, *args, **kwargs):
+        super(NonCommercialUsageOnlyForm, self).__init__(*args, **kwargs)
+        if (self.fields != None):
+            self.fields['name'].choices = build_choice_list("access.nonCommercialUsageOnly")
+
+
+class NonCommercialUsageOnlyAdmin(admin.ModelAdmin):
+    form = NonCommercialUsageOnlyForm
+
+
+
+class DocumentationTypeForm(forms.ModelForm):
+
+    class Meta:
+        model = DocumentationType
+        fields = ['format']
+
+    def __init__(self, *args, **kwargs):
+        super(DocumentationTypeForm, self).__init__(*args, **kwargs)
+        if (self.fields != None):
+            self.fields['format'].choices = build_choice_list("documentation.type")
+
+
+class DocumentationTypeAdmin(admin.ModelAdmin):
+    form = DocumentationTypeForm
+
+
+class AudioFormatForm(forms.ModelForm):
+
+    class Meta:
+        model = AudioFormat
+        fields = ['speechCoding', 'samplingFrequency', 'compression', 'bitResolution']
+
+    def __init__(self, *args, **kwargs):
+        super(AudioFormatForm, self).__init__(*args, **kwargs)
+        if (self.fields != None):
+            self.fields['speechCoding'].choices = build_choice_list("audioformat.speechcoding")
+
+
+class AudioFormatAdmin(admin.ModelAdmin):
+    form = AudioFormatForm
+
+
 class DomainAdmin(admin.ModelAdmin):
     filter_horizontal = ('name',)
     fieldsets = ( ('Searchable', {'fields': ()}),
@@ -180,9 +279,9 @@ class ProjectAdmin(admin.ModelAdmin):
 
 
 class SpeechCorpusAdmin(admin.ModelAdmin):
-    filter_horizontal = ('recordingEnvironment', 'channel', 'conversationalType', 'recordingConditions', 'socialContext', 'planningType', 'interactivity', 'involvement', 'audience',)
+    filter_horizontal = ('recordingEnvironment', 'channel', 'conversationalType', 'recordingConditions', 'socialContext', 'planningType', 'interactivity', 'involvement', 'audience', 'audioFormat')
     fieldsets = ( ('Searchable', {'fields': ()}),
-                  ('Other',      {'fields': ('recordingEnvironment', 'channel', 'conversationalType', 'recordingConditions', 'durationOfEffectiveSpeech', 'durationOfFullDatabase', 'numberOfSpeakers', 'speakerDemographics', 'socialContext', 'planningType', 'interactivity', 'involvement', 'audience',)}),
+                  ('Other',      {'fields': ('recordingEnvironment', 'channel', 'conversationalType', 'recordingConditions', 'durationOfEffectiveSpeech', 'durationOfFullDatabase', 'numberOfSpeakers', 'speakerDemographics', 'socialContext', 'planningType', 'interactivity', 'involvement', 'audience', 'audioFormat')}),
                 )
 
 class FieldChoiceAdmin(admin.ModelAdmin):
@@ -238,7 +337,7 @@ admin.site.register(LingualityVariant)
 admin.site.register(MultilingualityType)
 admin.site.register(Linguality, LingualityAdmin)
 # -- language
-admin.site.register(Language)
+admin.site.register(Language, LanguageAdmin)
 # -- languageDisorder
 admin.site.register(LanguageDisorder)
 # -- relation
@@ -247,13 +346,13 @@ admin.site.register(Relation)
 admin.site.register(DomainDescription)
 admin.site.register(Domain, DomainAdmin)
 # -- access
-admin.site.register(AccessAvailability)
+admin.site.register(AccessAvailability, AccessAvailabilityAdmin)
 admin.site.register(LicenseName)
 admin.site.register(LicenseUrl)
-admin.site.register(NonCommercialUsageOnly)
+admin.site.register(NonCommercialUsageOnly, NonCommercialUsageOnlyAdmin)
 admin.site.register(AccessContact)
 admin.site.register(AccessWebsite)
-admin.site.register(AccessMedium)
+admin.site.register(AccessMedium, AccessMediumAdmin)
 admin.site.register(Access, AccessAdmin)
 # -- totalSize
 admin.site.register(TotalSize, TotalSizeAdmin)
@@ -265,7 +364,7 @@ admin.site.register(Person)
 admin.site.register(ResourceCreator, ResourceCreatorAdmin)
 # -- documentation
 admin.site.register(DocumentationFile)
-admin.site.register(DocumentationType)
+admin.site.register(DocumentationType, DocumentationTypeAdmin)
 admin.site.register(DocumentationUrl)
 admin.site.register(Documentation, DocumentationAdmin)
 # -- validation
@@ -290,6 +389,7 @@ admin.site.register(PlanningType)
 admin.site.register(Interactivity)
 admin.site.register(Involvement)
 admin.site.register(Audience)
+admin.site.register(AudioFormat, AudioFormatAdmin)
 admin.site.register(SpeechCorpus, SpeechCorpusAdmin)
 
 # -- collection as a whole

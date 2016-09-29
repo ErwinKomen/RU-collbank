@@ -108,7 +108,12 @@ def reload_collbank(request=None):
     os.utime(WSGI_FILE,None)
 
     # Use the obj.refresh_from_db() function (since Django 1.8)
+    # NOTE: doesn't really seem to work.
+    #       what does work: add __init__ function to the form that is shown
+    #                       re-load "choices" in this __init__ function
     #for obj in Collection.objects.all():
+    #    obj.refresh_from_db()
+    #for obj in Language.objects.all():
     #    obj.refresh_from_db()
     #for obj in FieldChoice.objects.all():
     #    obj.refresh_from_db()
@@ -265,6 +270,15 @@ class CollectionDetailView(DetailView):
             add_element("0-1", access_this, "ISBN", acc)
             add_element("0-1", access_this, "ISLRN", acc)
             add_element("0-n", access_this, "medium", acc, foreign="format", fieldchoice=ACCESS_MEDIUM)
+        # totalSize (0-n) -- NOTE: this is on the COLLECTION level; there also is totalsize on the RESOURCE level
+        if col_this.totalSize != None:
+            for size_this in col_this.totalSize.all():
+                # Start adding this sub-element
+                tot = ET.SubElement(res, "totalSize")
+                # Add the size part
+                add_element("1", size_this, "size", tot)
+                # Add the sizeUnit part
+                add_element("1", size_this, "sizeUnit", tot)
         # PID (0-n)
         add_element("0-n", col_this, "pid", crp, foreign="code", subname="PID")
         # version (0-1)

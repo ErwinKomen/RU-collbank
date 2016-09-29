@@ -42,6 +42,7 @@ SPEECHCORPUS_PLANNINGTYPE = "speechcorpus.planningtype.name"
 SPEECHCORPUS_AUDIENCE = "speechcorpus.audience.type"
 SPEECHCORPUS_INTERACTIVITY = "speechcorpus.interactivity.name"
 SPEECHCORPUS_INVOLVEMENT = "speechcorpus.involvement.name"
+AUDIOFORMAT_SPEECHCODING = "audioformat.speechcoding"
 LINGUALITY_TYPE = "linguality.lingualitytype"
 LINGUALITY_NATIVENESS = "linguality.lingualitynativeness"
 LINGUALITY_AGEGROUP = "linguality.lingualityagegroup"
@@ -818,6 +819,28 @@ class Audience(models.Model):
         return choice_english(SPEECHCORPUS_AUDIENCE, self.name)
 
 
+class AudioFormat(models.Model):
+    """AudioFormat"""
+
+    # speechCoding (0-1; f)
+    # speechCoding = models.CharField("Speech coding", choices=build_choice_list(AUDIOFORMAT_SPEECHCODING), max_length=5, help_text=get_help(AUDIOFORMAT_SPEECHCODING), default='0')
+    speechCoding = models.CharField("Speech coding", blank=True, help_text=get_help(AUDIOFORMAT_SPEECHCODING), max_length=25, default='unknown')
+    # samplingFrequency (0-1; f)
+    samplingFrequency = models.CharField("Sampling frequency", blank=True, help_text=get_help('audioformat.samplingFrequency'), max_length=25, default='unknown')
+    # compression  (0-1; f)
+    compression = models.CharField("Compression", blank=True, help_text=get_help('audioformat.compression'), max_length=25, default='unknown')
+    # bitResolution  (0-1; f)
+    bitResolution = models.CharField("Bit resolution", blank=True, help_text=get_help('audioformat.bitResolution'), max_length=25, default='unknown')
+
+    def __str__(self):
+        sc = self.speechCoding
+        sf = self.samplingFrequency
+        cmp = self.compression
+        br = self.bitResolution
+        sMsg = "sc:{}, sf:{}, cmp:{}, br:{}".format(sc, sf, cmp, br)
+        return sMsg
+
+
 class SpeechCorpus(models.Model):
     """Spoken corpus"""
 
@@ -848,6 +871,8 @@ class SpeechCorpus(models.Model):
     involvement = models.ManyToManyField(Involvement, blank=True)
     # audience (0-n; c)
     audience = models.ManyToManyField(Audience, blank=True)
+    # audioFormat (0-n)
+    audioFormat = models.ManyToManyField(AudioFormat, blank=True)
 
     def __str__(self):
         return "rec:{}, ch:{}, cnv:{}".format(
