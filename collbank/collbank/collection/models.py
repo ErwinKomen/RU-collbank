@@ -315,7 +315,7 @@ class Provenance(models.Model):
 
     def __str__(self):
         idt = m2m_identifier(self.collection_set)
-        return "[{}] t:{}, g:{}".format(
+        return "[{}] temp:{}, geo:{}".format(
           idt,
           self.temporalProvenance, 
           m2m_combi(self.geographicProvenance))
