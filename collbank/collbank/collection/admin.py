@@ -1,6 +1,8 @@
 from django.contrib import admin
+from django.db.models import Q
 from django import forms
 from collbank.collection.models import *
+from functools import partial
 from django.core import serializers
 from django.contrib.contenttypes.models import ContentType
 import logging
@@ -28,15 +30,116 @@ def remove_from_fieldsets(fieldsets, fields):
 
                 break
 
+class TitleInline(admin.TabularInline):
+    model = Collection.title.through
+
+    def get_extra(self, request, obj=None, **kwargs):
+        return 0
+
+
+class OwnerInline(admin.TabularInline):
+    model = Collection.owner.through
+
+    def get_extra(self, request, obj=None, **kwargs):
+        return 0
+
+
+class ResourceInline(admin.TabularInline):
+    model = Collection.resource.through
+
+    def get_extra(self, request, obj=None, **kwargs):
+        return 0
+
+
+class GenreInline(admin.TabularInline):
+    model = Collection.genre.through
+
+    def get_extra(self, request, obj=None, **kwargs):
+        return 0
+
+
+class ProvenanceInline(admin.TabularInline):
+    model = Collection.provenance.through
+
+    def get_extra(self, request, obj=None, **kwargs):
+        return 0
+
+
+class LanguageInline(admin.TabularInline):
+    model = Collection.language.through
+
+    def get_extra(self, request, obj=None, **kwargs):
+        return 0
+
+
+class LanguageDisorderInline(admin.TabularInline):
+    model = Collection.languageDisorder.through
+
+    def get_extra(self, request, obj=None, **kwargs):
+        return 0
+
+
+class RelationInline(admin.TabularInline):
+    model = Collection.relation.through
+
+    def get_extra(self, request, obj=None, **kwargs):
+        return 0
+
+
+class DomainInline(admin.TabularInline):
+    model = Collection.domain.through
+
+    def get_extra(self, request, obj=None, **kwargs):
+        return 0
+
+
+class TotalSizeInline(admin.TabularInline):
+    model = Collection.totalSize.through
+
+    def get_extra(self, request, obj=None, **kwargs):
+        return 0
+
+
+class PidInline(admin.TabularInline):
+    model = Collection.pid.through
+
+    def get_extra(self, request, obj=None, **kwargs):
+        return 0
+
+
+class ResourceCreatorInline(admin.TabularInline):
+    model = Collection.resourceCreator.through
+
+    def get_extra(self, request, obj=None, **kwargs):
+        return 0
+
+
+class ProjectInline(admin.TabularInline):
+    model = Collection.project.through
+
+    def get_extra(self, request, obj=None, **kwargs):
+        return 0
+
+
 class CollectionAdmin(admin.ModelAdmin):
 #    inlines = (TitleInline,)
-    filter_horizontal = ('title', 'owner', 'resource', 'genre', 'provenance', 'language', 'languageDisorder', 'relation', 'domain', 'totalSize', 'pid', 'resourceCreator', 'project',)
-    fieldsets = ( ('Searchable', {'fields': ('title', 'identifier', 'resource', 'provenance', 'linguality','language', 'languageDisorder', 'relation', 'speechCorpus',)}),
-                  ('Other',      {'fields': ('description', 'owner', 'genre', 'domain', 'clarinCentre', 'access', 'totalSize', 'pid', 'version', 'resourceCreator', 'documentation', 'validation', 'project', 'writtenCorpus',)}),
+    inlines = [TitleInline, OwnerInline, ResourceInline, GenreInline, ProvenanceInline,
+               LanguageInline, LanguageDisorderInline, RelationInline, DomainInline,
+               TotalSizeInline, PidInline, ResourceCreatorInline]
+    # exclude = ('title', 'owner', 'resource', 'genre', 'provenance', 'language', 'languageDisorder', 'relation', 'domain', 'totalSize', 'pid', 'resourceCreator', 'project',)
+    # filter_horizontal = ('title', 'owner', 'resource', 'genre', 'provenance', 'language', 'languageDisorder', 'relation', 'domain', 'totalSize', 'pid', 'resourceCreator', 'project',)
+    # fieldsets = ( ('Searchable', {'fields': ('title', 'identifier', 'resource', 'provenance', 'linguality','language', 'languageDisorder', 'relation', 'speechCorpus',)}),
+    #               ('Other',      {'fields': ('description', 'owner', 'genre', 'domain', 'clarinCentre', 'access', 'totalSize', 'pid', 'version', 'resourceCreator', 'documentation', 'validation', 'project', 'writtenCorpus',)}),
+    #             )
+    fieldsets = ( ('Searchable', {'fields': ('identifier', 'linguality',  'speechCorpus',)}),
+                  ('Other',      {'fields': ('description', 'clarinCentre', 'access', 'version', 'documentation', 'validation', 'writtenCorpus',)}),
                 )
     actions = ['export_xml']
 
     def get_form(self, request, obj=None, **kwargs):
+        # Use one line to explicitly pass on the current object in [obj]
+        kwargs['formfield_callback'] = partial(self.formfield_for_dbfield, request=request, obj=obj)
+        # Standard processing from here
         form = super(CollectionAdmin, self).get_form(request, obj, **kwargs)
         bDelField = False
         bKeepIdentifier = True
@@ -81,6 +184,40 @@ class CollectionAdmin(admin.ModelAdmin):
             xml_serializer.serialize(queryset, stream=out)
         # TODO: make the file available for download and provide a link to it
     export_xml.short_description = "Export in XML format"
+
+    def formfield_for_dbfield(self, db_field, **kwargs):
+      collThis = kwargs.pop('obj', None)
+      formfield = super(CollectionAdmin, self).formfield_for_dbfield(db_field, **kwargs)
+      # Adapt the queryset
+      if db_field.name == "title" and collThis:
+          formfield.queryset = Title.objects.filter(collection=collThis.pk)
+      elif db_field.name == "owner" and collThis:
+          formfield.queryset = Owner.objects.filter(collection=collThis.pk)
+      elif db_field.name == "resource" and collThis:
+          formfield.queryset = Resource.objects.filter(collection=collThis.pk)
+      elif db_field.name == "genre" and collThis:
+          formfield.queryset = Genre.objects.filter(collection=collThis.pk)
+      elif db_field.name == "provenance" and collThis:
+          formfield.queryset = Provenance.objects.filter(collection=collThis.pk)
+      elif db_field.name == "language" and collThis:
+          formfield.queryset = Language.objects.filter(collection=collThis.pk)
+      elif db_field.name == "languageDisorder" and collThis:
+          formfield.queryset = LanguageDisorder.objects.filter(collection=collThis.pk)
+      elif db_field.name == "relation" and collThis:
+          formfield.queryset = Relation.objects.filter(collection=collThis.pk)
+      elif db_field.name == "domain" and collThis:
+          formfield.queryset = Domain.objects.filter(collection=collThis.pk)
+      elif db_field.name == "totalSize" and collThis:
+          formfield.queryset = TotalSize.objects.filter(collection=collThis.pk)
+      elif db_field.name == "pid" and collThis:
+          formfield.queryset = PID.objects.filter(collection=collThis.pk)
+      elif db_field.name == "resourceCreator" and collThis:
+          formfield.queryset = ResourceCreator.objects.filter(collection=collThis.pk)
+      elif db_field.name == "project" and collThis:
+          formfield.queryset = Project.objects.filter(collection=collThis.pk)
+      return formfield
+
+ 
 
 
 
