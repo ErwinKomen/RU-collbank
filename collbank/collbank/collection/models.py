@@ -471,9 +471,9 @@ class Domain(models.Model):
 
 
 class AccessAvailability(models.Model):
-    """Domain"""
+    """Access availability"""
 
-    name = models.CharField("Domain", choices=build_choice_list(ACCESS_AVAILABILITY), max_length=5, help_text=get_help(ACCESS_AVAILABILITY), default='0')
+    name = models.CharField("Access availability", choices=build_choice_list(ACCESS_AVAILABILITY), max_length=5, help_text=get_help(ACCESS_AVAILABILITY), default='0')
 
     def __str__(self):
         return choice_english(ACCESS_AVAILABILITY, self.name)

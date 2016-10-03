@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.db.models import Q
 from django import forms
+from django.forms import Textarea
 from collbank.collection.models import *
 from functools import partial
 from django.core import serializers
@@ -86,7 +87,7 @@ class RelationInline(admin.TabularInline):
         return 0
 
 
-class DomainInline(admin.TabularInline):
+class CollectionDomainInline(admin.TabularInline):
     model = Collection.domain.through
 
     def get_extra(self, request, obj=None, **kwargs):
@@ -124,7 +125,7 @@ class ProjectInline(admin.TabularInline):
 class CollectionAdmin(admin.ModelAdmin):
 #    inlines = (TitleInline,)
     inlines = [TitleInline, OwnerInline, ResourceInline, GenreInline, ProvenanceInline,
-               LanguageInline, LanguageDisorderInline, RelationInline, DomainInline,
+               LanguageInline, LanguageDisorderInline, RelationInline, CollectionDomainInline,
                TotalSizeInline, PidInline, ResourceCreatorInline]
     # exclude = ('title', 'owner', 'resource', 'genre', 'provenance', 'language', 'languageDisorder', 'relation', 'domain', 'totalSize', 'pid', 'resourceCreator', 'project',)
     # filter_horizontal = ('title', 'owner', 'resource', 'genre', 'provenance', 'language', 'languageDisorder', 'relation', 'domain', 'totalSize', 'pid', 'resourceCreator', 'project',)
@@ -135,6 +136,9 @@ class CollectionAdmin(admin.ModelAdmin):
                   ('Other',      {'fields': ('description', 'clarinCentre', 'access', 'version', 'documentation', 'validation', 'writtenCorpus',)}),
                 )
     actions = ['export_xml']
+    formfield_overrides = {
+        models.TextField: {'widget': Textarea(attrs={'rows': 1})},
+        }
 
     def get_form(self, request, obj=None, **kwargs):
         # Use one line to explicitly pass on the current object in [obj]
@@ -286,11 +290,43 @@ class GeographicProvenanceAdmin(admin.ModelAdmin):
       return formfield
 
 
+class AnnotationInline(admin.TabularInline):
+    model = Resource.annotation.through
+
+    def get_extra(self, request, obj=None, **kwargs):
+        return 0
+
+
+class ResourceSizeInline(admin.TabularInline):
+    model = Resource.totalSize.through
+
+    def get_extra(self, request, obj=None, **kwargs):
+        return 0
+
+
 class ResourceAdmin(admin.ModelAdmin):
-    filter_horizontal = ('annotation','totalSize',)
-    fieldsets = ( ('Searchable', {'fields': ('type', 'annotation', 'media',)}),
-                  ('Other',      {'fields': ('description', 'totalSize',)}),
+    # filter_horizontal = ('annotation','totalSize',)
+    inlines = [AnnotationInline, ResourceSizeInline]
+    fieldsets = ( ('Searchable', {'fields': ('type', 'media',)}),
+                  ('Other',      {'fields': ('description', )}),
                 )
+
+    def get_form(self, request, obj=None, **kwargs):
+        # Use one line to explicitly pass on the current object in [obj]
+        kwargs['formfield_callback'] = partial(self.formfield_for_dbfield, request=request, obj=obj)
+        # Standard processing from here
+        form = super(ResourceAdmin, self).get_form(request, obj, **kwargs)
+        return form
+
+    def formfield_for_dbfield(self, db_field, **kwargs):
+      itemThis = kwargs.pop('obj', None)
+      formfield = super(ResourceAdmin, self).formfield_for_dbfield(db_field, **kwargs)
+      # Adapt the queryset
+      if db_field.name == "annotation" and itemThis:
+          formfield.queryset = Annotation.objects.filter(resource=itemThis.pk)
+      elif db_field.name == "totalSize" and itemThis:
+          formfield.queryset = TotalSize.objects.filter(resource=itemThis.pk)
+      return formfield
 
 
 class AnnotationAdmin(admin.ModelAdmin):
@@ -299,11 +335,34 @@ class AnnotationAdmin(admin.ModelAdmin):
                 )
 
 
+class FormatInline(admin.TabularInline):
+    model = Media.format.through
+
+    def get_extra(self, request, obj=None, **kwargs):
+        return 0
+
+
 class MediaAdmin(admin.ModelAdmin):
-    filter_horizontal = ('format',)
+    # filter_horizontal = ('format',)
+    inlines = [FormatInline]
     fieldsets = ( ('Searchable', {'fields': ()}),
-                  ('Other',      {'fields': ('format',)}),
+                  ('Other',      {'fields': ()}),
                 )
+
+    def get_form(self, request, obj=None, **kwargs):
+        # Use one line to explicitly pass on the current object in [obj]
+        kwargs['formfield_callback'] = partial(self.formfield_for_dbfield, request=request, obj=obj)
+        # Standard processing from here
+        form = super(MediaAdmin, self).get_form(request, obj, **kwargs)
+        return form
+
+    def formfield_for_dbfield(self, db_field, **kwargs):
+      itemThis = kwargs.pop('obj', None)
+      formfield = super(MediaAdmin, self).formfield_for_dbfield(db_field, **kwargs)
+      # Adapt the queryset
+      if db_field.name == "format" and itemThis:
+          formfield.queryset = MediaFormat.objects.filter(media=itemThis.pk)
+      return formfield
 
 
 class LanguageForm(forms.ModelForm):
@@ -404,25 +463,192 @@ class AudioFormatAdmin(admin.ModelAdmin):
     form = AudioFormatForm
 
 
+class DomainInline(admin.TabularInline):
+    model = Domain.name.through
+
+    def get_extra(self, request, obj=None, **kwargs):
+        return 0
+
+
 class DomainAdmin(admin.ModelAdmin):
-    filter_horizontal = ('name',)
+    # filter_horizontal = ('name',)
+    inlines = [DomainInline]
     fieldsets = ( ('Searchable', {'fields': ()}),
-                  ('Other',      {'fields': ('name',)}),
-                )
-
-
-class LingualityAdmin(admin.ModelAdmin):
-    filter_horizontal = ('lingualityType', 'lingualityNativeness', 'lingualityAgeGroup', 'lingualityStatus', 'lingualityVariant', 'multilingualityType', )
-    fieldsets = ( ('Searchable', {'fields': ('lingualityType', 'lingualityNativeness', 'lingualityAgeGroup', 'lingualityStatus', 'lingualityVariant', 'multilingualityType',) }),
                   ('Other',      {'fields': ()}),
                 )
 
+    def get_form(self, request, obj=None, **kwargs):
+        # Use one line to explicitly pass on the current object in [obj]
+        kwargs['formfield_callback'] = partial(self.formfield_for_dbfield, request=request, obj=obj)
+        # Standard processing from here
+        form = super(DomainAdmin, self).get_form(request, obj, **kwargs)
+        return form
+
+    def formfield_for_dbfield(self, db_field, **kwargs):
+      itemThis = kwargs.pop('obj', None)
+      formfield = super(DomainAdmin, self).formfield_for_dbfield(db_field, **kwargs)
+      # Adapt the queryset
+      if db_field.name == "name" and itemThis:
+          formfield.queryset = DomainDescription.objects.filter(domain=itemThis.pk)
+      return formfield
+
+
+class LingualityTypeInline(admin.TabularInline):
+    model = Linguality.lingualityType.through
+
+    def get_extra(self, request, obj=None, **kwargs):
+        return 0
+
+
+class LingualityNativenessInline(admin.TabularInline):
+    model = Linguality.lingualityNativeness.through
+
+    def get_extra(self, request, obj=None, **kwargs):
+        return 0
+
+
+class LingualityAgeGroupInline(admin.TabularInline):
+    model = Linguality.lingualityAgeGroup.through
+
+    def get_extra(self, request, obj=None, **kwargs):
+        return 0
+
+
+class LingualityStatusInline(admin.TabularInline):
+    model = Linguality.lingualityStatus.through
+
+    def get_extra(self, request, obj=None, **kwargs):
+        return 0
+
+
+class LingualityVariantInline(admin.TabularInline):
+    model = Linguality.lingualityVariant.through
+
+    def get_extra(self, request, obj=None, **kwargs):
+        return 0
+
+
+class MultiLingualityTypeInline(admin.TabularInline):
+    model = Linguality.multilingualityType.through
+
+    def get_extra(self, request, obj=None, **kwargs):
+        return 0
+
+
+class LingualityAdmin(admin.ModelAdmin):
+    # filter_horizontal = ('lingualityType', 'lingualityNativeness', 'lingualityAgeGroup', 'lingualityStatus', 'lingualityVariant', 'multilingualityType', )
+    inlines = [LingualityTypeInline, LingualityNativenessInline, 
+               LingualityAgeGroupInline, LingualityStatusInline,
+               LingualityVariantInline, MultiLingualityTypeInline]
+    fieldsets = ( ('Searchable', {'fields': () }),
+                  ('Other',      {'fields': ()}),
+                )
+
+    def get_form(self, request, obj=None, **kwargs):
+        # Use one line to explicitly pass on the current object in [obj]
+        kwargs['formfield_callback'] = partial(self.formfield_for_dbfield, request=request, obj=obj)
+        # Standard processing from here
+        form = super(LingualityAdmin, self).get_form(request, obj, **kwargs)
+        return form
+
+    def formfield_for_dbfield(self, db_field, **kwargs):
+      itemThis = kwargs.pop('obj', None)
+      formfield = super(LingualityAdmin, self).formfield_for_dbfield(db_field, **kwargs)
+      # Adapt the queryset
+      if db_field.name == "lingualityType" and itemThis:
+          formfield.queryset = LingualityType.objects.filter(linguality=itemThis.pk)
+      elif db_field.name == "lingualityNativeness" and itemThis:
+          formfield.queryset = LingualityNativeness.objects.filter(linguality=itemThis.pk)
+      elif db_field.name == "lingualityAgeGroup" and itemThis:
+          formfield.queryset = LingualityAgeGroup.objects.filter(linguality=itemThis.pk)
+      elif db_field.name == "lingualityStatus" and itemThis:
+          formfield.queryset = LingualityStatus.objects.filter(linguality=itemThis.pk)
+      elif db_field.name == "lingualityVariant" and itemThis:
+          formfield.queryset = LingualityVariant.objects.filter(linguality=itemThis.pk)
+      elif db_field.name == "multilingualityType" and itemThis:
+          formfield.queryset = MultilingualityType.objects.filter(linguality=itemThis.pk)
+      return formfield
+
+
+class AccessAvailabilityInline(admin.TabularInline):
+    model = Access.availability.through
+
+    def get_extra(self, request, obj=None, **kwargs):
+        return 0
+
+
+class AccessLicenseNameInline(admin.TabularInline):
+    model = Access.licenseName.through
+
+    def get_extra(self, request, obj=None, **kwargs):
+        return 0
+
+
+class AccessLicenseUrlInline(admin.TabularInline):
+    model = Access.licenseUrl.through
+
+    def get_extra(self, request, obj=None, **kwargs):
+        return 0
+
+
+class AccessContactInline(admin.TabularInline):
+    model = Access.contact.through
+
+    def get_extra(self, request, obj=None, **kwargs):
+        return 0
+
+
+class AccessWebsiteInline(admin.TabularInline):
+    model = Access.website.through
+
+    def get_extra(self, request, obj=None, **kwargs):
+        return 0
+
+
+class AccessMediumInline(admin.TabularInline):
+    model = Access.medium.through
+
+    def get_extra(self, request, obj=None, **kwargs):
+        return 0
+
 
 class AccessAdmin(admin.ModelAdmin):
-    filter_horizontal = ('availability', 'licenseName', 'licenseUrl', 'contact', 'website', 'medium',)
+    # filter_horizontal = ('availability', 'licenseName', 'licenseUrl', 'contact', 'website', 'medium',)
+    inlines = [AccessAvailabilityInline, AccessLicenseNameInline,
+               AccessLicenseUrlInline, AccessContactInline,
+               AccessWebsiteInline, AccessMediumInline]
     fieldsets = ( ('Searchable', {'fields': ()}),
-                  ('Other',      {'fields': ('name', 'availability', 'licenseName', 'licenseUrl', 'nonCommercialUsageOnly', 'contact', 'website', 'ISBN', 'ISLRN', 'medium',)}),
+#                 ('Other',      {'fields': ('name', 'availability', 'licenseName', 'licenseUrl', 'nonCommercialUsageOnly', 'contact', 'website', 'ISBN', 'ISLRN', 'medium',)}),
+                  ('Other',      {'fields': ('name', 'nonCommercialUsageOnly', 'ISBN', 'ISLRN', )}),
                 )
+    formfield_overrides = {
+        models.TextField: {'widget': Textarea(attrs={'rows': 1})},
+        }
+
+    def get_form(self, request, obj=None, **kwargs):
+        # Use one line to explicitly pass on the current object in [obj]
+        kwargs['formfield_callback'] = partial(self.formfield_for_dbfield, request=request, obj=obj)
+        # Standard processing from here
+        form = super(AccessAdmin, self).get_form(request, obj, **kwargs)
+        return form
+
+    def formfield_for_dbfield(self, db_field, **kwargs):
+      itemThis = kwargs.pop('obj', None)
+      formfield = super(AccessAdmin, self).formfield_for_dbfield(db_field, **kwargs)
+      # Adapt the queryset
+      if db_field.name == "availability" and itemThis:
+          formfield.queryset = AccessAvailability.objects.filter(access=itemThis.pk)
+      elif db_field.name == "licenseName" and itemThis:
+          formfield.queryset = LicenseName.objects.filter(access=itemThis.pk)
+      elif db_field.name == "licenseUrl" and itemThis:
+          formfield.queryset = LicenseUrl.objects.filter(access=itemThis.pk)
+      elif db_field.name == "contact" and itemThis:
+          formfield.queryset = AccessContact.objects.filter(access=itemThis.pk)
+      elif db_field.name == "website" and itemThis:
+          formfield.queryset = AccessWebsite.objects.filter(access=itemThis.pk)
+      elif db_field.name == "medium" and itemThis:
+          formfield.queryset = AccessMedium.objects.filter(access=itemThis.pk)
+      return formfield
 
 
 class TotalSizeAdmin(admin.ModelAdmin):
@@ -431,39 +657,286 @@ class TotalSizeAdmin(admin.ModelAdmin):
                 )
 
 
+class ResourceOrganizationInline(admin.TabularInline):
+    model = ResourceCreator.organization.through
+
+    def get_extra(self, request, obj=None, **kwargs):
+        return 0
+
+
+class ResourcePersonInline(admin.TabularInline):
+    model = ResourceCreator.person.through
+
+    def get_extra(self, request, obj=None, **kwargs):
+        return 0
+
+
 class ResourceCreatorAdmin(admin.ModelAdmin):
-    filter_horizontal = ('organization', 'person',)
+    # filter_horizontal = ('organization', 'person',)
+    inlines = [ResourceOrganizationInline, ResourcePersonInline]
     fieldsets = ( ('Searchable', {'fields': ()}),
-                  ('Other',      {'fields': ('organization', 'person',)}),
+                  ('Other',      {'fields': ()}),
                 )
+    formfield_overrides = {
+        models.TextField: {'widget': Textarea(attrs={'rows': 1})},
+        }
+
+    def get_form(self, request, obj=None, **kwargs):
+        # Use one line to explicitly pass on the current object in [obj]
+        kwargs['formfield_callback'] = partial(self.formfield_for_dbfield, request=request, obj=obj)
+        # Standard processing from here
+        form = super(ResourceCreatorAdmin, self).get_form(request, obj, **kwargs)
+        return form
+
+    def formfield_for_dbfield(self, db_field, **kwargs):
+      itemThis = kwargs.pop('obj', None)
+      formfield = super(ResourceCreatorAdmin, self).formfield_for_dbfield(db_field, **kwargs)
+      # Adapt the queryset
+      if db_field.name == "organization" and itemThis:
+          formfield.queryset = Organization.objects.filter(resourcecreator=itemThis.pk)
+      elif db_field.name == "person" and itemThis:
+          formfield.queryset = Person.objects.filter(resourcecreator=itemThis.pk)
+      return formfield
+
+
+class DocumentationTypeInline(admin.TabularInline):
+    model = Documentation.documentationType.through
+
+    def get_extra(self, request, obj=None, **kwargs):
+        return 0
+
+
+class DocumentationFileInline(admin.TabularInline):
+    model = Documentation.fileName.through
+
+    def get_extra(self, request, obj=None, **kwargs):
+        return 0
+
+
+class DocumentationUrlInline(admin.TabularInline):
+    model = Documentation.url.through
+
+    def get_extra(self, request, obj=None, **kwargs):
+        return 0
+
+
+class DocumentationLanguageInline(admin.TabularInline):
+    model = Documentation.language.through
+
+    def get_extra(self, request, obj=None, **kwargs):
+        return 0
 
 
 class DocumentationAdmin(admin.ModelAdmin):
-    filter_horizontal = ('documentationType', 'fileName', 'url', 'language',)
+    # filter_horizontal = ('documentationType', 'fileName', 'url', 'language',)
+    inlines = [DocumentationTypeInline, DocumentationFileInline,
+               DocumentationUrlInline, DocumentationLanguageInline]
     fieldsets = ( ('Searchable', {'fields': ()}),
-                  ('Other',      {'fields': ('documentationType', 'fileName', 'url', 'language',)}),
+                  ('Other',      {'fields': ()}),
                 )
+
+    def get_form(self, request, obj=None, **kwargs):
+        # Use one line to explicitly pass on the current object in [obj]
+        kwargs['formfield_callback'] = partial(self.formfield_for_dbfield, request=request, obj=obj)
+        # Standard processing from here
+        form = super(DocumentationAdmin, self).get_form(request, obj, **kwargs)
+        return form
+
+    def formfield_for_dbfield(self, db_field, **kwargs):
+      itemThis = kwargs.pop('obj', None)
+      formfield = super(DocumentationAdmin, self).formfield_for_dbfield(db_field, **kwargs)
+      # Adapt the queryset
+      if db_field.name == "documentationType" and itemThis:
+          formfield.queryset = DocumentationType.objects.filter(documentationadmin=itemThis.pk)
+      elif db_field.name == "fileName" and itemThis:
+          formfield.queryset = DocumentationFile.objects.filter(documentationadmin=itemThis.pk)
+      elif db_field.name == "url" and itemThis:
+          formfield.queryset = DocumentationUrl.objects.filter(documentationadmin=itemThis.pk)
+      elif db_field.name == "language" and itemThis:
+          formfield.queryset = Language.objects.filter(documentationadmin=itemThis.pk)
+      return formfield
+
+
+class ValidationMethodInline(admin.TabularInline):
+    model = Validation.method.through
+
+    def get_extra(self, request, obj=None, **kwargs):
+        return 0
 
 
 class ValidationAdmin(admin.ModelAdmin):
-    filter_horizontal = ('method',)
+    # filter_horizontal = ('method',)
+    inlines = [ValidationMethodInline]
     fieldsets = ( ('Searchable', {'fields': ()}),
-                  ('Other',      {'fields': ('type', 'method',)}),
+                  ('Other',      {'fields': ('type', )}),
                 )
+
+    def get_form(self, request, obj=None, **kwargs):
+        # Use one line to explicitly pass on the current object in [obj]
+        kwargs['formfield_callback'] = partial(self.formfield_for_dbfield, request=request, obj=obj)
+        # Standard processing from here
+        form = super(ValidationAdmin, self).get_form(request, obj, **kwargs)
+        return form
+
+    def formfield_for_dbfield(self, db_field, **kwargs):
+      itemThis = kwargs.pop('obj', None)
+      formfield = super(ValidationAdmin, self).formfield_for_dbfield(db_field, **kwargs)
+      # Adapt the queryset
+      if db_field.name == "method" and itemThis:
+          formfield.queryset = ValidationMethod.objects.filter(validation=itemThis.pk)
+      return formfield
+
+
+class ProjectFunderInline(admin.TabularInline):
+    model = Project.funder.through
+
+    def get_extra(self, request, obj=None, **kwargs):
+        return 0
 
 
 class ProjectAdmin(admin.ModelAdmin):
-    filter_horizontal = ('funder',)
+    # filter_horizontal = ('funder',)
+    inlines = [ProjectFunderInline]
     fieldsets = ( ('Searchable', {'fields': ()}),
-                  ('Other',      {'fields': ('title', 'funder', 'URL',)}),
+                  ('Other',      {'fields': ('title', 'URL',)}),
                 )
+    formfield_overrides = {
+        models.TextField: {'widget': Textarea(attrs={'rows': 1})},
+        }
+
+    def get_form(self, request, obj=None, **kwargs):
+        # Use one line to explicitly pass on the current object in [obj]
+        kwargs['formfield_callback'] = partial(self.formfield_for_dbfield, request=request, obj=obj)
+        # Standard processing from here
+        form = super(ValidationAdmin, self).get_form(request, obj, **kwargs)
+        return form
+
+    def formfield_for_dbfield(self, db_field, **kwargs):
+      itemThis = kwargs.pop('obj', None)
+      formfield = super(ValidationAdmin, self).formfield_for_dbfield(db_field, **kwargs)
+      # Adapt the queryset
+      if db_field.name == "method" and itemThis:
+          formfield.queryset = ValidationMethod.objects.filter(validation=itemThis.pk)
+      return formfield
+
+
+class SpeechCorpusRecEnvInline(admin.TabularInline):
+    model = SpeechCorpus.recordingEnvironment.through
+
+    def get_extra(self, request, obj=None, **kwargs):
+        return 0
+
+
+class SpeechCorpusChannelInline(admin.TabularInline):
+    model = SpeechCorpus.channel.through
+
+    def get_extra(self, request, obj=None, **kwargs):
+        return 0
+
+
+class SpeechCorpusConvTypeInline(admin.TabularInline):
+    model = SpeechCorpus.conversationalType.through
+
+    def get_extra(self, request, obj=None, **kwargs):
+        return 0
+
+
+class SpeechCorpusRecCondInline(admin.TabularInline):
+    model = SpeechCorpus.recordingConditions.through
+
+    def get_extra(self, request, obj=None, **kwargs):
+        return 0
+
+
+class SpeechCorpusSocContextInline(admin.TabularInline):
+    model = SpeechCorpus.socialContext.through
+
+    def get_extra(self, request, obj=None, **kwargs):
+        return 0
+
+
+class SpeechCorpusPlanTypeInline(admin.TabularInline):
+    model = SpeechCorpus.planningType.through
+
+    def get_extra(self, request, obj=None, **kwargs):
+        return 0
+
+
+class SpeechCorpusInteractivityInline(admin.TabularInline):
+    model = SpeechCorpus.interactivity.through
+
+    def get_extra(self, request, obj=None, **kwargs):
+        return 0
+
+
+class SpeechCorpusInvolvementInline(admin.TabularInline):
+    model = SpeechCorpus.involvement.through
+
+    def get_extra(self, request, obj=None, **kwargs):
+        return 0
+
+
+class SpeechCorpusAudienceInline(admin.TabularInline):
+    model = SpeechCorpus.audience.through
+
+    def get_extra(self, request, obj=None, **kwargs):
+        return 0
+
+
+class SpeechCorpusAudioFormatInline(admin.TabularInline):
+    model = SpeechCorpus.audioFormat.through
+
+    def get_extra(self, request, obj=None, **kwargs):
+        return 0
 
 
 class SpeechCorpusAdmin(admin.ModelAdmin):
-    filter_horizontal = ('recordingEnvironment', 'channel', 'conversationalType', 'recordingConditions', 'socialContext', 'planningType', 'interactivity', 'involvement', 'audience', 'audioFormat')
+    # filter_horizontal = ('recordingEnvironment', 'channel', 'conversationalType', 'recordingConditions', 
+    #                      'socialContext', 'planningType', 'interactivity', 'involvement', 'audience', 'audioFormat')
+    inlines = [SpeechCorpusRecEnvInline, SpeechCorpusChannelInline, SpeechCorpusConvTypeInline,
+               SpeechCorpusRecCondInline, SpeechCorpusSocContextInline, SpeechCorpusPlanTypeInline,
+               SpeechCorpusInteractivityInline, SpeechCorpusInvolvementInline,
+               SpeechCorpusAudienceInline, SpeechCorpusAudioFormatInline]
     fieldsets = ( ('Searchable', {'fields': ()}),
-                  ('Other',      {'fields': ('recordingEnvironment', 'channel', 'conversationalType', 'recordingConditions', 'durationOfEffectiveSpeech', 'durationOfFullDatabase', 'numberOfSpeakers', 'speakerDemographics', 'socialContext', 'planningType', 'interactivity', 'involvement', 'audience', 'audioFormat')}),
+                  ('Other',      {'fields': ('durationOfEffectiveSpeech', 'durationOfFullDatabase', 'numberOfSpeakers', 
+                                             'speakerDemographics')}),
                 )
+    formfield_overrides = {
+        models.TextField: {'widget': Textarea(attrs={'rows': 1})},
+        }
+
+    def get_form(self, request, obj=None, **kwargs):
+        # Use one line to explicitly pass on the current object in [obj]
+        kwargs['formfield_callback'] = partial(self.formfield_for_dbfield, request=request, obj=obj)
+        # Standard processing from here
+        form = super(SpeechCorpusAdmin, self).get_form(request, obj, **kwargs)
+        return form
+
+    def formfield_for_dbfield(self, db_field, **kwargs):
+      itemThis = kwargs.pop('obj', None)
+      formfield = super(SpeechCorpusAdmin, self).formfield_for_dbfield(db_field, **kwargs)
+      # Adapt the queryset
+      if db_field.name == "recordingEnvironment" and itemThis:
+          formfield.queryset = RecordingEnvironment.objects.filter(speechcorpus=itemThis.pk)
+      elif db_field.name == "channel" and itemThis:
+          formfield.queryset = Channel.objects.filter(speechcorpus=itemThis.pk)
+      elif db_field.name == "conversationalType" and itemThis:
+          formfield.queryset = ConversationalType.objects.filter(speechcorpus=itemThis.pk)
+      elif db_field.name == "recordingConditions" and itemThis:
+          formfield.queryset = RecordingCondition.objects.filter(speechcorpus=itemThis.pk)
+      elif db_field.name == "socialContext" and itemThis:
+          formfield.queryset = SocialContext.objects.filter(speechcorpus=itemThis.pk)
+      elif db_field.name == "planningType" and itemThis:
+          formfield.queryset = PlanningType.objects.filter(speechcorpus=itemThis.pk)
+      elif db_field.name == "interactivity" and itemThis:
+          formfield.queryset = Interactivity.objects.filter(speechcorpus=itemThis.pk)
+      elif db_field.name == "involvement" and itemThis:
+          formfield.queryset = Involvement.objects.filter(speechcorpus=itemThis.pk)
+      elif db_field.name == "audience" and itemThis:
+          formfield.queryset = Audience.objects.filter(speechcorpus=itemThis.pk)
+      elif db_field.name == "audioFormat" and itemThis:
+          formfield.queryset = AudioFormat.objects.filter(speechcorpus=itemThis.pk)
+      return formfield
 
 class FieldChoiceAdmin(admin.ModelAdmin):
     readonly_fields=['machine_value']
