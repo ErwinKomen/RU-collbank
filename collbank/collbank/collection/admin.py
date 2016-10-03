@@ -222,11 +222,33 @@ class CollectionAdmin(admin.ModelAdmin):
 
 
 
+class GeographicProvenanceInline(admin.TabularInline):
+    model = Provenance.geographicProvenance.through
+
+    def get_extra(self, request, obj=None, **kwargs):
+        return 0
+
+
 class ProvenanceAdmin(admin.ModelAdmin):
-    filter_horizontal = ('geographicProvenance',)
-    fieldsets = ( ('Searchable', {'fields': ('temporalProvenance', 'geographicProvenance',)}),
+    inlines = [GeographicProvenanceInline]
+    fieldsets = ( ('Searchable', {'fields': ('temporalProvenance',)}),
                   ('Other',      {'fields': ()}),
                 )
+
+    def get_form(self, request, obj=None, **kwargs):
+        # Use one line to explicitly pass on the current object in [obj]
+        kwargs['formfield_callback'] = partial(self.formfield_for_dbfield, request=request, obj=obj)
+        # Standard processing from here
+        form = super(ProvenanceAdmin, self).get_form(request, obj, **kwargs)
+        return form
+
+    def formfield_for_dbfield(self, db_field, **kwargs):
+      itemThis = kwargs.pop('obj', None)
+      formfield = super(ProvenanceAdmin, self).formfield_for_dbfield(db_field, **kwargs)
+      # Adapt the queryset
+      if db_field.name == "geographicProvenance" and itemThis:
+          formfield.queryset = GeographicProvenance.objects.filter(provenance=itemThis.pk)
+      return formfield
 
 
 class TemporalProvenanceAdmin(admin.ModelAdmin):
@@ -235,11 +257,33 @@ class TemporalProvenanceAdmin(admin.ModelAdmin):
                 )
 
 
+class PlaceInline(admin.TabularInline):
+    model = GeographicProvenance.place.through
+
+    def get_extra(self, request, obj=None, **kwargs):
+        return 0
+
+
 class GeographicProvenanceAdmin(admin.ModelAdmin):
-    filter_horizontal = ('place',)
+    inlines = [PlaceInline]
     fieldsets = ( ('Searchable', {'fields': ()}),
-                  ('Other',      {'fields': ('country', 'place',)}),
+                  ('Other',      {'fields': ('country', )}),
                 )
+
+    def get_form(self, request, obj=None, **kwargs):
+        # Use one line to explicitly pass on the current object in [obj]
+        kwargs['formfield_callback'] = partial(self.formfield_for_dbfield, request=request, obj=obj)
+        # Standard processing from here
+        form = super(GeographicProvenanceAdmin, self).get_form(request, obj, **kwargs)
+        return form
+
+    def formfield_for_dbfield(self, db_field, **kwargs):
+      itemThis = kwargs.pop('obj', None)
+      formfield = super(GeographicProvenanceAdmin, self).formfield_for_dbfield(db_field, **kwargs)
+      # Adapt the queryset
+      if db_field.name == "geographicProvenance" and itemThis:
+          formfield.queryset = City.objects.filter(gegraphicprovenance=itemThis.pk)
+      return formfield
 
 
 class ResourceAdmin(admin.ModelAdmin):
