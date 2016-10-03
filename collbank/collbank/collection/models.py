@@ -210,12 +210,24 @@ class Media(models.Model):
         return m2m_combi(self.format)
 
 
+class AnnotationFormat(models.Model):
+    """Format of an annotation"""
+
+    name = models.CharField("Annotation format", choices=build_choice_list(ANNOTATION_FORMAT), max_length=5, help_text=get_help(ANNOTATION_FORMAT), default='0')
+
+    def __str__(self):
+        return choice_english(ANNOTATION_FORMAT, self.name)
+
+
 class Annotation(models.Model):
     """Description of one annotation layer in a resource"""
 
     type = models.CharField("Kind of annotation", choices=build_choice_list(ANNOTATION_TYPE), max_length=5, help_text=get_help(ANNOTATION_TYPE), default='0')
     mode = models.CharField("Annotation mode", choices=build_choice_list(ANNOTATION_MODE), max_length=5, help_text=get_help(ANNOTATION_MODE), default='0')
+    # The [format] field was used initially, but is now overridden by the [formatAnn] field
     format = models.CharField("Annotation format", choices=build_choice_list(ANNOTATION_FORMAT), max_length=5, help_text=get_help(ANNOTATION_FORMAT), default='0')
+    # The [formatAnn] field is the m2m field that should now be used
+    formatAnn = models.ManyToManyField(AnnotationFormat)
 
     def __str__(self):
         qs = self.resource_set
@@ -233,7 +245,7 @@ class Annotation(models.Model):
             idt,
             choice_english(ANNOTATION_TYPE, self.type), 
             choice_english(ANNOTATION_MODE,self.mode), 
-            choice_english(ANNOTATION_FORMAT,self.format))
+            m2m_combi(self.formatAnn))
 
 
 class TotalSize(models.Model):

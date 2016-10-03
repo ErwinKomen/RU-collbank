@@ -219,6 +219,18 @@ class CollectionAdmin(admin.ModelAdmin):
           formfield.queryset = ResourceCreator.objects.filter(collection=collThis.pk)
       elif db_field.name == "project" and collThis:
           formfield.queryset = Project.objects.filter(collection=collThis.pk)
+      elif db_field.name == "linguality" and collThis:                                  # ForeignKey
+          formfield.queryset = Linguality.objects.filter(collection=collThis.pk)
+      elif db_field.name == "access" and collThis:                                      # ForeignKey
+          formfield.queryset = Access.objects.filter(collection=collThis.pk)
+      elif db_field.name == "documentation" and collThis:                               # ForeignKey
+          formfield.queryset = Documentation.objects.filter(collection=collThis.pk)
+      elif db_field.name == "validation" and collThis:                                  # ForeignKey
+          formfield.queryset = Validation.objects.filter(collection=collThis.pk)
+      elif db_field.name == "writtenCorpus" and collThis:                               # ForeignKey
+          formfield.queryset = WrittenCorpus.objects.filter(collection=collThis.pk)
+      elif db_field.name == "speechCorpus" and collThis:                                # ForeignKey
+          formfield.queryset = SpeechCorpus.objects.filter(collection=collThis.pk)
       return formfield
 
  
@@ -252,6 +264,8 @@ class ProvenanceAdmin(admin.ModelAdmin):
       # Adapt the queryset
       if db_field.name == "geographicProvenance" and itemThis:
           formfield.queryset = GeographicProvenance.objects.filter(provenance=itemThis.pk)
+      elif db_field.name == "temporalProvenance" and itemThis:                                  # ForeignKey
+          formfield.queryset = TemporalProvenance.objects.filter(provenance=itemThis.pk)
       return formfield
 
 
@@ -326,13 +340,57 @@ class ResourceAdmin(admin.ModelAdmin):
           formfield.queryset = Annotation.objects.filter(resource=itemThis.pk)
       elif db_field.name == "totalSize" and itemThis:
           formfield.queryset = TotalSize.objects.filter(resource=itemThis.pk)
+      elif db_field.name == "media" and itemThis:                                   # ForeignKey
+          formfield.queryset = Media.objects.filter(resource=itemThis.pk)
       return formfield
 
 
+class AnnotationFormatInline(admin.TabularInline):
+    model = Annotation.formatAnn.through
+
+    def get_extra(self, request, obj=None, **kwargs):
+        return 0
+
+
 class AnnotationAdmin(admin.ModelAdmin):
+    inlines = [AnnotationFormatInline]
     fieldsets = ( ('Searchable', {'fields': ('type',) }),
-                  ('Other',      {'fields': ('mode', 'format',)}),
+                  ('Other',      {'fields': ('mode', )}),
                 )
+    # readonly_fields = ('format',)
+
+    def __init__(self, *args, **kwargs):
+        super(AnnotationAdmin, self).__init__(*args, **kwargs)
+        if (self.fields != None):
+            self.fields['name'].choices = build_choice_list("access.nonCommercialUsageOnly")
+
+    def get_form(self, request, obj=None, **kwargs):
+        # Use one line to explicitly pass on the current object in [obj]
+        kwargs['formfield_callback'] = partial(self.formfield_for_dbfield, request=request, obj=obj)
+        # Standard processing from here
+        form = super(AnnotationAdmin, self).get_form(request, obj, **kwargs)
+        return form
+
+    def formfield_for_dbfield(self, db_field, **kwargs):
+      itemThis = kwargs.pop('obj', None)
+      formfield = super(AnnotationAdmin, self).formfield_for_dbfield(db_field, **kwargs)
+      # Adapt the queryset
+      if db_field.name == "formatAnn" and itemThis:
+          # Check if this needs to be populated
+          if itemThis.formatAnn.count() == 0:
+              # This needs populating
+              formatNew = AnnotationFormat.objects.create(name = itemThis.format)
+              # Add it to this model
+              itemThis.formatAnn.add(formatNew)
+          # Now show it
+          formfield.queryset = AnnotationFormat.objects.filter(annotation=itemThis.pk)
+      elif db_field.name == "type" and itemThis and itemThis.formatAnn.count() == 0:
+          # Create a new format object
+          formatNew = AnnotationFormat.objects.create(name = itemThis.format)
+          # Add it to this model
+          itemThis.formatAnn.add(formatNew)
+      return formfield
+
 
 
 class FormatInline(admin.TabularInline):
@@ -648,6 +706,8 @@ class AccessAdmin(admin.ModelAdmin):
           formfield.queryset = AccessWebsite.objects.filter(access=itemThis.pk)
       elif db_field.name == "medium" and itemThis:
           formfield.queryset = AccessMedium.objects.filter(access=itemThis.pk)
+      elif db_field.name == "nonCommercialUsageOnly" and itemThis:                  # ForeignKey
+          formfield.queryset = NonCommercialUsageOnly.objects.filter(access=itemThis.pk)
       return formfield
 
 
@@ -784,6 +844,8 @@ class ValidationAdmin(admin.ModelAdmin):
       # Adapt the queryset
       if db_field.name == "method" and itemThis:
           formfield.queryset = ValidationMethod.objects.filter(validation=itemThis.pk)
+      elif db_field.name == "type" and itemThis:                                                # ForeignKey
+          formfield.queryset = ValidationType.objects.filter(validation=itemThis.pk)
       return formfield
 
 
@@ -817,6 +879,8 @@ class ProjectAdmin(admin.ModelAdmin):
       # Adapt the queryset
       if db_field.name == "method" and itemThis:
           formfield.queryset = ValidationMethod.objects.filter(validation=itemThis.pk)
+      elif db_field.name == "URL" and itemThis:                                                     # ForeignKey
+          formfield.queryset = ProjectUrl.objects.filter(validation=itemThis.pk)
       return formfield
 
 
