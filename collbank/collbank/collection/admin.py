@@ -352,17 +352,46 @@ class AnnotationFormatInline(admin.TabularInline):
         return 0
 
 
+class AnnotationFormatForm(forms.ModelForm):
+    model = AnnotationFormat
+    fields = ['name']
+
+    def __init__(self, *args, **kwargs):
+        super(AnnotationFormatForm, self).__init__(*args, **kwargs)
+        if (self.fields != None):
+            self.fields['name'].choices = build_choice_list(ANNOTATION_FORMAT)
+
+
+class AnnotationFormatAdmin(admin.ModelAdmin):
+    form = AnnotationFormatForm
+
+
+class AnnotationForm(forms.ModelForm):
+    model = Annotation
+    fields = ['type', 'mode', 'format']
+
+    def __init__(self, *args, **kwargs):
+        super(AnnotationForm, self).__init__(*args, **kwargs)
+        if (self.fields != None):
+            self.fields['type'].choices = build_choice_list(ANNOTATION_TYPE)
+            self.fields['mode'].choices = build_choice_list(ANNOTATION_MODE)
+            # self.fields['format'].choices = build_choice_list(ANNOTATION_FORMAT)
+
+
 class AnnotationAdmin(admin.ModelAdmin):
     inlines = [AnnotationFormatInline]
     fieldsets = ( ('Searchable', {'fields': ('type',) }),
                   ('Other',      {'fields': ('mode', )}),
                 )
     # readonly_fields = ('format',)
+    form = AnnotationForm
 
-    def __init__(self, *args, **kwargs):
-        super(AnnotationAdmin, self).__init__(*args, **kwargs)
-        if (self.fields != None):
-            self.fields['name'].choices = build_choice_list("access.nonCommercialUsageOnly")
+    #def __init__(self, *args, **kwargs):
+    #    super(AnnotationAdmin, self).__init__(*args, **kwargs)
+    #    if (self.fields != None):
+    #        self.fields['type'].choices = build_choice_list(ANNOTATION_TYPE)
+    #        self.fields['mode'].choices = build_choice_list(ANNOTATION_MODE)
+    #        self.fields['format'].choices = build_choice_list(ANNOTATION_FORMAT)
 
     def get_form(self, request, obj=None, **kwargs):
         # Use one line to explicitly pass on the current object in [obj]
@@ -1037,6 +1066,7 @@ admin.site.register(Owner)
 # -- Resource
 admin.site.register(Resource, ResourceAdmin)
 admin.site.register(Annotation, AnnotationAdmin)
+admin.site.register(AnnotationFormat, AnnotationFormatAdmin)
 admin.site.register(MediaFormat)
 admin.site.register(Media, MediaAdmin)
 # -- Genre
