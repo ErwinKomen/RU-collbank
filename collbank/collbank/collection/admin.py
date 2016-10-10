@@ -7,11 +7,6 @@ from functools import partial
 from django.core import serializers
 from django.contrib.contenttypes.models import ContentType
 import logging
-# from lxml.etree import ElementTree, Element, SubElement
-
-#class TitleInline(admin.TabularInline):
-#    model = Collection.title.through
-#    extra = 1
 
 MAX_IDENTIFIER_LEN = 10
 logger = logging.getLogger(__name__)
@@ -33,105 +28,216 @@ def remove_from_fieldsets(fieldsets, fields):
 
 class TitleInline(admin.TabularInline):
     model = Collection.title.through
+    extra = 0
 
-    def get_extra(self, request, obj=None, **kwargs):
-        return 0
+    def get_formset(self, request, obj = None, **kwargs):
+        # Get the currently selected Collection object's identifier
+        self.instance = obj
+        return super(TitleInline, self).get_formset(request, obj, **kwargs)
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        # Look for the field's name as it is used in the Collection model
+        if db_field.name == "title":
+            kwargs['queryset'] = Title.objects.filter(collection__exact=self.instance)
+        return super(TitleInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
 
 
 class OwnerInline(admin.TabularInline):
     model = Collection.owner.through
+    extra = 0
 
-    def get_extra(self, request, obj=None, **kwargs):
-        return 0
+    def get_formset(self, request, obj = None, **kwargs):
+        # Get the currently selected Collection object's identifier
+        self.instance = obj
+        return super(OwnerInline, self).get_formset(request, obj, **kwargs)
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        # Look for the field's name as it is used in the Collection model
+        if db_field.name == "owner":
+            kwargs['queryset'] = Owner.objects.filter(collection__exact=self.instance)
+        return super(OwnerInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
 
 
 class ResourceInline(admin.TabularInline):
     model = Collection.resource.through
+    extra = 0
 
-    def get_extra(self, request, obj=None, **kwargs):
-        return 0
+    def get_formset(self, request, obj = None, **kwargs):
+        # Get the currently selected Collection object's identifier
+        self.instance = obj
+        return super(ResourceInline, self).get_formset(request, obj, **kwargs)
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        # Look for the field's name as it is used in the Collection model
+        if db_field.name == "resource":
+            kwargs['queryset'] = Resource.objects.filter(collection__exact=self.instance)
+        return super(ResourceInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
 
 
 class GenreInline(admin.TabularInline):
     model = Collection.genre.through
+    extra = 0
 
-    def get_extra(self, request, obj=None, **kwargs):
-        return 0
+    def get_formset(self, request, obj = None, **kwargs):
+        # Get the currently selected Collection object's identifier
+        self.instance = obj
+        return super(GenreInline, self).get_formset(request, obj, **kwargs)
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        # Look for the field's name as it is used in the Collection model
+        if db_field.name == "genre":
+            kwargs['queryset'] = Genre.objects.filter(collection__exact=self.instance)
+        return super(GenreInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
 
 
 class ProvenanceInline(admin.TabularInline):
     model = Collection.provenance.through
+    extra = 0
 
-    def get_extra(self, request, obj=None, **kwargs):
-        return 0
+    def get_formset(self, request, obj = None, **kwargs):
+        # Get the currently selected Collection object's identifier
+        self.instance = obj
+        return super(ProvenanceInline, self).get_formset(request, obj, **kwargs)
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        # Look for the field's name as it is used in the Collection model
+        if db_field.name == "provenance":
+            kwargs['queryset'] = Provenance.objects.filter(collection__exact=self.instance)
+        return super(ProvenanceInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
 
 
 class LanguageInline(admin.TabularInline):
     model = Collection.language.through
+    extra = 0
 
-    def get_extra(self, request, obj=None, **kwargs):
-        return 0
+    def get_formset(self, request, obj = None, **kwargs):
+        # Get the currently selected Collection object's identifier
+        self.instance = obj
+        return super(LanguageInline, self).get_formset(request, obj, **kwargs)
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        # Look for the field's name as it is used in the Collection model
+        if db_field.name == "language":
+            kwargs['queryset'] = Language.objects.filter(collection__exact=self.instance)
+        return super(LanguageInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
 
 
 class LanguageDisorderInline(admin.TabularInline):
     model = Collection.languageDisorder.through
+    extra = 0
 
-    def get_extra(self, request, obj=None, **kwargs):
-        return 0
+    def get_formset(self, request, obj = None, **kwargs):
+        # Get the currently selected Collection object's identifier
+        self.instance = obj
+        return super(LanguageDisorderInline, self).get_formset(request, obj, **kwargs)
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        # Look for the field's name as it is used in the Collection model
+        if db_field.name == "languagedisorder":
+            kwargs['queryset'] = LanguageDisorder.objects.filter(collection__exact=self.instance)
+        return super(LanguageDisorderInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
 
 
 class RelationInline(admin.TabularInline):
     model = Collection.relation.through
+    extra = 0
 
-    def get_extra(self, request, obj=None, **kwargs):
-        return 0
+    def get_formset(self, request, obj = None, **kwargs):
+        # Get the currently selected Collection object's identifier
+        self.instance = obj
+        return super(RelationInline, self).get_formset(request, obj, **kwargs)
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        # Look for the field's name as it is used in the Collection model
+        if db_field.name == "relation":
+            kwargs['queryset'] = Relation.objects.filter(collection__exact=self.instance)
+        return super(RelationInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
 
 
 class CollectionDomainInline(admin.TabularInline):
     model = Collection.domain.through
+    extra = 0
 
-    def get_extra(self, request, obj=None, **kwargs):
-        return 0
+    def get_formset(self, request, obj = None, **kwargs):
+        # Get the currently selected Collection object's identifier
+        self.instance = obj
+        return super(CollectionDomainInline, self).get_formset(request, obj, **kwargs)
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        # Look for the field's name as it is used in the Collection model
+        if db_field.name == "domain":
+            kwargs['queryset'] = Domain.objects.filter(collection__exact=self.instance)
+        return super(CollectionDomainInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
 
 
 class TotalSizeInline(admin.TabularInline):
     model = Collection.totalSize.through
+    extra = 0
 
-    def get_extra(self, request, obj=None, **kwargs):
-        return 0
+    def get_formset(self, request, obj = None, **kwargs):
+        # Get the currently selected Collection object's identifier
+        self.instance = obj
+        return super(TotalSizeInline, self).get_formset(request, obj, **kwargs)
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        # Look for the field's name as it is used in the Collection model
+        if db_field.name == "totalsize":
+            kwargs['queryset'] = TotalSize.objects.filter(collection__exact=self.instance)
+        return super(TotalSizeInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
 
 
 class PidInline(admin.TabularInline):
     model = Collection.pid.through
+    extra = 0
 
-    def get_extra(self, request, obj=None, **kwargs):
-        return 0
+    def get_formset(self, request, obj = None, **kwargs):
+        # Get the currently selected Collection object's identifier
+        self.instance = obj
+        return super(PidInline, self).get_formset(request, obj, **kwargs)
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        # Look for the field's name as it is used in the Collection model
+        if db_field.name == "pid":
+            kwargs['queryset'] = PID.objects.filter(collection__exact=self.instance)
+        return super(PidInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
 
 
 class ResourceCreatorInline(admin.TabularInline):
     model = Collection.resourceCreator.through
+    extra = 0
 
-    def get_extra(self, request, obj=None, **kwargs):
-        return 0
+    def get_formset(self, request, obj = None, **kwargs):
+        # Get the currently selected Collection object's identifier
+        self.instance = obj
+        return super(ResourceCreatorInline, self).get_formset(request, obj, **kwargs)
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        # Look for the field's name as it is used in the Collection model
+        if db_field.name == "resourcecreator":
+            kwargs['queryset'] = ResourceCreator.objects.filter(collection__exact=self.instance)
+        return super(ResourceCreatorInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
 
 
 class ProjectInline(admin.TabularInline):
     model = Collection.project.through
+    extra = 0
 
-    def get_extra(self, request, obj=None, **kwargs):
-        return 0
+    def get_formset(self, request, obj = None, **kwargs):
+        # Get the currently selected Collection object's identifier
+        self.instance = obj
+        return super(ProjectInline, self).get_formset(request, obj, **kwargs)
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        # Look for the field's name as it is used in the Collection model
+        if db_field.name == "project":
+            kwargs['queryset'] = Project.objects.filter(collection__exact=self.instance)
+        return super(ProjectInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
 
 
 class CollectionAdmin(admin.ModelAdmin):
-#    inlines = (TitleInline,)
     inlines = [TitleInline, OwnerInline, ResourceInline, GenreInline, ProvenanceInline,
                LanguageInline, LanguageDisorderInline, RelationInline, CollectionDomainInline,
-               TotalSizeInline, PidInline, ResourceCreatorInline]
-    # exclude = ('title', 'owner', 'resource', 'genre', 'provenance', 'language', 'languageDisorder', 'relation', 'domain', 'totalSize', 'pid', 'resourceCreator', 'project',)
-    # filter_horizontal = ('title', 'owner', 'resource', 'genre', 'provenance', 'language', 'languageDisorder', 'relation', 'domain', 'totalSize', 'pid', 'resourceCreator', 'project',)
-    # fieldsets = ( ('Searchable', {'fields': ('title', 'identifier', 'resource', 'provenance', 'linguality','language', 'languageDisorder', 'relation', 'speechCorpus',)}),
-    #               ('Other',      {'fields': ('description', 'owner', 'genre', 'domain', 'clarinCentre', 'access', 'totalSize', 'pid', 'version', 'resourceCreator', 'documentation', 'validation', 'project', 'writtenCorpus',)}),
-    #             )
+               TotalSizeInline, PidInline, ResourceCreatorInline, ProjectInline]
     fieldsets = ( ('Searchable', {'fields': ('identifier', 'linguality',  'speechCorpus',)}),
                   ('Other',      {'fields': ('description', 'clarinCentre', 'access', 'version', 'documentation', 'validation', 'writtenCorpus',)}),
                 )
@@ -140,9 +246,14 @@ class CollectionAdmin(admin.ModelAdmin):
         models.TextField: {'widget': Textarea(attrs={'rows': 1})},
         }
 
+    def get_formset(self, request, obj = None, **kwargs):
+        self.instance = obj
+        return super(CollectionAdmin, self).get_formset(request, obj, **kwargs)
+
     def get_form(self, request, obj=None, **kwargs):
-        # Use one line to explicitly pass on the current object in [obj]
-        kwargs['formfield_callback'] = partial(self.formfield_for_dbfield, request=request, obj=obj)
+        # Get the instance before the form gets generated
+        self.instance = obj
+
         # Standard processing from here
         form = super(CollectionAdmin, self).get_form(request, obj, **kwargs)
         bDelField = False
@@ -187,62 +298,40 @@ class CollectionAdmin(admin.ModelAdmin):
             sFullPath = out.name
             xml_serializer.serialize(queryset, stream=out)
         # TODO: make the file available for download and provide a link to it
-    export_xml.short_description = "Export in XML format"
+        export_xml.short_description = "Export in XML format"
 
-    def formfield_for_dbfield(self, db_field, **kwargs):
-      collThis = kwargs.pop('obj', None)
-      formfield = super(CollectionAdmin, self).formfield_for_dbfield(db_field, **kwargs)
-      # Adapt the queryset
-      if db_field.name == "title" and collThis:
-          formfield.queryset = Title.objects.filter(collection=collThis.pk)
-      elif db_field.name == "owner" and collThis:
-          formfield.queryset = Owner.objects.filter(collection=collThis.pk)
-      elif db_field.name == "resource" and collThis:
-          formfield.queryset = Resource.objects.filter(collection=collThis.pk)
-      elif db_field.name == "genre" and collThis:
-          formfield.queryset = Genre.objects.filter(collection=collThis.pk)
-      elif db_field.name == "provenance" and collThis:
-          formfield.queryset = Provenance.objects.filter(collection=collThis.pk)
-      elif db_field.name == "language" and collThis:
-          formfield.queryset = Language.objects.filter(collection=collThis.pk)
-      elif db_field.name == "languageDisorder" and collThis:
-          formfield.queryset = LanguageDisorder.objects.filter(collection=collThis.pk)
-      elif db_field.name == "relation" and collThis:
-          formfield.queryset = Relation.objects.filter(collection=collThis.pk)
-      elif db_field.name == "domain" and collThis:
-          formfield.queryset = Domain.objects.filter(collection=collThis.pk)
-      elif db_field.name == "totalSize" and collThis:
-          formfield.queryset = TotalSize.objects.filter(collection=collThis.pk)
-      elif db_field.name == "pid" and collThis:
-          formfield.queryset = PID.objects.filter(collection=collThis.pk)
-      elif db_field.name == "resourceCreator" and collThis:
-          formfield.queryset = ResourceCreator.objects.filter(collection=collThis.pk)
-      elif db_field.name == "project" and collThis:
-          formfield.queryset = Project.objects.filter(collection=collThis.pk)
-      elif db_field.name == "linguality" and collThis:                                  # ForeignKey
-          formfield.queryset = Linguality.objects.filter(collection=collThis.pk)
-      elif db_field.name == "access" and collThis:                                      # ForeignKey
-          formfield.queryset = Access.objects.filter(collection=collThis.pk)
-      elif db_field.name == "documentation" and collThis:                               # ForeignKey
-          formfield.queryset = Documentation.objects.filter(collection=collThis.pk)
-      elif db_field.name == "validation" and collThis:                                  # ForeignKey
-          formfield.queryset = Validation.objects.filter(collection=collThis.pk)
-      elif db_field.name == "writtenCorpus" and collThis:                               # ForeignKey
-          formfield.queryset = WrittenCorpus.objects.filter(collection=collThis.pk)
-      elif db_field.name == "speechCorpus" and collThis:                                # ForeignKey
-          formfield.queryset = SpeechCorpus.objects.filter(collection=collThis.pk)
-      return formfield
-
- 
-
-
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        collThis = self.instance
+        formfield = super(CollectionAdmin, self).formfield_for_foreignkey(db_field, **kwargs)
+        if db_field.name == "linguality" and collThis:                                    # ForeignKey
+            formfield.queryset = Linguality.objects.filter(collection=collThis.pk)
+        elif db_field.name == "access" and collThis:                                      # ForeignKey
+            formfield.queryset = Access.objects.filter(collection=collThis.pk)
+        elif db_field.name == "documentation" and collThis:                               # ForeignKey
+            formfield.queryset = Documentation.objects.filter(collection=collThis.pk)
+        elif db_field.name == "validation" and collThis:                                  # ForeignKey
+            formfield.queryset = Validation.objects.filter(collection=collThis.pk)
+        elif db_field.name == "writtenCorpus" and collThis:                               # ForeignKey
+            formfield.queryset = WrittenCorpus.objects.filter(collection=collThis.pk)
+        elif db_field.name == "speechCorpus" and collThis:                                # ForeignKey
+            formfield.queryset = SpeechCorpus.objects.filter(collection=collThis.pk)
+        return formfield
 
 
 class GeographicProvenanceInline(admin.TabularInline):
     model = Provenance.geographicProvenance.through
+    extra = 0
 
-    def get_extra(self, request, obj=None, **kwargs):
-        return 0
+    def get_formset(self, request, obj = None, **kwargs):
+        # Get the currently selected Collection object's identifier
+        self.instance = obj
+        return super(GeographicProvenanceInline, self).get_formset(request, obj, **kwargs)
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        # Look for the field's name as it is used in the Collection model
+        if db_field.name == "geographicprovenance":
+            kwargs['queryset'] = GeographicProvenance.objects.filter(provenance__exact=self.instance)
+        return super(GeographicProvenanceInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
 
 
 class ProvenanceAdmin(admin.ModelAdmin):
@@ -262,9 +351,7 @@ class ProvenanceAdmin(admin.ModelAdmin):
       itemThis = kwargs.pop('obj', None)
       formfield = super(ProvenanceAdmin, self).formfield_for_dbfield(db_field, **kwargs)
       # Adapt the queryset
-      if db_field.name == "geographicProvenance" and itemThis:
-          formfield.queryset = GeographicProvenance.objects.filter(provenance=itemThis.pk)
-      elif db_field.name == "temporalProvenance" and itemThis:                                  # ForeignKey
+      if db_field.name == "temporalProvenance" and itemThis:                                  # ForeignKey
           formfield.queryset = TemporalProvenance.objects.filter(provenance=itemThis.pk)
       return formfield
 
@@ -277,9 +364,18 @@ class TemporalProvenanceAdmin(admin.ModelAdmin):
 
 class PlaceInline(admin.TabularInline):
     model = GeographicProvenance.place.through
+    extra = 0
 
-    def get_extra(self, request, obj=None, **kwargs):
-        return 0
+    def get_formset(self, request, obj = None, **kwargs):
+        # Get the currently selected Collection object's identifier
+        self.instance = obj
+        return super(PlaceInline, self).get_formset(request, obj, **kwargs)
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        # Look for the field's name as it is used in the Collection model
+        if db_field.name == "place":
+            kwargs['queryset'] = City.objects.filter(geographicprovenance__exact=self.instance)
+        return super(PlaceInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
 
 
 class GeographicProvenanceAdmin(admin.ModelAdmin):
@@ -288,34 +384,37 @@ class GeographicProvenanceAdmin(admin.ModelAdmin):
                   ('Other',      {'fields': ('country', )}),
                 )
 
-    def get_form(self, request, obj=None, **kwargs):
-        # Use one line to explicitly pass on the current object in [obj]
-        kwargs['formfield_callback'] = partial(self.formfield_for_dbfield, request=request, obj=obj)
-        # Standard processing from here
-        form = super(GeographicProvenanceAdmin, self).get_form(request, obj, **kwargs)
-        return form
-
-    def formfield_for_dbfield(self, db_field, **kwargs):
-      itemThis = kwargs.pop('obj', None)
-      formfield = super(GeographicProvenanceAdmin, self).formfield_for_dbfield(db_field, **kwargs)
-      # Adapt the queryset
-      if db_field.name == "geographicProvenance" and itemThis:
-          formfield.queryset = City.objects.filter(gegraphicprovenance=itemThis.pk)
-      return formfield
-
 
 class AnnotationInline(admin.TabularInline):
     model = Resource.annotation.through
+    extra = 0
 
-    def get_extra(self, request, obj=None, **kwargs):
-        return 0
+    def get_formset(self, request, obj = None, **kwargs):
+        # Get the currently selected Collection object's identifier
+        self.instance = obj
+        return super(AnnotationInline, self).get_formset(request, obj, **kwargs)
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        # Look for the field's name as it is used in the Collection model
+        if db_field.name == "annotation":
+            kwargs['queryset'] = Annotation.objects.filter(resource__exact=self.instance)
+        return super(AnnotationInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
 
 
 class ResourceSizeInline(admin.TabularInline):
     model = Resource.totalSize.through
+    extra = 0
 
-    def get_extra(self, request, obj=None, **kwargs):
-        return 0
+    def get_formset(self, request, obj = None, **kwargs):
+        # Get the currently selected Collection object's identifier
+        self.instance = obj
+        return super(ResourceSizeInline, self).get_formset(request, obj, **kwargs)
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        # Look for the field's name as it is used in the Collection model
+        if db_field.name == "totalsize":
+            kwargs['queryset'] = TotalSize.objects.filter(resource__exact=self.instance)
+        return super(ResourceSizeInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
 
 
 class ResourceAdmin(admin.ModelAdmin):
@@ -336,20 +435,29 @@ class ResourceAdmin(admin.ModelAdmin):
       itemThis = kwargs.pop('obj', None)
       formfield = super(ResourceAdmin, self).formfield_for_dbfield(db_field, **kwargs)
       # Adapt the queryset
-      if db_field.name == "annotation" and itemThis:
-          formfield.queryset = Annotation.objects.filter(resource=itemThis.pk)
-      elif db_field.name == "totalSize" and itemThis:
-          formfield.queryset = TotalSize.objects.filter(resource=itemThis.pk)
-      elif db_field.name == "media" and itemThis:                                   # ForeignKey
+      if db_field.name == "media" and itemThis:                                   # ForeignKey
           formfield.queryset = Media.objects.filter(resource=itemThis.pk)
+      #if db_field.name == "annotation" and itemThis:
+      #    formfield.queryset = Annotation.objects.filter(resource=itemThis.pk)
+      #elif db_field.name == "totalSize" and itemThis:
+      #    formfield.queryset = TotalSize.objects.filter(resource=itemThis.pk)
       return formfield
 
 
 class AnnotationFormatInline(admin.TabularInline):
     model = Annotation.formatAnn.through
+    extra = 0
 
-    def get_extra(self, request, obj=None, **kwargs):
-        return 0
+    def get_formset(self, request, obj = None, **kwargs):
+        # Get the currently selected Annotation object's identifier
+        self.instance = obj
+        return super(AnnotationFormatInline, self).get_formset(request, obj, **kwargs)
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        # Look for the field's name as it is used in the Collection model
+        if db_field.name == "annotationformat":
+            kwargs['queryset'] = AnnotationFormat.objects.filter(annotation__exact=self.instance)
+        return super(AnnotationFormatInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
 
 
 class AnnotationFormatForm(forms.ModelForm):
@@ -375,7 +483,6 @@ class AnnotationForm(forms.ModelForm):
         if (self.fields != None):
             self.fields['type'].choices = build_choice_list(ANNOTATION_TYPE)
             self.fields['mode'].choices = build_choice_list(ANNOTATION_MODE)
-            # self.fields['format'].choices = build_choice_list(ANNOTATION_FORMAT)
 
 
 class AnnotationAdmin(admin.ModelAdmin):
@@ -383,15 +490,7 @@ class AnnotationAdmin(admin.ModelAdmin):
     fieldsets = ( ('Searchable', {'fields': ('type',) }),
                   ('Other',      {'fields': ('mode', )}),
                 )
-    # readonly_fields = ('format',)
     form = AnnotationForm
-
-    #def __init__(self, *args, **kwargs):
-    #    super(AnnotationAdmin, self).__init__(*args, **kwargs)
-    #    if (self.fields != None):
-    #        self.fields['type'].choices = build_choice_list(ANNOTATION_TYPE)
-    #        self.fields['mode'].choices = build_choice_list(ANNOTATION_MODE)
-    #        self.fields['format'].choices = build_choice_list(ANNOTATION_FORMAT)
 
     def get_form(self, request, obj=None, **kwargs):
         # Use one line to explicitly pass on the current object in [obj]
@@ -421,12 +520,20 @@ class AnnotationAdmin(admin.ModelAdmin):
       return formfield
 
 
-
 class FormatInline(admin.TabularInline):
     model = Media.format.through
+    extra = 0
 
-    def get_extra(self, request, obj=None, **kwargs):
-        return 0
+    def get_formset(self, request, obj = None, **kwargs):
+        # Get the currently selected Collection object's identifier
+        self.instance = obj
+        return super(FormatInline, self).get_formset(request, obj, **kwargs)
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        # Look for the field's name as it is used in the Collection model
+        if db_field.name == "mediaformat":
+            kwargs['queryset'] = MediaFormat.objects.filter(media__exact=self.instance)
+        return super(FormatInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
 
 
 class MediaAdmin(admin.ModelAdmin):
@@ -435,21 +542,6 @@ class MediaAdmin(admin.ModelAdmin):
     fieldsets = ( ('Searchable', {'fields': ()}),
                   ('Other',      {'fields': ()}),
                 )
-
-    def get_form(self, request, obj=None, **kwargs):
-        # Use one line to explicitly pass on the current object in [obj]
-        kwargs['formfield_callback'] = partial(self.formfield_for_dbfield, request=request, obj=obj)
-        # Standard processing from here
-        form = super(MediaAdmin, self).get_form(request, obj, **kwargs)
-        return form
-
-    def formfield_for_dbfield(self, db_field, **kwargs):
-      itemThis = kwargs.pop('obj', None)
-      formfield = super(MediaAdmin, self).formfield_for_dbfield(db_field, **kwargs)
-      # Adapt the queryset
-      if db_field.name == "format" and itemThis:
-          formfield.queryset = MediaFormat.objects.filter(media=itemThis.pk)
-      return formfield
 
 
 class LanguageForm(forms.ModelForm):
@@ -500,7 +592,6 @@ class AccessMediumAdmin(admin.ModelAdmin):
     form = AccessMediumForm
 
 
-
 class NonCommercialUsageOnlyForm(forms.ModelForm):
 
     class Meta:
@@ -515,8 +606,7 @@ class NonCommercialUsageOnlyForm(forms.ModelForm):
 
 class NonCommercialUsageOnlyAdmin(admin.ModelAdmin):
     form = NonCommercialUsageOnlyForm
-
-
+    
 
 class DocumentationTypeForm(forms.ModelForm):
 
@@ -552,9 +642,18 @@ class AudioFormatAdmin(admin.ModelAdmin):
 
 class DomainInline(admin.TabularInline):
     model = Domain.name.through
+    extra = 0
 
-    def get_extra(self, request, obj=None, **kwargs):
-        return 0
+    def get_formset(self, request, obj = None, **kwargs):
+        # Get the currently selected Domain object's identifier
+        self.instance = obj
+        return super(DomainInline, self).get_formset(request, obj, **kwargs)
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        # Look for the field's name as it is used in the Collection model
+        if db_field.name == "domaindescription":
+            kwargs['queryset'] = DomainDescription.objects.filter(domain__exact=self.instance)
+        return super(DomainInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
 
 
 class DomainAdmin(admin.ModelAdmin):
@@ -564,62 +663,101 @@ class DomainAdmin(admin.ModelAdmin):
                   ('Other',      {'fields': ()}),
                 )
 
-    def get_form(self, request, obj=None, **kwargs):
-        # Use one line to explicitly pass on the current object in [obj]
-        kwargs['formfield_callback'] = partial(self.formfield_for_dbfield, request=request, obj=obj)
-        # Standard processing from here
-        form = super(DomainAdmin, self).get_form(request, obj, **kwargs)
-        return form
-
-    def formfield_for_dbfield(self, db_field, **kwargs):
-      itemThis = kwargs.pop('obj', None)
-      formfield = super(DomainAdmin, self).formfield_for_dbfield(db_field, **kwargs)
-      # Adapt the queryset
-      if db_field.name == "name" and itemThis:
-          formfield.queryset = DomainDescription.objects.filter(domain=itemThis.pk)
-      return formfield
-
 
 class LingualityTypeInline(admin.TabularInline):
     model = Linguality.lingualityType.through
+    extra = 0
 
-    def get_extra(self, request, obj=None, **kwargs):
-        return 0
+    def get_formset(self, request, obj = None, **kwargs):
+        # Get the currently selected Linguality object's identifier
+        self.instance = obj
+        return super(LingualityTypeInline, self).get_formset(request, obj, **kwargs)
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        # Look for the field's name as it is used in the Linguality model
+        if db_field.name == "lingualitytype":
+            kwargs['queryset'] = LingualityType.objects.filter(linguality__exact=self.instance)
+        return super(LingualityTypeInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
 
 
 class LingualityNativenessInline(admin.TabularInline):
     model = Linguality.lingualityNativeness.through
+    extra = 0
 
-    def get_extra(self, request, obj=None, **kwargs):
-        return 0
+    def get_formset(self, request, obj = None, **kwargs):
+        # Get the currently selected Linguality object's identifier
+        self.instance = obj
+        return super(LingualityNativenessInline, self).get_formset(request, obj, **kwargs)
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        # Look for the field's name as it is used in the Linguality model
+        if db_field.name == "lingualitynativeness":
+            kwargs['queryset'] = LingualityNativeness.objects.filter(linguality__exact=self.instance)
+        return super(LingualityNativenessInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
 
 
 class LingualityAgeGroupInline(admin.TabularInline):
     model = Linguality.lingualityAgeGroup.through
+    extra = 0
 
-    def get_extra(self, request, obj=None, **kwargs):
-        return 0
+    def get_formset(self, request, obj = None, **kwargs):
+        # Get the currently selected Linguality object's identifier
+        self.instance = obj
+        return super(LingualityAgeGroupInline, self).get_formset(request, obj, **kwargs)
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        # Look for the field's name as it is used in the Linguality model
+        if db_field.name == "lingualityagegroup":
+            kwargs['queryset'] = LingualityAgeGroup.objects.filter(linguality__exact=self.instance)
+        return super(LingualityAgeGroupInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
 
 
 class LingualityStatusInline(admin.TabularInline):
     model = Linguality.lingualityStatus.through
+    extra = 0
 
-    def get_extra(self, request, obj=None, **kwargs):
-        return 0
+    def get_formset(self, request, obj = None, **kwargs):
+        # Get the currently selected Linguality object's identifier
+        self.instance = obj
+        return super(LingualityStatusInline, self).get_formset(request, obj, **kwargs)
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        # Look for the field's name as it is used in the Linguality model
+        if db_field.name == "lingualitystatus":
+            kwargs['queryset'] = LingualityStatus.objects.filter(linguality__exact=self.instance)
+        return super(LingualityStatusInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
 
 
 class LingualityVariantInline(admin.TabularInline):
     model = Linguality.lingualityVariant.through
+    extra = 0
 
-    def get_extra(self, request, obj=None, **kwargs):
-        return 0
+    def get_formset(self, request, obj = None, **kwargs):
+        # Get the currently selected Linguality object's identifier
+        self.instance = obj
+        return super(LingualityVariantInline, self).get_formset(request, obj, **kwargs)
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        # Look for the field's name as it is used in the Linguality model
+        if db_field.name == "lingualityvariant":
+            kwargs['queryset'] = LingualityVariant.objects.filter(linguality__exact=self.instance)
+        return super(LingualityVariantInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
 
 
 class MultiLingualityTypeInline(admin.TabularInline):
     model = Linguality.multilingualityType.through
+    extra = 0
 
-    def get_extra(self, request, obj=None, **kwargs):
-        return 0
+    def get_formset(self, request, obj = None, **kwargs):
+        # Get the currently selected Linguality object's identifier
+        self.instance = obj
+        return super(MultiLingualityTypeInline, self).get_formset(request, obj, **kwargs)
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        # Look for the field's name as it is used in the Linguality model
+        if db_field.name == "multilingualitytype":
+            kwargs['queryset'] = MultilingualityType.objects.filter(linguality__exact=self.instance)
+        return super(MultiLingualityTypeInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
 
 
 class LingualityAdmin(admin.ModelAdmin):
@@ -659,44 +797,98 @@ class LingualityAdmin(admin.ModelAdmin):
 
 class AccessAvailabilityInline(admin.TabularInline):
     model = Access.availability.through
+    extra = 0
 
-    def get_extra(self, request, obj=None, **kwargs):
-        return 0
+    def get_formset(self, request, obj = None, **kwargs):
+        # Get the currently selected Access object's identifier
+        self.instance = obj
+        return super(AccessAvailabilityInline, self).get_formset(request, obj, **kwargs)
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        # Look for the field's name as it is used in the Access model
+        if db_field.name == "accessavailability":
+            kwargs['queryset'] = AccessAvailability.objects.filter(access__exact=self.instance)
+        return super(AccessAvailabilityInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
 
 
 class AccessLicenseNameInline(admin.TabularInline):
     model = Access.licenseName.through
+    extra = 0
 
-    def get_extra(self, request, obj=None, **kwargs):
-        return 0
+    def get_formset(self, request, obj = None, **kwargs):
+        # Get the currently selected Access object's identifier
+        self.instance = obj
+        return super(AccessLicenseNameInline, self).get_formset(request, obj, **kwargs)
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        # Look for the field's name as it is used in the Access model
+        if db_field.name == "licensename":
+            kwargs['queryset'] = LicenseName.objects.filter(access__exact=self.instance)
+        return super(AccessLicenseNameInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
 
 
 class AccessLicenseUrlInline(admin.TabularInline):
     model = Access.licenseUrl.through
+    extra = 0
 
-    def get_extra(self, request, obj=None, **kwargs):
-        return 0
+    def get_formset(self, request, obj = None, **kwargs):
+        # Get the currently selected Access object's identifier
+        self.instance = obj
+        return super(AccessLicenseUrlInline, self).get_formset(request, obj, **kwargs)
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        # Look for the field's name as it is used in the Access model
+        if db_field.name == "licenseurl":
+            kwargs['queryset'] = LicenseUrl.objects.filter(access__exact=self.instance)
+        return super(AccessLicenseUrlInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
 
 
 class AccessContactInline(admin.TabularInline):
     model = Access.contact.through
+    extra = 0
 
-    def get_extra(self, request, obj=None, **kwargs):
-        return 0
+    def get_formset(self, request, obj = None, **kwargs):
+        # Get the currently selected Access object's identifier
+        self.instance = obj
+        return super(AccessContactInline, self).get_formset(request, obj, **kwargs)
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        # Look for the field's name as it is used in the Access model
+        if db_field.name == "accesscontact":
+            kwargs['queryset'] = AccessContact.objects.filter(access__exact=self.instance)
+        return super(AccessContactInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
 
 
 class AccessWebsiteInline(admin.TabularInline):
     model = Access.website.through
+    extra = 0
 
-    def get_extra(self, request, obj=None, **kwargs):
-        return 0
+    def get_formset(self, request, obj = None, **kwargs):
+        # Get the currently selected Access object's identifier
+        self.instance = obj
+        return super(AccessWebsiteInline, self).get_formset(request, obj, **kwargs)
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        # Look for the field's name as it is used in the Access model
+        if db_field.name == "accesswebsite":
+            kwargs['queryset'] = AccessWebsite.objects.filter(access__exact=self.instance)
+        return super(AccessWebsiteInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
 
 
 class AccessMediumInline(admin.TabularInline):
     model = Access.medium.through
+    extra = 0
 
-    def get_extra(self, request, obj=None, **kwargs):
-        return 0
+    def get_formset(self, request, obj = None, **kwargs):
+        # Get the currently selected Access object's identifier
+        self.instance = obj
+        return super(AccessMediumInline, self).get_formset(request, obj, **kwargs)
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        # Look for the field's name as it is used in the Access model
+        if db_field.name == "accessmedium":
+            kwargs['queryset'] = AccessMedium.objects.filter(access__exact=self.instance)
+        return super(AccessMediumInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
 
 
 class AccessAdmin(admin.ModelAdmin):
@@ -723,20 +915,23 @@ class AccessAdmin(admin.ModelAdmin):
       itemThis = kwargs.pop('obj', None)
       formfield = super(AccessAdmin, self).formfield_for_dbfield(db_field, **kwargs)
       # Adapt the queryset
-      if db_field.name == "availability" and itemThis:
-          formfield.queryset = AccessAvailability.objects.filter(access=itemThis.pk)
-      elif db_field.name == "licenseName" and itemThis:
-          formfield.queryset = LicenseName.objects.filter(access=itemThis.pk)
-      elif db_field.name == "licenseUrl" and itemThis:
-          formfield.queryset = LicenseUrl.objects.filter(access=itemThis.pk)
-      elif db_field.name == "contact" and itemThis:
-          formfield.queryset = AccessContact.objects.filter(access=itemThis.pk)
-      elif db_field.name == "website" and itemThis:
-          formfield.queryset = AccessWebsite.objects.filter(access=itemThis.pk)
-      elif db_field.name == "medium" and itemThis:
-          formfield.queryset = AccessMedium.objects.filter(access=itemThis.pk)
-      elif db_field.name == "nonCommercialUsageOnly" and itemThis:                  # ForeignKey
+      if db_field.name == "nonCommercialUsageOnly" and itemThis:                  # ForeignKey
           formfield.queryset = NonCommercialUsageOnly.objects.filter(access=itemThis.pk)
+
+      #if db_field.name == "availability" and itemThis:
+      #    formfield.queryset = AccessAvailability.objects.filter(access=itemThis.pk)
+      #elif db_field.name == "licenseName" and itemThis:
+      #    formfield.queryset = LicenseName.objects.filter(access=itemThis.pk)
+      #elif db_field.name == "licenseUrl" and itemThis:
+      #    formfield.queryset = LicenseUrl.objects.filter(access=itemThis.pk)
+      #elif db_field.name == "contact" and itemThis:
+      #    formfield.queryset = AccessContact.objects.filter(access=itemThis.pk)
+      #elif db_field.name == "website" and itemThis:
+      #    formfield.queryset = AccessWebsite.objects.filter(access=itemThis.pk)
+      #elif db_field.name == "medium" and itemThis:
+      #    formfield.queryset = AccessMedium.objects.filter(access=itemThis.pk)
+      #elif db_field.name == "nonCommercialUsageOnly" and itemThis:                  # ForeignKey
+      #    formfield.queryset = NonCommercialUsageOnly.objects.filter(access=itemThis.pk)
       return formfield
 
 
@@ -748,16 +943,34 @@ class TotalSizeAdmin(admin.ModelAdmin):
 
 class ResourceOrganizationInline(admin.TabularInline):
     model = ResourceCreator.organization.through
+    extra = 0
 
-    def get_extra(self, request, obj=None, **kwargs):
-        return 0
+    def get_formset(self, request, obj = None, **kwargs):
+        # Get the currently selected ResourceCreator object's identifier
+        self.instance = obj
+        return super(ResourceOrganizationInline, self).get_formset(request, obj, **kwargs)
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        # Look for the field's name as it is used in the ResourceCreator model
+        if db_field.name == "organization":
+            kwargs['queryset'] = Organization.objects.filter(resourcecreator__exact=self.instance)
+        return super(ResourceOrganizationInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
 
 
 class ResourcePersonInline(admin.TabularInline):
     model = ResourceCreator.person.through
+    extra = 0
 
-    def get_extra(self, request, obj=None, **kwargs):
-        return 0
+    def get_formset(self, request, obj = None, **kwargs):
+        # Get the currently selected ResourceCreator object's identifier
+        self.instance = obj
+        return super(ResourcePersonInline, self).get_formset(request, obj, **kwargs)
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        # Look for the field's name as it is used in the ResourceCreator model
+        if db_field.name == "person":
+            kwargs['queryset'] = Person.objects.filter(resourcecreator__exact=self.instance)
+        return super(ResourcePersonInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
 
 
 class ResourceCreatorAdmin(admin.ModelAdmin):
@@ -770,50 +983,69 @@ class ResourceCreatorAdmin(admin.ModelAdmin):
         models.TextField: {'widget': Textarea(attrs={'rows': 1})},
         }
 
-    def get_form(self, request, obj=None, **kwargs):
-        # Use one line to explicitly pass on the current object in [obj]
-        kwargs['formfield_callback'] = partial(self.formfield_for_dbfield, request=request, obj=obj)
-        # Standard processing from here
-        form = super(ResourceCreatorAdmin, self).get_form(request, obj, **kwargs)
-        return form
-
-    def formfield_for_dbfield(self, db_field, **kwargs):
-      itemThis = kwargs.pop('obj', None)
-      formfield = super(ResourceCreatorAdmin, self).formfield_for_dbfield(db_field, **kwargs)
-      # Adapt the queryset
-      if db_field.name == "organization" and itemThis:
-          formfield.queryset = Organization.objects.filter(resourcecreator=itemThis.pk)
-      elif db_field.name == "person" and itemThis:
-          formfield.queryset = Person.objects.filter(resourcecreator=itemThis.pk)
-      return formfield
-
 
 class DocumentationTypeInline(admin.TabularInline):
     model = Documentation.documentationType.through
+    extra = 0
 
-    def get_extra(self, request, obj=None, **kwargs):
-        return 0
+    def get_formset(self, request, obj = None, **kwargs):
+        # Get the currently selected Documentation object's identifier
+        self.instance = obj
+        return super(DocumentationTypeInline, self).get_formset(request, obj, **kwargs)
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        # Look for the field's name as it is used in the Documentation model
+        if db_field.name == "documentationtype" :
+            kwargs['queryset'] = DocumentationType.objects.filter(documentation__exact=self.instance)
+        return super(DocumentationTypeInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
 
 
 class DocumentationFileInline(admin.TabularInline):
     model = Documentation.fileName.through
+    extra = 0
 
-    def get_extra(self, request, obj=None, **kwargs):
-        return 0
+    def get_formset(self, request, obj = None, **kwargs):
+        # Get the currently selected Documentation object's identifier
+        self.instance = obj
+        return super(DocumentationFileInline, self).get_formset(request, obj, **kwargs)
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        # Look for the field's name as it is used in the Documentation model
+        if db_field.name == "documentationfile" :
+            kwargs['queryset'] = DocumentationFile.objects.filter(documentation__exact=self.instance)
+        return super(DocumentationFileInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
 
 
 class DocumentationUrlInline(admin.TabularInline):
     model = Documentation.url.through
+    extra = 0
 
-    def get_extra(self, request, obj=None, **kwargs):
-        return 0
+    def get_formset(self, request, obj = None, **kwargs):
+        # Get the currently selected Documentation object's identifier
+        self.instance = obj
+        return super(DocumentationUrlInline, self).get_formset(request, obj, **kwargs)
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        # Look for the field's name as it is used in the Documentation model
+        if db_field.name == "documentationurl":
+            kwargs['queryset'] = DocumentationUrl.objects.filter(documentation__exact=self.instance)
+        return super(DocumentationUrlInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
 
 
 class DocumentationLanguageInline(admin.TabularInline):
     model = Documentation.language.through
+    extra = 0
 
-    def get_extra(self, request, obj=None, **kwargs):
-        return 0
+    def get_formset(self, request, obj = None, **kwargs):
+        # Get the currently selected Documentation object's identifier
+        self.instance = obj
+        return super(DocumentationLanguageInline, self).get_formset(request, obj, **kwargs)
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        # Look for the field's name as it is used in the Documentation model
+        if db_field.name== "language":
+            kwargs['queryset'] = Language.objects.filter(documentation__exact=self.instance)
+        return super(DocumentationLanguageInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
 
 
 class DocumentationAdmin(admin.ModelAdmin):
@@ -824,33 +1056,21 @@ class DocumentationAdmin(admin.ModelAdmin):
                   ('Other',      {'fields': ()}),
                 )
 
-    def get_form(self, request, obj=None, **kwargs):
-        # Use one line to explicitly pass on the current object in [obj]
-        kwargs['formfield_callback'] = partial(self.formfield_for_dbfield, request=request, obj=obj)
-        # Standard processing from here
-        form = super(DocumentationAdmin, self).get_form(request, obj, **kwargs)
-        return form
-
-    def formfield_for_dbfield(self, db_field, **kwargs):
-      itemThis = kwargs.pop('obj', None)
-      formfield = super(DocumentationAdmin, self).formfield_for_dbfield(db_field, **kwargs)
-      # Adapt the queryset
-      if db_field.name == "documentationType" and itemThis:
-          formfield.queryset = DocumentationType.objects.filter(documentationadmin=itemThis.pk)
-      elif db_field.name == "fileName" and itemThis:
-          formfield.queryset = DocumentationFile.objects.filter(documentationadmin=itemThis.pk)
-      elif db_field.name == "url" and itemThis:
-          formfield.queryset = DocumentationUrl.objects.filter(documentationadmin=itemThis.pk)
-      elif db_field.name == "language" and itemThis:
-          formfield.queryset = Language.objects.filter(documentationadmin=itemThis.pk)
-      return formfield
-
-
+ 
 class ValidationMethodInline(admin.TabularInline):
     model = Validation.method.through
+    extra = 0
 
-    def get_extra(self, request, obj=None, **kwargs):
-        return 0
+    def get_formset(self, request, obj = None, **kwargs):
+        # Get the currently selected Validation object's identifier
+        self.instance = obj
+        return super(ValidationMethodInline, self).get_formset(request, obj, **kwargs)
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        # Look for the field's name as it is used in the Validation model
+        if db_field.name == "validationmethod":
+            kwargs['queryset'] = ValidationMethod.objects.filter(validation__exact=self.instance)
+        return super(ValidationMethodInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
 
 
 class ValidationAdmin(admin.ModelAdmin):
@@ -871,18 +1091,29 @@ class ValidationAdmin(admin.ModelAdmin):
       itemThis = kwargs.pop('obj', None)
       formfield = super(ValidationAdmin, self).formfield_for_dbfield(db_field, **kwargs)
       # Adapt the queryset
-      if db_field.name == "method" and itemThis:
-          formfield.queryset = ValidationMethod.objects.filter(validation=itemThis.pk)
-      elif db_field.name == "type" and itemThis:                                                # ForeignKey
+      if db_field.name == "type" and itemThis:                                                # ForeignKey
           formfield.queryset = ValidationType.objects.filter(validation=itemThis.pk)
+      #if db_field.name == "method" and itemThis:
+      #    formfield.queryset = ValidationMethod.objects.filter(validation=itemThis.pk)
+      #elif db_field.name == "type" and itemThis:                                                # ForeignKey
+      #    formfield.queryset = ValidationType.objects.filter(validation=itemThis.pk)
       return formfield
 
 
 class ProjectFunderInline(admin.TabularInline):
     model = Project.funder.through
+    extra = 0
 
-    def get_extra(self, request, obj=None, **kwargs):
-        return 0
+    def get_formset(self, request, obj = None, **kwargs):
+        # Get the currently selected Project object's identifier
+        self.instance = obj
+        return super(ProjectFunderInline, self).get_formset(request, obj, **kwargs)
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        # Look for the field's name as it is used in the Project model
+        if db_field.name == "projectfunder":
+            kwargs['queryset'] = ProjectFunder.objects.filter(project__exact=self.instance)
+        return super(ProjectFunderInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
 
 
 class ProjectAdmin(admin.ModelAdmin):
@@ -899,17 +1130,15 @@ class ProjectAdmin(admin.ModelAdmin):
         # Use one line to explicitly pass on the current object in [obj]
         kwargs['formfield_callback'] = partial(self.formfield_for_dbfield, request=request, obj=obj)
         # Standard processing from here
-        form = super(ValidationAdmin, self).get_form(request, obj, **kwargs)
+        form = super(ProjectAdmin, self).get_form(request, obj, **kwargs)
         return form
 
     def formfield_for_dbfield(self, db_field, **kwargs):
       itemThis = kwargs.pop('obj', None)
-      formfield = super(ValidationAdmin, self).formfield_for_dbfield(db_field, **kwargs)
+      formfield = super(ProjectAdmin, self).formfield_for_dbfield(db_field, **kwargs)
       # Adapt the queryset
-      if db_field.name == "method" and itemThis:
-          formfield.queryset = ValidationMethod.objects.filter(validation=itemThis.pk)
-      elif db_field.name == "URL" and itemThis:                                                     # ForeignKey
-          formfield.queryset = ProjectUrl.objects.filter(validation=itemThis.pk)
+      if (db_field.name == "URL" ) and itemThis:                                                     # ForeignKey
+          formfield.queryset = ProjectUrl.objects.filter(project=itemThis.pk)
       return formfield
 
 

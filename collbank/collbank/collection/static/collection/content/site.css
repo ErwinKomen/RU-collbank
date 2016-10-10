@@ -48,3 +48,7 @@ a.list-group-item-info:hover {
 table tbody tr:hover {
   background-color: lightyellow !important;
 }
+
+div.inline-group a.add-related {
+    visibility: hidden;
+}
