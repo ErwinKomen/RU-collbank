@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/1.9/ref/settings/
 
 import os
 import posixpath
+from django.contrib import admin
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -27,6 +28,7 @@ if "d:" in WRITABLE_DIR or "D:" in WRITABLE_DIR:
     APP_PREFIX = ""
 elif "/scratch" in WRITABLE_DIR:
     APP_PREFIX = "collbank/"
+    admin.site.site_url = "/collbank"
 
 # Not the location of the wsgi.py file for "reload_collbank"
 WSGI_FILE = os.path.abspath(os.path.join(BASE_DIR,"collbank/wsgi.py"))
