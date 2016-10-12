@@ -89,10 +89,10 @@
     <Content Include="collbank\collection\templates\collection\index.html" />
     <Content Include="collbank\collection\templates\collection\layout.html" />
     <Content Include="collbank\collection\templates\collection\login.html" />
+    <Content Include="collbank\collection\templates\collection\topnav.html" />
     <Content Include="collbank\collection\templates\collection\loginpartial.html" />
     <Content Include="collbank\collection\templates\collection\output.xml" />
     <Content Include="collbank\collection\templates\collection\overview.html" />
-    <Content Include="collbank\collection\templates\collection\topnav.html" />
     <Content Include="collbank\templates\admin\base.html" />
     <Content Include="requirements.txt" />
   </ItemGroup>
