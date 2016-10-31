@@ -15,10 +15,13 @@ var $ = django.jQuery.noConflict();
 function type_change() {
   // Get the value of the selected [DCtype]
   var dctype_type = $('#id_DCtype').val();
+  // Create the URL that is needed
+  var url_prefix = $(".container").attr("url_home");
+  var sUrl = url_prefix + "subtype_choices/?dctype_type=" + dctype_type;
   // Make a request to get all subtype choices for this DCtype
   $.ajax({
     "type": "GET",
-    "url": "/subtype_choices/?dctype_type=" + dctype_type,
+    "url": sUrl,
     "dataType": "json",
     "cache": false,
     "success": function (json) {

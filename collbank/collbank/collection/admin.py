@@ -3,6 +3,7 @@ from django.db.models import Q
 from django import forms
 from django.forms import Textarea
 from collbank.collection.models import *
+from collbank.settings import APP_PREFIX
 from functools import partial
 from django.core import serializers
 from django.contrib.contenttypes.models import ContentType
@@ -443,7 +444,7 @@ class ResourceAdmin(admin.ModelAdmin):
     current_dctype = ''
 
     class Media:
-        js = ['/static/collection/scripts/collbank.js']
+        js = ['/'+APP_PREFIX+'static/collection/scripts/collbank.js']
 
     def get_form(self, request, obj=None, **kwargs):
         # Use one line to explicitly pass on the current object in [obj]
