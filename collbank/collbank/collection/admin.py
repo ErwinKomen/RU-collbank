@@ -417,12 +417,33 @@ class ResourceSizeInline(admin.TabularInline):
         return super(ResourceSizeInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
 
 
+class ResourceForm(forms.ModelForm):
+    # model = Resource
+    current_dctype = ''
+
+    def __init__(self, *args, **kwargs):
+        super(ResourceForm, self).__init__(*args, **kwargs)
+        if (self.fields != None):
+            self.fields['subtype'].choices = build_choice_list(RESOURCE_TYPE, 'after', self.current_dctype)
+
+    class Meta:
+        model = Resource
+        fields = ['type', 'DCtype', 'subtype', 'media', 'description']
+        widgets = { 'subtype': forms.Select }
+
+
 class ResourceAdmin(admin.ModelAdmin):
+    form = ResourceForm
+
     # filter_horizontal = ('annotation','totalSize',)
     inlines = [AnnotationInline, ResourceSizeInline]
-    fieldsets = ( ('Searchable', {'fields': ('type', 'media',)}),
+    fieldsets = ( ('Searchable', {'fields': ('DCtype', 'subtype', 'media',)}),
                   ('Other',      {'fields': ('description', )}),
                 )
+    current_dctype = ''
+
+    class Media:
+        js = ['/static/collection/scripts/collbank.js']
 
     def get_form(self, request, obj=None, **kwargs):
         # Use one line to explicitly pass on the current object in [obj]
@@ -437,10 +458,26 @@ class ResourceAdmin(admin.ModelAdmin):
       # Adapt the queryset
       if db_field.name == "media" and itemThis:                                   # ForeignKey
           formfield.queryset = Media.objects.filter(resource=itemThis.pk)
-      #if db_field.name == "annotation" and itemThis:
-      #    formfield.queryset = Annotation.objects.filter(resource=itemThis.pk)
-      #elif db_field.name == "totalSize" and itemThis:
-      #    formfield.queryset = TotalSize.objects.filter(resource=itemThis.pk)
+      elif db_field.name == "DCtype":
+          # Take note of the selected DC type
+          # self.current_dctype = str(itemThis.DCtype)
+          # Try to convert this into an integer index
+          if itemThis.DCtype != '' and itemThis.DCtype != '-':
+              # Get the DCtype list
+              # arDCtype = Resource._meta.get_field('DCtype').choices
+              arDCtype = db_field.choices
+              # Get the element from this list
+              sDCtype = get_tuple_value(arDCtype, itemThis.DCtype)
+              self.current_dctype = sDCtype
+              self.form.current_dctype = sDCtype
+
+              #tupDCtype = arDCtype[int(itemThis.DCtype)]
+              #self.current_dctype = tupDCtype[1]
+              #self.form.current_dctype = tupDCtype[1]
+      elif db_field.name == "subtype":
+          if itemThis.subtype != '' and itemThis.subtype != '-':
+              # Note which DCtype was selected
+              db_field.choices = build_choice_list(RESOURCE_TYPE, 'after', self.current_dctype)
       return formfield
 
 

@@ -8,10 +8,13 @@ Each resource in the collection is characterised by its own annotations.
 from django.db import models
 from django.contrib.auth.models import User
 from datetime import datetime
+import sys
 
 MAX_IDENTIFIER_LEN = 10
 
 RESOURCE_TYPE = "resource.type"
+RESOURCE_DCTYPE = "resource.DCtype"
+RESOURCE_SUBTYPE = "resource.subtype"
 GENRE_NAME = "genre.name"
 MEDIA_FORMAT = "resource.media.format"
 PROVENANCE_TEMPORALPROVENANCE = 'provenance.temporalprovenance'
@@ -67,10 +70,11 @@ class FieldChoice(models.Model):
         ordering = ['field','machine_value']
 
 
-def build_choice_list(field):
+def build_choice_list(field, position=None, subcat=None):
     """Create a list of choice-tuples"""
 
     choice_list = [];
+    unique_list = [];   # Check for uniqueness
 
     try:
         # check if there are any options at all
@@ -79,10 +83,30 @@ def build_choice_list(field):
             choice_list = [('0','-'),('1','N/A')]
         else:
             for choice in FieldChoice.objects.filter(field__iexact=field):
-                choice_list.append((str(choice.machine_value),choice.english_name));
+                # Default
+                sEngName = ""
+                # Any special position??
+                if position==None:
+                    sEngName = choice.english_name
+                elif position=='before':
+                    # We only need to take into account anything before a ":" sign
+                    sEngName = choice.english_name.split(':',1)[0]
+                elif position=='after':
+                    if subcat!=None:
+                        arName = choice.english_name.partition(':')
+                        if len(arName)>1 and arName[0]==subcat:
+                            sEngName = arName[2]
+
+                # Sanity check
+                if sEngName != "" and not sEngName in unique_list:
+                    # Add it to the REAL list
+                    choice_list.append((str(choice.machine_value),sEngName));
+                    # Add it to the list that checks for uniqueness
+                    unique_list.append(sEngName)
 
             choice_list = sorted(choice_list,key=lambda x: x[1]);
     except:
+        print("Unexpected error:", sys.exc_info()[0])
         choice_list = [('0','-'),('1','N/A')];
 
     # Signbank returns: [('0','-'),('1','N/A')] + choice_list
@@ -127,6 +151,59 @@ def get_ident(qs):
             qs = lst[0].collection_set
             idt = m2m_identifier(qs)
     return idt
+
+def get_tuple_value(lstTuples, iId):
+    if lstTuples == None:
+        sBack = ""
+    else:
+        lstFound = [item for item in lstTuples if item[0] == iId]
+        if len(lstFound) == 0:
+            sBack = ""
+        else:
+            sBack = lstFound[0][1]
+    return sBack
+
+def get_tuple_index(lstTuples, sValue):
+    if lstTuples == None:
+        iBack = -1
+    else:
+        lstFound = [item for item in lstTuples if item[1] == sValue]
+        if len(lstFound) == 0:
+            iBack = -1
+        else:
+            iBack = lstFound[0][0]
+    return iBack
+
+def one_time_startup():
+    """Execute things that only need to be done once on startup"""
+    iChanges = 0
+
+    try:
+        # Make a list of all DCtype values
+        arTypeChoices = Resource._meta.get_field('type').choices
+        arDCtypeChoices = Resource._meta.get_field('DCtype').choices
+        # Walk all existing 'Resource' objects
+        for resThis in Resource.objects.all():
+            # Check if the Type needs updating
+            if resThis.DCtype == '' or resThis.DCtype == '0':
+                # The type needs updating
+                sType = get_tuple_value(arTypeChoices, resThis.type)
+                # (1) Get the correct value
+                arType = sType.partition(':')
+                if len(arType) == 1:
+                    resThis.DCtype = get_tuple_index(arTypeChoices, sType)
+                    resThis.subtype = ''
+                else:
+                    resThis.DCtype = get_tuple_index(arDCtypeChoices, arType[0])
+                    resThis.subtype = get_tuple_index(arTypeChoices, sType)
+                iChanges += 1
+                resThis.save()
+
+        if iChanges > 0:
+            # Note the changes
+            print('Changes: ' + str(iChanges) + '\n')
+    except:
+        print("Unexpected error:", sys.exc_info()[0])
 
   
 
@@ -267,6 +344,13 @@ class Resource(models.Model):
     # (1;c)
     type = models.CharField("Type of this resource", choices=build_choice_list(RESOURCE_TYPE), max_length=5,
                             help_text=get_help(RESOURCE_TYPE))
+    # NEW: type >> [DCtype] + [subtype]
+    # (1;c) DCtype
+    DCtype = models.CharField("DCtype of this resource", choices=build_choice_list(RESOURCE_TYPE, 'before'), max_length=5,
+                            help_text=get_help(RESOURCE_DCTYPE), default='0')
+    # (0-1) subtype
+    subtype = models.CharField("Subtype of this resource (optional)", choices=build_choice_list(RESOURCE_TYPE), max_length=5,
+                            help_text=get_help(RESOURCE_SUBTYPE), blank=True, null=True)
     # (0-n)
     annotation = models.ManyToManyField(Annotation)
     # (0-1)
@@ -280,6 +364,9 @@ class Resource(models.Model):
             idt,
             choice_english(RESOURCE_TYPE, self.type),
             m2m_combi(self.annotation))
+
+
+
 
 
 class TemporalProvenance(models.Model):

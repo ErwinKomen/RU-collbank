@@ -6,6 +6,7 @@ from django.views.generic.detail import DetailView
 from django.shortcuts import get_object_or_404, render
 from django.http import HttpRequest, HttpResponse
 from django.template import RequestContext, loader
+import json
 from datetime import datetime
 from xml.dom import minidom
 import xml.etree.ElementTree as ET
@@ -124,6 +125,27 @@ def reload_collbank(request=None):
     if request != None:
         from django.shortcuts import render_to_response
         return render_to_response('collection/index.html')
+
+def subtype_choices(request):
+    """Provide the list of subtypes valid for the chosen DCtype-number"""
+
+    # Get the DCtype ID value that has been selected by the user (delivered by JavaScript)
+    sDCtype_id = request.GET.get('dctype_type')
+    # Get the 'choices' for the DCtype from which we need to find the selected DCtype
+    arDCtype = Resource._meta.get_field('DCtype').choices
+    arThis = [item for item in arDCtype if item[0] == sDCtype_id]
+    # Sanity check
+    if len(arThis) > 0:
+        # get the STRING belonging to the first tuple that satisfies the ID condition
+        sDCtype = arThis[0][1]
+        # Get the choices of subtype for this DCtype
+        choices = build_choice_list(RESOURCE_TYPE, 'after', sDCtype)
+        sOut = json.dumps(list(choices))
+    else:
+        # rturn empty-handedly
+        sOut = "{}"
+    return HttpResponse(sOut)
+
 
 
 class CollectionDetailView(DetailView):

@@ -17,6 +17,7 @@ from django.core.urlresolvers import reverse, reverse_lazy
 from django.views.generic.base import RedirectView
 from django.contrib import admin
 from collbank.settings import APP_PREFIX
+from collbank.collection.models import one_time_startup
 admin.autodiscover()
 
 # set admin site names
@@ -40,6 +41,7 @@ urlpatterns = [
     url(r'^overview$', collbank.collection.views.overview, name='overview'),
     # url(r'^output/(?P<collection_id>[0-9]+)/$', CollectionDetailView.as_view(), name='output'),
     url(r'^output/(?P<pk>\d+)', CollectionDetailView.as_view(), name='output'),
+    url(r'^subtype_choices/', collbank.collection.views.subtype_choices),
 
     url(r'^login/$',
         django.contrib.auth.views.login,
@@ -66,3 +68,5 @@ urlpatterns = [
     # Uncomment the next line to enable the admin:
     url(r'^admin/', include(admin.site.urls), name='admin_base'),
 ]
+
+one_time_startup()
