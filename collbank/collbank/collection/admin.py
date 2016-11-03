@@ -402,6 +402,22 @@ class AnnotationInline(admin.TabularInline):
         return super(AnnotationInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
 
 
+class ModalityInline(admin.TabularInline):
+    model = Resource.modality.through
+    extra = 0
+
+    def get_formset(self, request, obj = None, **kwargs):
+        # Get the currently selected Collection object's identifier
+        self.instance = obj
+        return super(ModalityInline, self).get_formset(request, obj, **kwargs)
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        # Look for the field's name as it is used in the Collection model
+        if db_field.name == "modality":
+            kwargs['queryset'] = Modality.objects.filter(resource__exact=self.instance)
+        return super(ModalityInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
+
+
 class ResourceSizeInline(admin.TabularInline):
     model = Resource.totalSize.through
     extra = 0
@@ -429,7 +445,7 @@ class ResourceForm(forms.ModelForm):
 
     class Meta:
         model = Resource
-        fields = ['type', 'DCtype', 'subtype', 'media', 'description']
+        fields = ['type', 'DCtype', 'subtype', 'modality', 'media', 'description']
         widgets = { 'subtype': forms.Select }
 
 
@@ -437,8 +453,8 @@ class ResourceAdmin(admin.ModelAdmin):
     form = ResourceForm
 
     # filter_horizontal = ('annotation','totalSize',)
-    inlines = [AnnotationInline, ResourceSizeInline]
-    fieldsets = ( ('Searchable', {'fields': ('DCtype', 'subtype', 'media',)}),
+    inlines = [AnnotationInline, ResourceSizeInline, ModalityInline]
+    fieldsets = ( ('Searchable', {'fields': ('DCtype', 'subtype', 'modality', 'media',)}),
                   ('Other',      {'fields': ('description', )}),
                 )
     current_dctype = ''
@@ -465,16 +481,12 @@ class ResourceAdmin(admin.ModelAdmin):
           # Try to convert this into an integer index
           if itemThis.DCtype != '' and itemThis.DCtype != '-':
               # Get the DCtype list
-              # arDCtype = Resource._meta.get_field('DCtype').choices
               arDCtype = db_field.choices
               # Get the element from this list
               sDCtype = get_tuple_value(arDCtype, itemThis.DCtype)
               self.current_dctype = sDCtype
               self.form.current_dctype = sDCtype
 
-              #tupDCtype = arDCtype[int(itemThis.DCtype)]
-              #self.current_dctype = tupDCtype[1]
-              #self.form.current_dctype = tupDCtype[1]
       elif db_field.name == "subtype":
           if itemThis.subtype != '' and itemThis.subtype != '-':
               # Note which DCtype was selected
@@ -1426,6 +1438,7 @@ admin.site.register(Annotation, AnnotationAdmin)
 admin.site.register(AnnotationFormat, AnnotationFormatAdmin)
 admin.site.register(MediaFormat)
 admin.site.register(Media, MediaAdmin)
+admin.site.register(Modality)
 # -- Genre
 admin.site.register(Genre)
 # -- provenance

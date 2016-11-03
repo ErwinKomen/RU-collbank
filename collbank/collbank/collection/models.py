@@ -15,6 +15,7 @@ MAX_IDENTIFIER_LEN = 10
 RESOURCE_TYPE = "resource.type"
 RESOURCE_DCTYPE = "resource.DCtype"
 RESOURCE_SUBTYPE = "resource.subtype"
+RESOURCE_MODALITY = "resource.modality"
 GENRE_NAME = "genre.name"
 MEDIA_FORMAT = "resource.media.format"
 PROVENANCE_TEMPORALPROVENANCE = 'provenance.temporalprovenance'
@@ -336,6 +337,27 @@ class TotalSize(models.Model):
         return "[{}] {} {}".format(idt,self.size,self.sizeUnit)
 
 
+class Modality(models.Model):
+    """Modality of a resource"""
+
+    name = models.CharField("Resource modality", choices=build_choice_list(RESOURCE_MODALITY), max_length=5, 
+                            help_text=get_help(RESOURCE_MODALITY), default='0')
+
+    def __str__(self):
+        qs = self.resource_set
+        if qs == None:
+            idt = ""
+        else:
+            lst = qs.all()
+            if len(lst) == 0:
+                idt = "(empty)"
+            else:
+                qs = lst[0].collection_set
+                idt = m2m_identifier(qs)
+
+        return "[{}] {}".format(idt,self.name)
+
+
 class Resource(models.Model):
     """A resource is part of a collection"""
 
@@ -351,6 +373,8 @@ class Resource(models.Model):
     # (0-1) subtype
     subtype = models.CharField("Subtype of this resource (optional)", choices=build_choice_list(RESOURCE_TYPE), max_length=5,
                             help_text=get_help(RESOURCE_SUBTYPE), blank=True, null=True)
+    # (0-n) modality
+    modality = models.ManyToManyField(Modality)
     # (0-n)
     annotation = models.ManyToManyField(Annotation)
     # (0-1)
