@@ -74,6 +74,7 @@
     <Content Include="collbank\collection\static\collection\scripts\bootstrap.min.js" />
     <None Include="collbank\collection\static\collection\scripts\jquery.validate-vsdoc.js" />
     <None Include="collbank\collection\static\collection\scripts\jquery-1.10.2.intellisense.js" />
+    <Content Include="collbank\collection\static\collection\scripts\collbank.js" />
     <Content Include="collbank\collection\static\collection\scripts\jquery-1.10.2.js" />
     <Content Include="collbank\collection\static\collection\scripts\jquery-1.10.2.min.js" />
     <Content Include="collbank\collection\static\collection\scripts\jquery-1.10.2.min.map" />

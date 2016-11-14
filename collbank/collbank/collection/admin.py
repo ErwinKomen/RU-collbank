@@ -402,6 +402,23 @@ class AnnotationInline(admin.TabularInline):
         return super(AnnotationInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
 
 
+class ModalityForm(forms.ModelForm):
+
+    class Meta:
+        model = Modality
+        fields = ['name']
+
+    def __init__(self, *args, **kwargs):
+        super(ModalityForm, self).__init__(*args, **kwargs)
+        if (self.fields != None):
+            self.fields['name'].choices = build_choice_list(RESOURCE_MODALITY)
+            self.fields['name'].help_text = get_help(RESOURCE_MODALITY)
+
+            
+class ModalityAdmin(admin.ModelAdmin):
+    form = ModalityForm
+
+
 class ModalityInline(admin.TabularInline):
     model = Resource.modality.through
     extra = 0
@@ -608,7 +625,7 @@ class LanguageForm(forms.ModelForm):
 
 class LanguageAdmin(admin.ModelAdmin):
     form = LanguageForm
-
+    
 
 class AccessAvailabilityForm(forms.ModelForm):
 
@@ -1438,7 +1455,7 @@ admin.site.register(Annotation, AnnotationAdmin)
 admin.site.register(AnnotationFormat, AnnotationFormatAdmin)
 admin.site.register(MediaFormat)
 admin.site.register(Media, MediaAdmin)
-admin.site.register(Modality)
+admin.site.register(Modality, ModalityAdmin)
 # -- Genre
 admin.site.register(Genre)
 # -- provenance
