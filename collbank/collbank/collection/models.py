@@ -202,9 +202,9 @@ def one_time_startup():
 
         if iChanges > 0:
             # Note the changes
-            print('Changes: ' + str(iChanges) + '\n')
+            print('OneTimeStartup Changes: ' + str(iChanges) + '\n',file=sys.stderr)
     except:
-        print("Unexpected error:", sys.exc_info()[0])
+        print("OneTimeStartup Unexpected error:", sys.exc_info()[0],file=sys.stderr)
 
   
 

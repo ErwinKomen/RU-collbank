@@ -244,7 +244,7 @@ class CollectionAdmin(admin.ModelAdmin):
                 )
     actions = ['export_xml']
     formfield_overrides = {
-        models.TextField: {'widget': Textarea(attrs={'rows': 1})},
+        models.TextField: {'widget': Textarea(attrs={'rows': 1, 'cols':30})},
         }
 
     def get_formset(self, request, obj = None, **kwargs):
@@ -471,9 +471,12 @@ class ResourceAdmin(admin.ModelAdmin):
 
     # filter_horizontal = ('annotation','totalSize',)
     inlines = [AnnotationInline, ResourceSizeInline, ModalityInline]
-    fieldsets = ( ('Searchable', {'fields': ('DCtype', 'subtype', 'modality', 'media',)}),
+    fieldsets = ( ('Searchable', {'fields': ('DCtype', 'subtype', 'media',)}),
                   ('Other',      {'fields': ('description', )}),
                 )
+    formfield_overrides = {
+        models.TextField: {'widget': Textarea(attrs={'rows': 2, 'cols':30})},
+        }
     current_dctype = ''
 
     class Media:
@@ -496,7 +499,7 @@ class ResourceAdmin(admin.ModelAdmin):
           # Take note of the selected DC type
           # self.current_dctype = str(itemThis.DCtype)
           # Try to convert this into an integer index
-          if itemThis.DCtype != '' and itemThis.DCtype != '-':
+          if itemThis != None and itemThis.DCtype != None and  itemThis.DCtype != '' and itemThis.DCtype != '-':
               # Get the DCtype list
               arDCtype = db_field.choices
               # Get the element from this list
@@ -968,7 +971,7 @@ class AccessAdmin(admin.ModelAdmin):
                   ('Other',      {'fields': ('name', 'nonCommercialUsageOnly', 'ISBN', 'ISLRN', )}),
                 )
     formfield_overrides = {
-        models.TextField: {'widget': Textarea(attrs={'rows': 1})},
+        models.TextField: {'widget': Textarea(attrs={'rows': 1, 'cols':30})},
         }
 
     def get_form(self, request, obj=None, **kwargs):
@@ -1047,7 +1050,7 @@ class ResourceCreatorAdmin(admin.ModelAdmin):
                   ('Other',      {'fields': ()}),
                 )
     formfield_overrides = {
-        models.TextField: {'widget': Textarea(attrs={'rows': 1})},
+        models.TextField: {'widget': Textarea(attrs={'rows': 1, 'cols':30})},
         }
 
 
@@ -1190,7 +1193,7 @@ class ProjectAdmin(admin.ModelAdmin):
                   ('Other',      {'fields': ('title', 'URL',)}),
                 )
     formfield_overrides = {
-        models.TextField: {'widget': Textarea(attrs={'rows': 1})},
+        models.TextField: {'widget': Textarea(attrs={'rows': 1, 'cols':30})},
         }
 
     def get_form(self, request, obj=None, **kwargs):
@@ -1381,7 +1384,7 @@ class SpeechCorpusAdmin(admin.ModelAdmin):
                                              'speakerDemographics')}),
                 )
     formfield_overrides = {
-        models.TextField: {'widget': Textarea(attrs={'rows': 1})},
+        models.TextField: {'widget': Textarea(attrs={'rows': 1, 'cols':30})},
         }
 
     #def get_form(self, request, obj=None, **kwargs):
