@@ -380,9 +380,9 @@ class Resource(models.Model):
     subtype = models.CharField("Subtype of this resource (optional)", choices=build_choice_list(RESOURCE_TYPE), max_length=5,
                             help_text=get_help(RESOURCE_SUBTYPE), blank=True, null=True)
     # (0-n) modality
-    modality = models.ManyToManyField(Modality)
+    modality = models.ManyToManyField(Modality, blank=True)
     # (0-n)
-    annotation = models.ManyToManyField(Annotation)
+    annotation = models.ManyToManyField(Annotation, blank=True)
     # (0-1)
     media = models.ForeignKey(Media, blank=True, null=True)
     # == totalSize (0-n)

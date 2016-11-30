@@ -40,7 +40,8 @@ class TitleInline(admin.TabularInline):
         formfield = super(TitleInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
         # Look for the field's name as it is used in the Collection model
         if db_field.name == "title":
-            formfield.queryset = Title.objects.filter(collection__exact=self.instance)
+            query = Q(collection=None) | Q(collection=self.instance)
+            formfield.queryset = Title.objects.filter(query)
         return formfield
 
 
@@ -57,7 +58,8 @@ class OwnerInline(admin.TabularInline):
         formfield = super(OwnerInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
         # Look for the field's name as it is used in the Collection model
         if db_field.name == "owner":
-            formfield.queryset = Owner.objects.filter(collection__exact=self.instance)
+            query = Q(collection=None) | Q(collection=self.instance)
+            formfield.queryset = Owner.objects.filter(query)
         return formfield
 
 
@@ -74,7 +76,9 @@ class ResourceInline(admin.TabularInline):
         formfield = super(ResourceInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
         # Look for the field's name as it is used in the Collection model
         if db_field.name == "resource":
-            formfield.queryset = Resource.objects.filter(collection__exact=self.instance)
+            query = Q(collection=None) | Q(collection=self.instance)
+            formfield.queryset = Resource.objects.filter(query)
+            # formfield.queryset = Resource.objects.filter(collection__exact=self.instance)
         return formfield
 
 
@@ -91,7 +95,8 @@ class GenreInline(admin.TabularInline):
         formfield = super(GenreInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
         # Look for the field's name as it is used in the Collection model
         if db_field.name == "genre":
-            formfield.queryset = Genre.objects.filter(collection__exact=self.instance)
+            query = Q(collection=None) | Q(collection=self.instance)
+            formfield.queryset = Genre.objects.filter(query)
         return formfield
 
 
@@ -108,7 +113,8 @@ class ProvenanceInline(admin.TabularInline):
         formfield = super(ProvenanceInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
         # Look for the field's name as it is used in the Collection model
         if db_field.name == "provenance":
-            formfield.queryset = Provenance.objects.filter(collection__exact=self.instance)
+            query = Q(collection=None) | Q(collection=self.instance)
+            formfield.queryset = Provenance.objects.filter(query)
         return formfield
 
 
@@ -125,7 +131,8 @@ class LanguageInline(admin.TabularInline):
         formfield = super(LanguageInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
         # Look for the field's name as it is used in the Collection model
         if db_field.name == "language":
-            formfield.queryset = Language.objects.filter(collection__exact=self.instance)
+            query = Q(collection=None) | Q(collection=self.instance)
+            formfield.queryset = Language.objects.filter(query)
         return formfield
 
 
@@ -142,7 +149,8 @@ class LanguageDisorderInline(admin.TabularInline):
         formfield = super(LanguageDisorderInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
         # Look for the field's name as it is used in the Collection model
         if db_field.name == "languagedisorder":
-            formfield.queryset = LanguageDisorder.objects.filter(collection__exact=self.instance)
+            query = Q(collection=None) | Q(collection=self.instance)
+            formfield.queryset = LanguageDisorder.objects.filter(query)
         return formfield
 
 
@@ -159,7 +167,8 @@ class RelationInline(admin.TabularInline):
         formfield = super(RelationInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
         # Look for the field's name as it is used in the Collection model
         if db_field.name == "relation":
-            formfield.queryset = Relation.objects.filter(collection__exact=self.instance)
+            query = Q(collection=None) | Q(collection=self.instance)
+            formfield.queryset = Relation.objects.filter(query)
         return formfield
 
 
@@ -176,7 +185,8 @@ class CollectionDomainInline(admin.TabularInline):
         formfield = super(CollectionDomainInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
         # Look for the field's name as it is used in the Collection model
         if db_field.name == "domain":
-            formfield.queryset = Domain.objects.filter(collection__exact=self.instance)
+            query = Q(collection=None) | Q(collection=self.instance)
+            formfield.queryset = Domain.objects.filter(query)
         return formfield
 
 
@@ -193,7 +203,8 @@ class TotalSizeInline(admin.TabularInline):
         formfield = super(TotalSizeInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
         # Look for the field's name as it is used in the Collection model
         if db_field.name == "totalsize":
-            formfield.queryset = TotalSize.objects.filter(collection__exact=self.instance)
+            query = Q(collection=None) | Q(collection=self.instance)
+            formfield.queryset = TotalSize.objects.filter(query)
         return formfield
 
 
@@ -210,7 +221,8 @@ class PidInline(admin.TabularInline):
         formfield = super(PidInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
         # Look for the field's name as it is used in the Collection model
         if db_field.name == "pid":
-            formfield.queryset = PID.objects.filter(collection__exact=self.instance)
+            query = Q(collection=None) | Q(collection=self.instance)
+            formfield.queryset = PID.objects.filter(query)
         return formfield
 
 
@@ -227,7 +239,8 @@ class ResourceCreatorInline(admin.TabularInline):
         formfield = super(ResourceCreatorInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
         # Look for the field's name as it is used in the Collection model
         if db_field.name == "resourcecreator":
-            formfield.queryset = ResourceCreator.objects.filter(collection__exact=self.instance)
+            query = Q(collection=None) | Q(collection=self.instance)
+            formfield.queryset = ResourceCreator.objects.filter(query)
         return formfield
 
 
@@ -244,7 +257,8 @@ class ProjectInline(admin.TabularInline):
         formfield = super(ProjectInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
         # Look for the field's name as it is used in the Collection model
         if db_field.name == "project":
-            formfield.queryset = Project.objects.filter(collection__exact=self.instance)
+            query = Q(collection=None) | Q(collection=self.instance)
+            formfield.queryset = Project.objects.filter(query)
         return formfield
 
 
@@ -330,6 +344,8 @@ class CollectionAdmin(admin.ModelAdmin):
             formfield.queryset = WrittenCorpus.objects.filter(query)
         elif db_field.name == "speechCorpus" and collThis:                                # ForeignKey
             formfield.queryset = SpeechCorpus.objects.filter(query)
+        #elif db_field.name == "resource" and collThis:                                    # ManyToMany
+        #    formfield.queryset = Resource.objects.filter(query)
         return formfield
 
 
@@ -346,7 +362,8 @@ class GeographicProvenanceInline(admin.TabularInline):
         formfield = super(GeographicProvenanceInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
         # Look for the field's name as it is used in the Collection model
         if db_field.name == "geographicprovenance":
-            formfield.queryset = GeographicProvenance.objects.filter(provenance__exact=self.instance)
+           query = Q(provenance=None) | Q(provenance=self.instance)
+           formfield.queryset = GeographicProvenance.objects.filter(query)
         return formfield
 
 
@@ -392,7 +409,8 @@ class PlaceInline(admin.TabularInline):
         formfield = super(PlaceInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
         # Look for the field's name as it is used in the Collection model
         if db_field.name == "place":
-            formfield.queryset = City.objects.filter(geographicprovenance__exact=self.instance)
+            query = Q(geographicprovenance=None) | Q(geographicprovenance=self.instance)
+            formfield.queryset = City.objects.filter(query)
         return formfield
 
 
@@ -416,7 +434,8 @@ class AnnotationInline(admin.TabularInline):
         formfield = super(AnnotationInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
         # Look for the field's name as it is used in the Collection model
         if db_field.name == "annotation":
-            formfield.queryset = Annotation.objects.filter(resource__exact=self.instance)
+            query = Q(resource=None) | Q(resource=self.instance)
+            formfield.queryset = Annotation.objects.filter(query)
         return formfield
 
 
@@ -450,7 +469,8 @@ class ModalityInline(admin.TabularInline):
         formfield = super(ModalityInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
         # Look for the field's name as it is used in the Collection model
         if db_field.name == "modality":
-            formfield.queryset = Modality.objects.filter(resource__exact=self.instance)
+            query = Q(resource=None) | Q(resource=self.instance)
+            formfield.queryset = Modality.objects.filter(query)
         return formfield
 
 
@@ -468,7 +488,8 @@ class ResourceSizeInline(admin.TabularInline):
         formfield = super(ResourceSizeInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
         # Look for the field's name as it is used in the Collection model
         if db_field.name == "totalsize":
-            formfield.queryset = TotalSize.objects.filter(resource__exact=self.instance)
+            query = Q(resource=None) | Q(resource=self.instance)
+            formfield.queryset = TotalSize.objects.filter(query)
         return formfield
 
 
@@ -478,8 +499,8 @@ class ResourceForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(ResourceForm, self).__init__(*args, **kwargs)
-        if (self.fields != None):
-            self.fields['subtype'].choices = build_choice_list(RESOURCE_TYPE, 'after', self.current_dctype)
+        #if (self.fields != None):
+        #    self.fields['subtype'].choices = build_choice_list(RESOURCE_TYPE, 'after', self.current_dctype)
 
     class Meta:
         model = Resource
@@ -530,11 +551,13 @@ class ResourceAdmin(admin.ModelAdmin):
               sDCtype = get_tuple_value(arDCtype, itemThis.DCtype)
               self.current_dctype = sDCtype
               self.form.current_dctype = sDCtype
+          # formfield.queryset = Media.objects.filter(query)
 
       elif db_field.name == "subtype":
-          if itemThis.subtype != '' and itemThis.subtype != '-':
+          if itemThis != None and itemThis.subtype != '' and itemThis.subtype != '-':
               # Note which DCtype was selected
               db_field.choices = build_choice_list(RESOURCE_TYPE, 'after', self.current_dctype)
+          # formfield.queryset = Media.objects.filter(query)
       return formfield
 
 
@@ -551,7 +574,8 @@ class AnnotationFormatInline(admin.TabularInline):
         formfield = super(AnnotationFormatInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
         # Look for the field's name as it is used in the Collection model
         if db_field.name == "annotationformat":
-            formfield.queryset = AnnotationFormat.objects.filter(annotation__exact=self.instance)
+            query = Q(annotation=None) | Q(annotation=self.instance)
+            formfield.queryset = AnnotationFormat.objects.filter(query)
         return formfield
 
 
@@ -628,7 +652,8 @@ class FormatInline(admin.TabularInline):
         formfield = super(FormatInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
         # Look for the field's name as it is used in the Collection model
         if db_field.name == "mediaformat":
-            formfield.queryset = MediaFormat.objects.filter(media__exact=self.instance)
+            query = Q(media=None) | Q(media=self.instance)
+            formfield.queryset = MediaFormat.objects.filter(query)
         return formfield
 
 
@@ -749,7 +774,8 @@ class DomainInline(admin.TabularInline):
         formfield = super(DomainInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
         # Look for the field's name as it is used in the Collection model
         if db_field.name == "domaindescription":
-            formfield.queryset = DomainDescription.objects.filter(domain__exact=self.instance)
+            query = Q(domain=None) | Q(domain=self.instance)
+            formfield.queryset = DomainDescription.objects.filter(query)
         return formfield
 
 
@@ -774,7 +800,8 @@ class LingualityTypeInline(admin.TabularInline):
         formfield = super(LingualityTypeInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
         # Look for the field's name as it is used in the Linguality model
         if db_field.name == "lingualitytype":
-            formfield.queryset = LingualityType.objects.filter(linguality__exact=self.instance)
+            query = Q(linguality=None) | Q(linguality=self.instance)
+            formfield.queryset = LingualityType.objects.filter(query)
         return formfield
 
 
@@ -791,7 +818,8 @@ class LingualityNativenessInline(admin.TabularInline):
         formfield = super(LingualityNativenessInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
         # Look for the field's name as it is used in the Linguality model
         if db_field.name == "lingualitynativeness":
-            formfield.queryset = LingualityNativeness.objects.filter(linguality__exact=self.instance)
+            query = Q(linguality=None) | Q(linguality=self.instance)
+            formfield.queryset = LingualityNativeness.objects.filter(query)
         return formfield
 
 
@@ -808,7 +836,8 @@ class LingualityAgeGroupInline(admin.TabularInline):
         formfield = super(LingualityAgeGroupInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
         # Look for the field's name as it is used in the Linguality model
         if db_field.name == "lingualityagegroup":
-            formfield.queryset = LingualityAgeGroup.objects.filter(linguality__exact=self.instance)
+            query = Q(linguality=None) | Q(linguality=self.instance)
+            formfield.queryset = LingualityAgeGroup.objects.filter(query)
         return formfield
 
 
@@ -825,7 +854,8 @@ class LingualityStatusInline(admin.TabularInline):
         formfield = super(LingualityStatusInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
         # Look for the field's name as it is used in the Linguality model
         if db_field.name == "lingualitystatus":
-            formfield.queryset = LingualityStatus.objects.filter(linguality__exact=self.instance)
+            query = Q(linguality=None) | Q(linguality=self.instance)
+            formfield.queryset = LingualityStatus.objects.filter(query)
         return formfield
 
 
@@ -842,7 +872,8 @@ class LingualityVariantInline(admin.TabularInline):
         formfield = super(LingualityVariantInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
         # Look for the field's name as it is used in the Linguality model
         if db_field.name == "lingualityvariant":
-            formfield.queryset = LingualityVariant.objects.filter(linguality__exact=self.instance)
+            query = Q(linguality=None) | Q(linguality=self.instance)
+            formfield.queryset = LingualityVariant.objects.filter(query)
         return formfield
 
 
@@ -859,7 +890,8 @@ class MultiLingualityTypeInline(admin.TabularInline):
         formfield = super(MultiLingualityTypeInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
         # Look for the field's name as it is used in the Linguality model
         if db_field.name == "multilingualitytype":
-            formfield.queryset = MultilingualityType.objects.filter(linguality__exact=self.instance)
+            query = Q(linguality=None) | Q(linguality=self.instance)
+            formfield.queryset = MultilingualityType.objects.filter(query)
         return formfield
 
 
@@ -920,7 +952,8 @@ class AccessAvailabilityInline(admin.TabularInline):
         formfield = super(AccessAvailabilityInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
         # Look for the field's name as it is used in the Access model
         if db_field.name == "accessavailability":
-            formfield.queryset = AccessAvailability.objects.filter(access__exact=self.instance)
+            query = Q(access=None) | Q(access=self.instance)
+            formfield.queryset = AccessAvailability.objects.filter(query)
         return formfield
 
 
@@ -937,7 +970,8 @@ class AccessLicenseNameInline(admin.TabularInline):
         formfield = super(AccessLicenseNameInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
         # Look for the field's name as it is used in the Access model
         if db_field.name == "licensename":
-            formfield.queryset = LicenseName.objects.filter(access__exact=self.instance)
+            query = Q(access=None) | Q(access=self.instance)
+            formfield.queryset = LicenseName.objects.filter(query)
         return formfield
 
 
@@ -954,7 +988,8 @@ class AccessLicenseUrlInline(admin.TabularInline):
         formfield = super(AccessLicenseUrlInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
         # Look for the field's name as it is used in the Access model
         if db_field.name == "licenseurl":
-            formfield.queryset = LicenseUrl.objects.filter(access__exact=self.instance)
+            query = Q(access=None) | Q(access=self.instance)
+            formfield.queryset = LicenseUrl.objects.filter(query)
         return formfield
 
 
@@ -971,7 +1006,8 @@ class AccessContactInline(admin.TabularInline):
         formfield = super(AccessContactInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
         # Look for the field's name as it is used in the Access model
         if db_field.name == "accesscontact":
-            formfield.queryset = AccessContact.objects.filter(access__exact=self.instance)
+            query = Q(access=None) | Q(access=self.instance)
+            formfield.queryset = AccessContact.objects.filter(query)
         return formfield
 
 
@@ -988,7 +1024,8 @@ class AccessWebsiteInline(admin.TabularInline):
         formfield = super(AccessWebsiteInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
         # Look for the field's name as it is used in the Access model
         if db_field.name == "accesswebsite":
-            formfield.queryset = AccessWebsite.objects.filter(access__exact=self.instance)
+            query = Q(access=None) | Q(access=self.instance)
+            formfield.queryset = AccessWebsite.objects.filter(query)
         return formfield
 
 
@@ -1005,7 +1042,8 @@ class AccessMediumInline(admin.TabularInline):
         formfield = super(AccessMediumInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
         # Look for the field's name as it is used in the Access model
         if db_field.name == "accessmedium":
-            formfield.queryset = AccessMedium.objects.filter(access__exact=self.instance)
+            query = Q(access=None) | Q(access=self.instance)
+            formfield.queryset = AccessMedium.objects.filter(query)
         return formfield
 
 
@@ -1073,7 +1111,8 @@ class ResourceOrganizationInline(admin.TabularInline):
         formfield = super(ResourceOrganizationInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
         # Look for the field's name as it is used in the ResourceCreator model
         if db_field.name == "organization":
-            formfield.queryset = Organization.objects.filter(resourcecreator__exact=self.instance)
+            query = Q(resourcecreator=None) | Q(resourcecreator=self.instance)
+            formfield.queryset = Organization.objects.filter(query)
         return formfield
 
 
@@ -1090,7 +1129,8 @@ class ResourcePersonInline(admin.TabularInline):
         formfield = super(ResourcePersonInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
         # Look for the field's name as it is used in the ResourceCreator model
         if db_field.name == "person":
-            formfield.queryset = Person.objects.filter(resourcecreator__exact=self.instance)
+            query = Q(resourcecreator=None) | Q(resourcecreator=self.instance)
+            formfield.queryset = Person.objects.filter(query)
         return formfield
 
 
@@ -1118,7 +1158,8 @@ class DocumentationTypeInline(admin.TabularInline):
         formfield = super(DocumentationTypeInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
         # Look for the field's name as it is used in the Documentation model
         if db_field.name == "documentationtype" :
-            formfield.queryset = DocumentationType.objects.filter(documentation__exact=self.instance)
+            query = Q(documentation=None) | Q(documentation=self.instance)
+            formfield.queryset = DocumentationType.objects.filter(query)
         return formfield
 
 
@@ -1135,7 +1176,8 @@ class DocumentationFileInline(admin.TabularInline):
         formfield = super(DocumentationFileInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
         # Look for the field's name as it is used in the Documentation model
         if db_field.name == "documentationfile" :
-            formfield.queryset = DocumentationFile.objects.filter(documentation__exact=self.instance)
+            query = Q(documentation=None) | Q(documentation=self.instance)
+            formfield.queryset = DocumentationFile.objects.filter(query)
         return formfield
 
 
@@ -1152,7 +1194,8 @@ class DocumentationUrlInline(admin.TabularInline):
         formfield = super(DocumentationUrlInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
         # Look for the field's name as it is used in the Documentation model
         if db_field.name == "documentationurl":
-            formfield.queryset = DocumentationUrl.objects.filter(documentation__exact=self.instance)
+            query = Q(documentation=None) | Q(documentation=self.instance)
+            formfield.queryset = DocumentationUrl.objects.filter(query)
         return formfield
 
 
@@ -1169,7 +1212,8 @@ class DocumentationLanguageInline(admin.TabularInline):
         formfield = super(DocumentationLanguageInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
         # Look for the field's name as it is used in the Documentation model
         if db_field.name== "language":
-            formfield.queryset = Language.objects.filter(documentation__exact=self.instance)
+            query = Q(documentation=None) | Q(documentation=self.instance)
+            formfield.queryset = Language.objects.filter(query)
         return formfield
 
 
@@ -1195,7 +1239,8 @@ class ValidationMethodInline(admin.TabularInline):
         formfield = super(ValidationMethodInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
         # Look for the field's name as it is used in the Validation model
         if db_field.name == "validationmethod":
-            formfield.queryset = ValidationMethod.objects.filter(validation__exact=self.instance)
+            query = Q(validation=None) | Q(validation=self.instance)
+            formfield.queryset = ValidationMethod.objects.filter(query)
         return formfield
 
 
@@ -1240,7 +1285,8 @@ class ProjectFunderInline(admin.TabularInline):
         formfield = super(ProjectFunderInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
         # Look for the field's name as it is used in the Project model
         if db_field.name == "projectfunder":
-            formfield.queryset = ProjectFunder.objects.filter(project__exact=self.instance)
+            query = Q(project=None) | Q(project=self.instance)
+            formfield.queryset = ProjectFunder.objects.filter(query)
         return formfield
 
 
@@ -1284,7 +1330,8 @@ class SpeechCorpusRecEnvInline(admin.TabularInline):
         formfield = super(SpeechCorpusRecEnvInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
         # Look for the field's name as it is used in the SpeechCorpus model
         if db_field.name == "recordingenvironment":
-            formfield.queryset = RecordingEnvironment.objects.filter(speechcorpus__exact=self.instance)
+            query = Q(speechcorpus=None) | Q(speechcorpus=self.instance)
+            formfield.queryset = RecordingEnvironment.objects.filter(query)
         return formfield
 
 
@@ -1301,7 +1348,8 @@ class SpeechCorpusChannelInline(admin.TabularInline):
         formfield = super(SpeechCorpusChannelInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
         # Look for the field's name as it is used in the SpeechCorpus model
         if db_field.name == "channel":
-            formfield.queryset = Channel.objects.filter(speechcorpus__exact=self.instance)
+            query = Q(speechcorpus=None) | Q(speechcorpus=self.instance)
+            formfield.queryset = Channel.objects.filter(query)
         return formfield
 
 
@@ -1318,7 +1366,8 @@ class SpeechCorpusConvTypeInline(admin.TabularInline):
         formfield = super(SpeechCorpusConvTypeInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
         # Look for the field's name as it is used in the SpeechCorpus model
         if db_field.name == "conversationaltype":
-            formfield.queryset = ConversationalType.objects.filter(speechcorpus__exact=self.instance)
+            query = Q(speechcorpus=None) | Q(speechcorpus=self.instance)
+            formfield.queryset = ConversationalType.objects.filter(query)
         return formfield
 
 
@@ -1335,7 +1384,8 @@ class SpeechCorpusRecCondInline(admin.TabularInline):
         formfield = super(SpeechCorpusRecCondInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
         # Look for the field's name as it is used in the SpeechCorpus model
         if db_field.name == "recordingcondition":
-            formfield.queryset = RecordingCondition.objects.filter(speechcorpus__exact=self.instance)
+            query = Q(speechcorpus=None) | Q(speechcorpus=self.instance)
+            formfield.queryset = RecordingCondition.objects.filter(query)
         return formfield
 
 
@@ -1352,7 +1402,8 @@ class SpeechCorpusSocContextInline(admin.TabularInline):
         formfield = super(SpeechCorpusSocContextInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
         # Look for the field's name as it is used in the SpeechCorpus model
         if db_field.name == "socialcontext":
-            formfield.queryset = SocialContext.objects.filter(speechcorpus__exact=self.instance)
+            query = Q(speechcorpus=None) | Q(speechcorpus=self.instance)
+            formfield.queryset = SocialContext.objects.filter(query)
         return formfield
 
 
@@ -1369,7 +1420,8 @@ class SpeechCorpusPlanTypeInline(admin.TabularInline):
         formfield = super(SpeechCorpusPlanTypeInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
         # Look for the field's name as it is used in the SpeechCorpus model
         if db_field.name == "planningtype":
-            formfield.queryset = PlanningType.objects.filter(speechcorpus__exact=self.instance)
+            query = Q(speechcorpus=None) | Q(speechcorpus=self.instance)
+            formfield.queryset = PlanningType.objects.filter(query)
         return formfield
 
 
@@ -1386,7 +1438,8 @@ class SpeechCorpusInteractivityInline(admin.TabularInline):
         formfield = super(SpeechCorpusInteractivityInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
         # Look for the field's name as it is used in the SpeechCorpus model
         if db_field.name == "interactivity":
-            formfield.queryset = Interactivity.objects.filter(speechcorpus__exact=self.instance)
+            query = Q(speechcorpus=None) | Q(speechcorpus=self.instance)
+            formfield.queryset = Interactivity.objects.filter(query)
         return formfield
 
 
@@ -1403,7 +1456,8 @@ class SpeechCorpusInvolvementInline(admin.TabularInline):
         formfield = super(SpeechCorpusInvolvementInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
         # Look for the field's name as it is used in the SpeechCorpus model
         if db_field.name == "involvement":
-            formfield.queryset = Involvement.objects.filter(speechcorpus__exact=self.instance)
+            query = Q(speechcorpus=None) | Q(speechcorpus=self.instance)
+            formfield.queryset = Involvement.objects.filter(query)
         return formfield
 
 
@@ -1420,7 +1474,8 @@ class SpeechCorpusAudienceInline(admin.TabularInline):
         formfield = super(SpeechCorpusAudienceInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
         # Look for the field's name as it is used in the SpeechCorpus model
         if db_field.name == "audience":
-            formfield.queryset = Audience.objects.filter(speechcorpus__exact=self.instance)
+            query = Q(speechcorpus=None) | Q(speechcorpus=self.instance)
+            formfield.queryset = Audience.objects.filter(query)
         return formfield
 
 
@@ -1437,7 +1492,8 @@ class SpeechCorpusAudioFormatInline(admin.TabularInline):
         formfield = super(SpeechCorpusAudioFormatInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
         # Look for the field's name as it is used in the SpeechCorpus model
         if db_field.name == "audioformat":
-            formfield.queryset = AudioFormat.objects.filter(speechcorpus__exact=self.instance)
+            query = Q(speechcorpus=None) | Q(speechcorpus=self.instance)
+            formfield.queryset = AudioFormat.objects.filter(query)
         return formfield
 
 
