@@ -334,6 +334,12 @@ class TotalSize(models.Model):
 
     def __str__(self):
         idt = m2m_identifier(self.collection_set)
+        if idt == '':
+            lst = self.resource_set.all()
+            if len(lst) == 0:
+                idt = "(empty)"
+            else:
+                idt = m2m_identifier(lst[0].collection_set)
         return "[{}] {} {}".format(idt,self.size,self.sizeUnit)
 
 
@@ -354,8 +360,8 @@ class Modality(models.Model):
             else:
                 qs = lst[0].collection_set
                 idt = m2m_identifier(qs)
-
-        return "[{}] {}".format(idt,self.name)
+        return "[{}] {}".format(idt,choice_english(RESOURCE_MODALITY, self.name))
+        #  return choice_english(RESOURCE_MODALITY, self.name)
 
 
 class Resource(models.Model):
