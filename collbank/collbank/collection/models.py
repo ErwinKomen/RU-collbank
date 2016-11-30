@@ -519,7 +519,7 @@ class MultilingualityType(models.Model):
 class Linguality(models.Model):
     """Linguality information on this collection"""
 
-    name = models.TextField("Name of this linguality type", default='-')
+    # name = models.TextField("Name of this linguality type", default='-')
     # lingualityType (0-n,c)
     lingualityType = models.ManyToManyField(LingualityType, blank=True)
     # lingualityNativeness (0-n;c)

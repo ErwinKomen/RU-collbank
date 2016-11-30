@@ -869,7 +869,7 @@ class LingualityAdmin(admin.ModelAdmin):
                LingualityAgeGroupInline, LingualityStatusInline,
                LingualityVariantInline, MultiLingualityTypeInline]
     fieldsets = ( ('Searchable', {'fields': () }),
-                  ('Other',      {'fields': ('name',) }),
+                  ('Other',      {'fields': () }),
                 )
 
     def get_form(self, request, obj=None, **kwargs):
