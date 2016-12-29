@@ -331,7 +331,10 @@ class CollectionAdmin(admin.ModelAdmin):
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         collThis = self.instance
         formfield = super(CollectionAdmin, self).formfield_for_foreignkey(db_field, **kwargs)
-        query = Q(collection=None) | Q(collection=collThis.pk)
+        if collThis == None:
+            query = Q(collection=None)
+        else:
+            query = Q(collection=None) | Q(collection=collThis.pk)
         if db_field.name == "linguality" and collThis:                                    # ForeignKey
             formfield.queryset = Linguality.objects.filter(query)
         elif db_field.name == "access" and collThis:                                      # ForeignKey
