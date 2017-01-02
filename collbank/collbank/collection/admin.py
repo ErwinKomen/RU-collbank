@@ -269,6 +269,9 @@ class CollectionAdmin(admin.ModelAdmin):
     fieldsets = ( ('Searchable', {'fields': ('identifier', 'linguality',  'speechCorpus',)}),
                   ('Other',      {'fields': ('description', 'clarinCentre', 'access', 'version', 'documentation', 'validation', 'writtenCorpus',)}),
                 )
+
+    list_display = ['id', 'do_identifier', 'get_title']
+    search_fields = ['identifier', 'title__name']
     actions = ['export_xml']
     formfield_overrides = {
         models.TextField: {'widget': Textarea(attrs={'rows': 1, 'cols':30})},

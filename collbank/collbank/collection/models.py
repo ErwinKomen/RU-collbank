@@ -133,6 +133,15 @@ def m2m_combi(items):
         sBack = '-'.join([str(thing) for thing in qs])
     return sBack
 
+def m2m_namelist(items):
+    if items == None:
+        sBack = ''
+    else:
+        qs = items.all()
+        sBack = ' || '.join([thing.name for thing in qs])
+    return sBack
+
+
 def m2m_identifier(items):
     if items == None:
         sBack = ''
@@ -1062,8 +1071,22 @@ class Collection(models.Model):
     # speechCorpus (0-1)
     speechCorpus = models.ForeignKey(SpeechCorpus, blank=True, null=True)
 
+    class Meta:
+        ordering = ['identifier']
+
     def get_identifier(self):
         return self.identifier.value_to_string()
+
+    def do_identifier(self):
+        return str(self.identifier)
+    do_identifier.short_description = "Identifier"
+    do_identifier.admin_order_field = 'identifier'
+
+    def get_title(self):
+        return m2m_namelist(self.title)
+    get_title.short_description = 'Titles (not sortable)'
+    # This works, but sorting on a non-f
+    # get_title.admin_order_field = 'identifier'
 
     def __str__(self):
         return m2m_combi(self.title)
