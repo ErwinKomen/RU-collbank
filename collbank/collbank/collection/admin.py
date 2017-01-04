@@ -27,6 +27,11 @@ def remove_from_fieldsets(fieldsets, fields):
 
                 break
 
+def init_choices(obj, sFieldName, sSet):
+    if (obj.fields != None and sFieldName in obj.fields):
+        obj.fields[sFieldName].choices = build_choice_list(sSet)
+        obj.fields[sFieldName].help_text = get_help(sSet)
+
 class TitleInline(admin.TabularInline):
     model = Collection.title.through
     extra = 0
@@ -80,6 +85,21 @@ class ResourceInline(admin.TabularInline):
             formfield.queryset = Resource.objects.filter(query)
             # formfield.queryset = Resource.objects.filter(collection__exact=self.instance)
         return formfield
+
+
+class GenreForm(forms.ModelForm):
+
+    class Meta:
+        model = Genre
+        fields = ['name']
+
+    def __init__(self, *args, **kwargs):
+        super(GenreForm, self).__init__(*args, **kwargs)
+        init_choices(self, 'name', GENRE_NAME)
+
+
+class GenreAdmin(admin.ModelAdmin):
+    form = GenreForm
 
 
 class GenreInline(admin.TabularInline):
@@ -270,12 +290,15 @@ class CollectionAdmin(admin.ModelAdmin):
                   ('Other',      {'fields': ('description', 'clarinCentre', 'access', 'version', 'documentation', 'validation', 'writtenCorpus',)}),
                 )
 
-    list_display = ['id', 'do_identifier', 'get_title']
-    search_fields = ['identifier', 'title__name']
+    list_display = ['id', 'do_identifier', 'get_title', 'description']
+    search_fields = ['identifier', 'title__name', 'description']
     actions = ['export_xml']
     formfield_overrides = {
         models.TextField: {'widget': Textarea(attrs={'rows': 1, 'cols':30})},
         }
+
+    def get_ordering_field_columns():
+        return self.ordering
 
     def get_formset(self, request, obj = None, **kwargs):
         self.instance = obj
@@ -420,11 +443,23 @@ class PlaceInline(admin.TabularInline):
         return formfield
 
 
+class GeographicProvenanceForm(forms.ModelForm):
+
+    class Meta:
+        model = GeographicProvenance
+        fields = ['country', 'place']
+
+    def __init__(self, *args, **kwargs):
+        super(GeographicProvenanceForm, self).__init__(*args, **kwargs)
+        init_choices(self, 'country', PROVENANCE_GEOGRAPHIC_COUNTRY)
+
+
 class GeographicProvenanceAdmin(admin.ModelAdmin):
     inlines = [PlaceInline]
     fieldsets = ( ('Searchable', {'fields': ()}),
                   ('Other',      {'fields': ('country', )}),
                 )
+    form = GeographicProvenanceForm
 
 
 class AnnotationInline(admin.TabularInline):
@@ -453,9 +488,7 @@ class ModalityForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(ModalityForm, self).__init__(*args, **kwargs)
-        if (self.fields != None):
-            self.fields['name'].choices = build_choice_list(RESOURCE_MODALITY)
-            self.fields['name'].help_text = get_help(RESOURCE_MODALITY)
+        init_choices(self, 'name', RESOURCE_MODALITY)
 
             
 class ModalityAdmin(admin.ModelAdmin):
@@ -478,6 +511,112 @@ class ModalityInline(admin.TabularInline):
             query = Q(resource=None) | Q(resource=self.instance)
             formfield.queryset = Modality.objects.filter(query)
         return formfield
+
+
+class CharacterEncodingForm(forms.ModelForm):
+
+    class Meta:
+        model = CharacterEncoding
+        fields = ['name']
+
+    def __init__(self, *args, **kwargs):
+        super(CharacterEncodingForm, self).__init__(*args, **kwargs)
+        init_choices(self, 'name', CHARACTERENCODING)
+
+
+class CharacterEncodingAdmin(admin.ModelAdmin):
+    form = CharacterEncodingForm
+
+
+class LingualityTypeForm(forms.ModelForm):
+
+    class Meta:
+        model = LingualityType
+        fields = ['name']
+
+    def __init__(self, *args, **kwargs):
+        super(LingualityTypeForm, self).__init__(*args, **kwargs)
+        init_choices(self, 'name', LINGUALITY_TYPE)
+
+
+class LingualityTypeAdmin(admin.ModelAdmin):
+    form = LingualityTypeForm
+
+
+class LingualityNativenessForm(forms.ModelForm):
+
+    class Meta:
+        model = LingualityNativeness
+        fields = ['name']
+
+    def __init__(self, *args, **kwargs):
+        super(LingualityNativenessForm, self).__init__(*args, **kwargs)
+        init_choices(self, 'name', LINGUALITY_NATIVENESS)
+
+
+class LingualityNativenessAdmin(admin.ModelAdmin):
+    form = LingualityNativenessForm
+
+
+class LingualityAgeGroupForm(forms.ModelForm):
+
+    class Meta:
+        model = LingualityAgeGroup
+        fields = ['name']
+
+    def __init__(self, *args, **kwargs):
+        super(LingualityAgeGroupForm, self).__init__(*args, **kwargs)
+        init_choices(self, 'name', LINGUALITY_AGEGROUP)
+
+
+class LingualityAgeGroupAdmin(admin.ModelAdmin):
+    form = LingualityAgeGroupForm
+
+
+class LingualityStatusForm(forms.ModelForm):
+
+    class Meta:
+        model = LingualityStatus
+        fields = ['name']
+
+    def __init__(self, *args, **kwargs):
+        super(LingualityStatusForm, self).__init__(*args, **kwargs)
+        init_choices(self, 'name', LINGUALITY_STATUS)
+
+
+class LingualityStatusAdmin(admin.ModelAdmin):
+    form = LingualityStatusForm
+
+
+class LingualityVariantForm(forms.ModelForm):
+
+    class Meta:
+        model = LingualityVariant
+        fields = ['name']
+
+    def __init__(self, *args, **kwargs):
+        super(LingualityVariantForm, self).__init__(*args, **kwargs)
+        init_choices(self, 'name', LINGUALITY_VARIANT)
+
+
+class LingualityVariantAdmin(admin.ModelAdmin):
+    form = LingualityVariantForm
+
+
+class MultilingualityTypeForm(forms.ModelForm):
+
+    class Meta:
+        model = MultilingualityType
+        fields = ['name']
+
+    def __init__(self, *args, **kwargs):
+        super(MultilingualityTypeForm, self).__init__(*args, **kwargs)
+        init_choices(self, 'name', LINGUALITY_MULTI)
+
+
+class MultilingualityTypeAdmin(admin.ModelAdmin):
+    form = MultilingualityTypeForm
+
 
 
 
@@ -591,8 +730,7 @@ class AnnotationFormatForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(AnnotationFormatForm, self).__init__(*args, **kwargs)
-        if (self.fields != None):
-            self.fields['name'].choices = build_choice_list(ANNOTATION_FORMAT)
+        init_choices(self, 'name', ANNOTATION_FORMAT)
 
 
 class AnnotationFormatAdmin(admin.ModelAdmin):
@@ -605,9 +743,8 @@ class AnnotationForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(AnnotationForm, self).__init__(*args, **kwargs)
-        if (self.fields != None):
-            self.fields['type'].choices = build_choice_list(ANNOTATION_TYPE)
-            self.fields['mode'].choices = build_choice_list(ANNOTATION_MODE)
+        init_choices(self, 'type', ANNOTATION_TYPE)
+        init_choices(self, 'mode', ANNOTATION_MODE)
 
 
 class AnnotationAdmin(admin.ModelAdmin):
@@ -661,6 +798,21 @@ class FormatInline(admin.TabularInline):
             query = Q(media=None) | Q(media=self.instance)
             formfield.queryset = MediaFormat.objects.filter(query)
         return formfield
+
+
+class MediaFormatForm(forms.ModelForm):
+
+    class Meta:
+        model = MediaFormat
+        fields = ['name']
+
+    def __init__(self, *args, **kwargs):
+        super(MediaFormatForm, self).__init__(*args, **kwargs)
+        init_choices(self, 'name', MEDIA_FORMAT)
+
+
+class MediaFormatAdmin(admin.ModelAdmin):
+    form = MediaFormatForm
 
 
 class MediaAdmin(admin.ModelAdmin):
@@ -942,8 +1094,7 @@ class LingualityAdmin(admin.ModelAdmin):
         if db_field.name == "lingualityType":
             formfield.queryset = MultilingualityType.objects.filter(linguality__exact=self.instance)
         return formfield
-
-
+    
 
 class AccessAvailabilityInline(admin.TabularInline):
     model = Access.availability.through
@@ -1467,6 +1618,126 @@ class SpeechCorpusInvolvementInline(admin.TabularInline):
         return formfield
 
 
+class AudienceForm(forms.ModelForm):
+
+    class Meta:
+        model = Audience
+        fields = ['name']
+
+    def __init__(self, *args, **kwargs):
+        super(AudienceForm, self).__init__(*args, **kwargs)
+        init_choices(self, '', SPEECHCORPUS_AUDIENCE)
+
+
+class AudienceAdmin(admin.ModelAdmin):
+    form = AudienceForm
+
+
+class ChannelForm(forms.ModelForm):
+
+    class Meta:
+        model = Channel
+        fields = ['name']
+
+    def __init__(self, *args, **kwargs):
+        super(ChannelForm, self).__init__(*args, **kwargs)
+        init_choices(self, '', SPEECHCORPUS_CHANNEL)
+
+
+class ChannelAdmin(admin.ModelAdmin):
+    form = ChannelForm
+
+
+class ConversationalTypeForm(forms.ModelForm):
+
+    class Meta:
+        model = ConversationalType
+        fields = ['name']
+
+    def __init__(self, *args, **kwargs):
+        super(ConversationalTypeForm, self).__init__(*args, **kwargs)
+        init_choices(self, '', SPEECHCORPUS_CONVERSATIONALTYPE)
+
+
+class ConversationalTypeAdmin(admin.ModelAdmin):
+    form = ConversationalTypeForm
+
+
+class InteractivityForm(forms.ModelForm):
+
+    class Meta:
+        model = Interactivity
+        fields = ['name']
+
+    def __init__(self, *args, **kwargs):
+        super(InteractivityForm, self).__init__(*args, **kwargs)
+        init_choices(self, '', SPEECHCORPUS_INTERACTIVITY)
+
+
+class InteractivityAdmin(admin.ModelAdmin):
+    form = InteractivityForm
+
+
+class InvolvementForm(forms.ModelForm):
+
+    class Meta:
+        model = Involvement
+        fields = ['name']
+
+    def __init__(self, *args, **kwargs):
+        super(InvolvementForm, self).__init__(*args, **kwargs)
+        init_choices(self, '', SPEECHCORPUS_INVOLVEMENT)
+
+
+class InvolvementAdmin(admin.ModelAdmin):
+    form = InvolvementForm
+
+
+class PlanningTypeForm(forms.ModelForm):
+
+    class Meta:
+        model = PlanningType
+        fields = ['name']
+
+    def __init__(self, *args, **kwargs):
+        super(PlanningTypeForm, self).__init__(*args, **kwargs)
+        init_choices(self, '', SPEECHCORPUS_PLANNINGTYPE)
+
+
+class PlanningTypeAdmin(admin.ModelAdmin):
+    form = PlanningTypeForm
+
+
+class RecordingEnvironmentForm(forms.ModelForm):
+
+    class Meta:
+        model = RecordingEnvironment
+        fields = ['name']
+
+    def __init__(self, *args, **kwargs):
+        super(RecordingEnvironmentForm, self).__init__(*args, **kwargs)
+        init_choices(self, '', SPEECHCORPUS_RECORDINGENVIRONMENT)
+
+
+class RecordingEnvironmentAdmin(admin.ModelAdmin):
+    form = RecordingEnvironmentForm
+
+
+class SocialContextForm(forms.ModelForm):
+
+    class Meta:
+        model = SocialContext
+        fields = ['name']
+
+    def __init__(self, *args, **kwargs):
+        super(SocialContextForm, self).__init__(*args, **kwargs)
+        init_choices(self, '', SPEECHCORPUS_SOCIALCONTEXT)
+
+
+class SocialContextAdmin(admin.ModelAdmin):
+    form = SocialContextForm
+
+
 class SpeechCorpusAudienceInline(admin.TabularInline):
     model = SpeechCorpus.audience.through
     extra = 0
@@ -1519,6 +1790,36 @@ class SpeechCorpusAdmin(admin.ModelAdmin):
         }
 
 
+class ValidationMethodForm(forms.ModelForm):
+
+    class Meta:
+        model = ValidationMethod
+        fields = ['name']
+
+    def __init__(self, *args, **kwargs):
+        super(ValidationMethodForm, self).__init__(*args, **kwargs)
+        init_choices(self, '', VALIDATION_METHOD)
+
+
+class ValidationMethodAdmin(admin.ModelAdmin):
+    form = ValidationMethodForm
+
+
+class ValidationTypeForm(forms.ModelForm):
+
+    class Meta:
+        model = ValidationType
+        fields = ['name']
+
+    def __init__(self, *args, **kwargs):
+        super(ValidationTypeForm, self).__init__(*args, **kwargs)
+        init_choices(self, '', VALIDATION_TYPE)
+
+
+class ValidationTypeAdmin(admin.ModelAdmin):
+    form = ValidationTypeForm
+
+
 class FieldChoiceAdmin(admin.ModelAdmin):
     readonly_fields=['machine_value']
     list_display = ['english_name','dutch_name','machine_value','field']
@@ -1555,23 +1856,24 @@ admin.site.register(Owner)
 admin.site.register(Resource, ResourceAdmin)
 admin.site.register(Annotation, AnnotationAdmin)
 admin.site.register(AnnotationFormat, AnnotationFormatAdmin)
-admin.site.register(MediaFormat)
+admin.site.register(MediaFormat, MediaFormatAdmin)
 admin.site.register(Media, MediaAdmin)
 admin.site.register(Modality, ModalityAdmin)
 # -- Genre
-admin.site.register(Genre)
+admin.site.register(Genre, GenreAdmin)
 # -- provenance
 admin.site.register(Provenance, ProvenanceAdmin)
 admin.site.register(TemporalProvenance, TemporalProvenanceAdmin)
 admin.site.register(GeographicProvenance, GeographicProvenanceAdmin)
 admin.site.register(City)
+
 # -- linguality
-admin.site.register(LingualityType)
-admin.site.register(LingualityNativeness)
-admin.site.register(LingualityAgeGroup)
-admin.site.register(LingualityStatus)
-admin.site.register(LingualityVariant)
-admin.site.register(MultilingualityType)
+admin.site.register(LingualityType, LingualityTypeAdmin)
+admin.site.register(LingualityNativeness, LingualityNativenessAdmin)
+admin.site.register(LingualityAgeGroup, LingualityAgeGroupAdmin)
+admin.site.register(LingualityStatus, LingualityStatusAdmin)
+admin.site.register(LingualityVariant, LingualityVariantAdmin)
+admin.site.register(MultilingualityType, MultilingualityTypeAdmin)
 admin.site.register(Linguality, LingualityAdmin)
 # -- language
 admin.site.register(Language, LanguageAdmin)
@@ -1605,8 +1907,8 @@ admin.site.register(DocumentationType, DocumentationTypeAdmin)
 admin.site.register(DocumentationUrl)
 admin.site.register(Documentation, DocumentationAdmin)
 # -- validation
-admin.site.register(ValidationType)
-admin.site.register(ValidationMethod)
+admin.site.register(ValidationType, ValidationTypeAdmin)
+admin.site.register(ValidationMethod, ValidationMethodAdmin)
 admin.site.register(Validation, ValidationAdmin)
 # -- project
 admin.site.register(ProjectFunder)
@@ -1614,18 +1916,18 @@ admin.site.register(ProjectUrl)
 admin.site.register(Project, ProjectAdmin)
 
 # -- writtencorpus
-admin.site.register(CharacterEncoding)
+admin.site.register(CharacterEncoding, CharacterEncodingAdmin)
 admin.site.register(WrittenCorpus)
 # -- speechcorpus
-admin.site.register(RecordingEnvironment)
-admin.site.register(Channel)
-admin.site.register(ConversationalType)
+admin.site.register(RecordingEnvironment, RecordingEnvironmentAdmin)
+admin.site.register(Channel, ChannelAdmin)
+admin.site.register(ConversationalType, ConversationalTypeAdmin)
 admin.site.register(RecordingCondition)
-admin.site.register(SocialContext)
-admin.site.register(PlanningType)
-admin.site.register(Interactivity)
-admin.site.register(Involvement)
-admin.site.register(Audience)
+admin.site.register(SocialContext, SocialContextAdmin)
+admin.site.register(PlanningType, PlanningTypeAdmin)
+admin.site.register(Interactivity, InteractivityAdmin)
+admin.site.register(Involvement, InvolvementAdmin)
+admin.site.register(Audience, AudienceAdmin)
 admin.site.register(AudioFormat, AudioFormatAdmin)
 admin.site.register(SpeechCorpus, SpeechCorpusAdmin)
 

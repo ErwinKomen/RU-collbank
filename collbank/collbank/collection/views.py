@@ -3,9 +3,12 @@ Definition of views.
 """
 
 from django.views.generic.detail import DetailView
+from django.views.generic import ListView
 from django.shortcuts import get_object_or_404, render
 from django.http import HttpRequest, HttpResponse
 from django.template import RequestContext, loader
+from django.contrib.admin.templatetags.admin_list import result_headers
+from django.db.models.functions import Lower
 import json
 from datetime import datetime
 from xml.dom import minidom
@@ -13,6 +16,7 @@ import xml.etree.ElementTree as ET
 import os
 from collbank.collection.models import *
 from collbank.settings import OUTPUT_XML, APP_PREFIX, WSGI_FILE
+from collbank.collection.admin import CollectionAdmin
 
 # General help functions
 def add_element(optionality, col_this, el_name, crp, **kwargs):
@@ -42,7 +46,23 @@ def add_element(optionality, col_this, el_name, crp, **kwargs):
             col_value = str(col_value)
             title_element.text = col_value
 
+#def add_header_sorting(field_name, bSorted):
+#    oHeader = {}
+#    # Copied from admin_list.py // result_headers
+#    th_classes = ['sortable', 'column-{}'.format(field_name)]
+#    order_type = ''
+#    new_order_type = 'asc'
+#    sort_priority = 0
+#    sorted = False
+#    # Is this one sorted by default?
+#    if bSorted:
+#        sorted = True
+#        order_type = ordering_field_columns.get(i).lower()
+#        sort_priority = list(ordering_field_columns).index(i) + 1
+#        th_classes.append('sorted %sending' % order_type)
+#        new_order_type = {'asc': 'desc', 'desc': 'asc'}[order_type]
 
+#    return oHeader
 
 
 def home(request):
@@ -91,16 +111,16 @@ def output(request, collection_id):
     return HttpResponse(open(file_name).read(), content_type='text/xml')
 
 
-def overview(request):
-    """Give an overview of the collections that have been entered"""
+#def overview(request):
+#    """Give an overview of the collections that have been entered"""
 
-    overview_list = Collection.objects.order_by('identifier')
-    template = loader.get_template('collection/overview.html')
-    context = {
-        'overview_list': overview_list,
-        'app_prefix': APP_PREFIX,
-    }
-    return HttpResponse(template.render(context, request))
+#    overview_list = Collection.objects.order_by('identifier')
+#    template = loader.get_template('collection/overview.html')
+#    context = {
+#        'overview_list':    overview_list,
+#        'app_prefix':       APP_PREFIX,
+#    }
+#    return HttpResponse(template.render(context, request))
 
 def reload_collbank(request=None):
     """Clear the Apache cache by touching the WSGI file"""
@@ -146,6 +166,51 @@ def subtype_choices(request):
         sOut = "{}"
     return HttpResponse(sOut)
 
+class CollectionListView(ListView):
+    """Listview of collections"""
+
+    model = Collection
+    context_object_name='collection'
+    template_name = 'collection/overview.html'
+    order_cols = ['id', 'identifier']
+    order_heads = [{'name': 'id', 'order': 'o=1', 'type': 'int'}, 
+                   {'name': 'Identifier', 'order': 'o=2', 'type': 'str'}, 
+                   {'name': 'Description', 'order': '', 'type': 'str'}]
+
+    def render_to_response(self, context, **response_kwargs):
+        return super(CollectionListView, self).render_to_response(context, **response_kwargs)
+
+    def get_context_data(self, **kwargs):
+        # Get the base implementation first of the context
+        context = super(CollectionListView, self).get_context_data(**kwargs)
+        # Add our own elements
+        context['app_prefix'] = APP_PREFIX
+        # Figure out which ordering to take
+        order = 'identifier'
+        initial = self.request.GET
+        bAscending = True
+        sType = 'str'
+        if 'o' in initial:
+            iOrderCol = int(initial['o'])
+            bAscending = (iOrderCol>0)
+            iOrderCol = abs(iOrderCol)
+            order = self.order_cols[iOrderCol-1]
+            sType = self.order_heads[iOrderCol-1]['type']
+            if bAscending:
+                self.order_heads[iOrderCol-1]['order'] = 'o=-{}'.format(iOrderCol)
+            else:
+                # order = "-" + order
+                self.order_heads[iOrderCol-1]['order'] = 'o={}'.format(iOrderCol)
+        if sType == 'str':
+            qs = Collection.objects.order_by(Lower(order))
+        else:
+            qs = Collection.objects.order_by(order)
+        if not bAscending:
+            qs = qs.reverse()
+        context['overview_list'] = qs
+        context['order_heads'] = self.order_heads
+        # Return the calculated context
+        return context
 
 
 class CollectionDetailView(DetailView):
@@ -156,13 +221,17 @@ class CollectionDetailView(DetailView):
     context_object_name = 'collection'
 
     def render_to_response(self, context, **response_kwargs):
-        if self.export_xml:
+        """Check if downloading is needed or not"""
+        sType = self.request.GET.get('submit_type', '')
+        if sType == 'xml':
+            return self.download_to_xml(context)
+        elif self.export_xml:
             return self.render_to_xml(context)
         else:
             return super(CollectionDetailView, self).render_to_response(context, **response_kwargs)
-
-
-    def render_to_xml(self, context):
+        
+    def convert_to_xml(self, context):
+        """Convert the 'collection' object from the context to XML"""
 
         # Define the top-level of the xml output
         topattributes = {'xmlns:xsi':"http://www.w3.org/2001/XMLSchema-instance",
@@ -366,14 +435,35 @@ class CollectionDetailView(DetailView):
             add_element("0-n", speech_this, "audience", speech, foreign="name", fieldchoice=SPEECHCORPUS_AUDIENCE)
 
 
-        # Export this object to XML
-        # xmlstr = minidom.parseString(ET.tostring(top,'utf-8')).toprettyxml(indent="  ")
+        # Convert the XML to a string
         xmlstr = minidom.parseString(ET.tostring(top,encoding='utf-8')).toprettyxml(indent="  ")
+
+        # Return this string
+        return xmlstr
+
+    def render_to_xml(self, context):
+        """Return the XML representation in the browser"""
+
+        # Save the to a standard location
+        sXmlStr = self.convert_to_xml(context)
+        sFileName = OUTPUT_XML
         sFullPath = ""
-        with open(OUTPUT_XML, encoding="utf-8", mode="w+") as f:
+        with open(sFileName, encoding="utf-8", mode="w+") as f:
             sFullPath = f.name
-            f.write(xmlstr)
-
-
-        # TODO: make the file available for download and provide a link to it
+            f.write(sXmlStr)
+        # Show result from that location
         return HttpResponse(open(sFullPath, encoding="utf-8").read(), content_type='text/xml')
+
+    def download_to_xml(self, context):
+        """Make the XML representation of this collection downloadable"""
+
+        # Construct a file name based on the identifier
+        sFileName = 'collection-{}'.format(getattr(context['collection'], 'identifier'))
+        # Get the XML of this collection
+        sXmlStr = self.convert_to_xml(context)
+        # Create the HttpResponse object with the appropriate CSV header.
+        response = HttpResponse(sXmlStr, content_type='text/xml')
+        response['Content-Disposition'] = 'attachment; filename="'+sFileName+'.xml"'
+
+        # Return the result
+        return response

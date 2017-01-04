@@ -1,5 +1,4 @@
 ﻿<!DOCTYPE html>
-
 <html lang="en" xmlns="http://www.w3.org/1999/xhtml">
 <head>
     <meta charset="utf-8" />
@@ -20,13 +19,30 @@
     {% if overview_list %}
       <h3>Available collections</h3>
       <table class="table table-hover">
-        <thead><tr><th>id</th><th>Identifier</th><th>Description</th></tr></thead>
+        <thead>
+          <tr>
+            {% for hd in order_heads %}
+            <th class="sortable" scope="col">
+              <div class="text">
+                {% if hd.order == "" %}{{hd.name}}
+                {% else %}
+                <a href=?{{hd.order}}>{{hd.name}}</a>
+                {% endif %}
+              </div>
+            </th>
+            {% endfor %}
+          </tr>
+          <tr>
+          </tr>
+        </thead>
         <tbody>
         {% for coll in overview_list %}
           <tr>
-            <td> {{ coll.id }} </td>
-            <td><a href="/{{app_prefix }}output/{{coll.pk}}">{{ coll.identifier}}</a></td>
-            <td>{{coll.description}}</td>
+            <td>{{coll.id}}</td>
+            <td><a href="/{{app_prefix }}admin/collection/collection/{{coll.pk}}/change/">{{coll.identifier}}</a></td>
+            <td>{{coll.description}}
+              <span class="coll-xml"><a class="btn btn-success btn-xs" href="/{{app_prefix }}output/{{coll.pk}}?submit_type=xml">xml</a></span>
+            </td>
           </tr>
         {% endfor %}
         </tbody>

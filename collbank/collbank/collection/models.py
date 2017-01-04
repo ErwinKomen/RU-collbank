@@ -141,7 +141,6 @@ def m2m_namelist(items):
         sBack = ' || '.join([thing.name for thing in qs])
     return sBack
 
-
 def m2m_identifier(items):
     if items == None:
         sBack = ''
@@ -290,6 +289,9 @@ class MediaFormat(models.Model):
 class Media(models.Model):
     """Medium on which this resource exists"""
 
+    class Meta:
+        verbose_name_plural = "Media's"
+
     # format (0-n; c)
     format = models.ManyToManyField(MediaFormat, blank=True)
 
@@ -354,6 +356,9 @@ class TotalSize(models.Model):
 
 class Modality(models.Model):
     """Modality of a resource"""
+
+    class Meta:
+        verbose_name_plural = "Modalities"
 
     name = models.CharField("Resource modality", choices=build_choice_list(RESOURCE_MODALITY), max_length=5, 
                             help_text=get_help(RESOURCE_MODALITY), default='0')
@@ -423,6 +428,9 @@ class TemporalProvenance(models.Model):
 class City(models.Model):
     """Name of a city"""
 
+    class Meta:
+        verbose_name_plural = "Cities"
+
     name = models.CharField("Place (city)", max_length=80, help_text=get_help(PROVENANCE_GEOGRAPHIC_PLACE))
 
     def __str__(self):
@@ -483,6 +491,9 @@ class LingualityType(models.Model):
 class LingualityNativeness(models.Model):
     """Nativeness type of linguality"""
 
+    class Meta:
+        verbose_name_plural = "Linguality Nativeness Types"
+
     name = models.CharField("Nativeness type of linguality", choices=build_choice_list(LINGUALITY_NATIVENESS), max_length=5, help_text=get_help(LINGUALITY_NATIVENESS), default='0')
 
     def __str__(self):
@@ -500,6 +511,9 @@ class LingualityAgeGroup(models.Model):
 
 class LingualityStatus(models.Model):
     """Status of linguality"""
+
+    class Meta:
+        verbose_name_plural = "Linguality statuses"
 
     name = models.CharField("Status of linguality", choices=build_choice_list(LINGUALITY_STATUS), max_length=5, help_text=get_help(LINGUALITY_STATUS), default='0')
 
@@ -527,6 +541,9 @@ class MultilingualityType(models.Model):
 
 class Linguality(models.Model):
     """Linguality information on this collection"""
+
+    class Meta:
+        verbose_name_plural = "Lingualities"
 
     # name = models.TextField("Name of this linguality type", default='-')
     # lingualityType (0-n,c)
@@ -612,6 +629,9 @@ class Domain(models.Model):
 class AccessAvailability(models.Model):
     """Access availability"""
 
+    class Meta:
+        verbose_name_plural = "Access availabilities"
+
     name = models.CharField("Access availability", choices=build_choice_list(ACCESS_AVAILABILITY), max_length=5, help_text=get_help(ACCESS_AVAILABILITY), default='0')
 
     def __str__(self):
@@ -638,6 +658,9 @@ class LicenseUrl(models.Model):
 
 class NonCommercialUsageOnly(models.Model):
     """Whether access is restricted to non-commerical usage"""
+
+    class Meta:
+        verbose_name_plural = "Non-commercial usage only types"
 
     name = models.CharField("Non-commercial usage only access", choices=build_choice_list(ACCESS_NONCOMMERCIAL ), max_length=5, help_text=get_help(ACCESS_NONCOMMERCIAL ), default='0')
 
@@ -678,6 +701,9 @@ class AccessMedium(models.Model):
 class Access(models.Model):
     """Access to the resources"""
 
+    class Meta:
+        verbose_name_plural = "Accesses"
+
     name = models.TextField("Name of this access type", default='-')
     # availability (0-n;c ) 
     availability = models.ManyToManyField(AccessAvailability, blank=True)
@@ -706,6 +732,9 @@ class Access(models.Model):
 
 class PID(models.Model):
     """Persistent identifier"""
+
+    class Meta:
+        verbose_name_plural = "PIDs"
 
     code = models.TextField("Persistent identifier of the collection", help_text=get_help('PID'))
 
@@ -870,6 +899,9 @@ class CharacterEncoding(models.Model):
 class WrittenCorpus(models.Model):
     """Written Corpus"""
 
+    class Meta:
+        verbose_name_plural = "Written corpora"
+
     # characterEncoding (0-n; c: ) 
     characterEncoding = models.ManyToManyField(CharacterEncoding, blank=True)
 
@@ -934,6 +966,9 @@ class PlanningType(models.Model):
 class Interactivity(models.Model):
     """Interactivity"""
 
+    class Meta:
+        verbose_name_plural = "Interactivities"
+
     name = models.CharField("Interactivity", choices=build_choice_list(SPEECHCORPUS_INTERACTIVITY), max_length=5, help_text=get_help(SPEECHCORPUS_INTERACTIVITY), default='0')
 
     def __str__(self):
@@ -982,6 +1017,9 @@ class AudioFormat(models.Model):
 
 class SpeechCorpus(models.Model):
     """Spoken corpus"""
+
+    class Meta:
+        verbose_name_plural = "Speech corpora"
 
     # recordingEnvironment (0-n;c)
     recordingEnvironment = models.ManyToManyField(RecordingEnvironment, blank=True)
@@ -1072,12 +1110,14 @@ class Collection(models.Model):
     speechCorpus = models.ForeignKey(SpeechCorpus, blank=True, null=True)
 
     class Meta:
+        # This defines (amongst others) the default ordering in the admin listview of Collections
         ordering = ['identifier']
 
     def get_identifier(self):
         return self.identifier.value_to_string()
 
     def do_identifier(self):
+        # This function is used in [CollectionAdmin] in list_display
         return str(self.identifier)
     do_identifier.short_description = "Identifier"
     do_identifier.admin_order_field = 'identifier'
