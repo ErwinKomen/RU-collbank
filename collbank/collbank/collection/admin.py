@@ -32,6 +32,12 @@ def init_choices(obj, sFieldName, sSet):
         obj.fields[sFieldName].choices = build_choice_list(sSet)
         obj.fields[sFieldName].help_text = get_help(sSet)
 
+def get_formfield_qs(modelThis, instanceThis, parentName):
+    qs = modelThis.objects.filter(**{parentName: instanceThis})
+    if len(qs) == 0:
+        qs = modelThis.objects.filter(**{parentName: None})
+    return qs
+
 class TitleInline(admin.TabularInline):
     model = Collection.title.through
     extra = 0
@@ -45,8 +51,9 @@ class TitleInline(admin.TabularInline):
         formfield = super(TitleInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
         # Look for the field's name as it is used in the Collection model
         if db_field.name == "title":
-            query = Q(collection=None) | Q(collection=self.instance)
-            formfield.queryset = Title.objects.filter(query)
+            #query = Q(collection=None) | Q(collection=self.instance)
+            #formfield.queryset = Title.objects.filter(query)
+            formfield.queryset = get_formfield_qs(Title, self.instance, "collection")
         return formfield
 
 
@@ -290,6 +297,11 @@ class CollectionAdmin(admin.ModelAdmin):
                   ('Other',      {'fields': ('description', 'clarinCentre', 'access', 'version', 'documentation', 'validation', 'writtenCorpus',)}),
                 )
 
+    # FUTURE after issue #27: without speechCorpus and writtenCorpus
+    #fieldsets = ( ('Searchable', {'fields': ('identifier', 'linguality', )}),
+    #              ('Other',      {'fields': ('description', 'clarinCentre', 'access', 'version', 'documentation', 'validation', )}),
+    #            )
+
     list_display = ['id', 'do_identifier', 'get_title', 'description']
     search_fields = ['identifier', 'title__name', 'description']
     actions = ['export_xml']
@@ -508,8 +520,9 @@ class ModalityInline(admin.TabularInline):
         formfield = super(ModalityInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
         # Look for the field's name as it is used in the Collection model
         if db_field.name == "modality":
-            query = Q(resource=None) | Q(resource=self.instance)
-            formfield.queryset = Modality.objects.filter(query)
+            #query = Q(resource=self.instance)
+            #formfield.queryset = Modality.objects.filter(query)
+            formfield.queryset = get_formfield_qs(Modality, self.instance, "resource")
         return formfield
 
 
@@ -658,8 +671,8 @@ class ResourceAdmin(admin.ModelAdmin):
 
     # filter_horizontal = ('annotation','totalSize',)
     inlines = [AnnotationInline, ResourceSizeInline, ModalityInline]
-    fieldsets = ( ('Searchable', {'fields': ('DCtype', 'subtype', 'media',)}),
-                  ('Other',      {'fields': ('description', )}),
+    fieldsets = ( ('Searchable', {'fields': ('DCtype', 'subtype', 'media', 'speechCorpus',)}),
+                  ('Other',      {'fields': ('description', 'writtenCorpus',)}),
                 )
     formfield_overrides = {
         models.TextField: {'widget': Textarea(attrs={'rows': 2, 'cols':30})},
@@ -685,6 +698,12 @@ class ResourceAdmin(admin.ModelAdmin):
       if db_field.name == "media" and itemThis:                                   # ForeignKey
           query = Q(resource=None) | Q(resource=itemThis.pk)
           formfield.queryset = Media.objects.filter(query)
+      elif db_field.name == "speechCorpus" and itemThis:                          # ForeignKey
+          query = Q(resource=None) | Q(resource=itemThis.pk)
+          formfield.queryset = SpeechCorpus.objects.filter(query)
+      elif db_field.name == "writtenCorpus" and itemThis:                         # ForeignKey
+          query = Q(resource=None) | Q(resource=itemThis.pk)
+          formfield.queryset = WrittenCorpus.objects.filter(query)
       elif db_field.name == "DCtype":
           # Take note of the selected DC type
           # self.current_dctype = str(itemThis.DCtype)
@@ -703,7 +722,29 @@ class ResourceAdmin(admin.ModelAdmin):
               # Note which DCtype was selected
               db_field.choices = build_choice_list(RESOURCE_TYPE, 'after', self.current_dctype)
           # formfield.queryset = Media.objects.filter(query)
+      elif db_field.name == "modality" and itemThis:                         # M2M
+          query = Q(resource=None) | Q(resource=itemThis.pk)
+          formfield.queryset = Modality.objects.filter(query)
+      elif db_field.name == "annotation" and itemThis:                         # M2M
+          query = Q(resource=None) | Q(resource=itemThis.pk)
+          formfield.queryset = Annotation.objects.filter(query)
+      elif db_field.name == "totalSize" and itemThis:                         # M2M
+          query = Q(resource=None) | Q(resource=itemThis.pk)
+          formfield.queryset = TotalSize.objects.filter(query)
       return formfield
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        itemThis = self.instance
+        formfield = super(ResourceAdmin, self).formfield_for_foreignkey(db_field, **kwargs)
+        if itemThis == None:
+            query = Q(resource=None)
+        else:
+            query = Q(resource=None) | Q(resource=itemThis.pk)
+        if db_field.name == "speechCorpus" and itemThis:                                    # ForeignKey
+            formfield.queryset = SpeechCorpus.objects.filter(query)
+        elif db_field.name == "writtenCorpus" and itemThis:                                      # ForeignKey
+            formfield.queryset = WrittenCorpus.objects.filter(query)
+        return formfield
 
 
 class AnnotationFormatInline(admin.TabularInline):

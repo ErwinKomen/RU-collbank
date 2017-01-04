@@ -378,37 +378,6 @@ class Modality(models.Model):
         #  return choice_english(RESOURCE_MODALITY, self.name)
 
 
-class Resource(models.Model):
-    """A resource is part of a collection"""
-
-    # (0-1)
-    description = models.TextField("Description of this resource", blank=True)
-    # (1;c)
-    type = models.CharField("Type of this resource", choices=build_choice_list(RESOURCE_TYPE), max_length=5,
-                            help_text=get_help(RESOURCE_TYPE))
-    # NEW: type >> [DCtype] + [subtype]
-    # (1;c) DCtype
-    DCtype = models.CharField("DCtype of this resource", choices=build_choice_list(RESOURCE_TYPE, 'before'), max_length=5,
-                            help_text=get_help(RESOURCE_DCTYPE), default='0')
-    # (0-1) subtype
-    subtype = models.CharField("Subtype of this resource (optional)", choices=build_choice_list(RESOURCE_TYPE), max_length=5,
-                            help_text=get_help(RESOURCE_SUBTYPE), blank=True, null=True)
-    # (0-n) modality
-    modality = models.ManyToManyField(Modality, blank=True)
-    # (0-n)
-    annotation = models.ManyToManyField(Annotation, blank=True)
-    # (0-1)
-    media = models.ForeignKey(Media, blank=True, null=True)
-    # == totalSize (0-n)
-    totalSize = models.ManyToManyField(TotalSize, blank=True)
-
-    def __str__(self):
-        idt = m2m_identifier(self.collection_set)
-        return "[{}] {}: {}".format(
-            idt,
-            choice_english(RESOURCE_TYPE, self.type),
-            m2m_combi(self.annotation))
-
 
 
 
@@ -1056,6 +1025,42 @@ class SpeechCorpus(models.Model):
           m2m_combi(self.recordingEnvironment), 
           m2m_combi(self.channel),
           m2m_combi(self.conversationalType))
+
+
+class Resource(models.Model):
+    """A resource is part of a collection"""
+
+    # (0-1)
+    description = models.TextField("Description of this resource", blank=True)
+    # (1;c)
+    type = models.CharField("Type of this resource", choices=build_choice_list(RESOURCE_TYPE), max_length=5,
+                            help_text=get_help(RESOURCE_TYPE))
+    # NEW: type >> [DCtype] + [subtype]
+    # (1;c) DCtype
+    DCtype = models.CharField("DCtype of this resource", choices=build_choice_list(RESOURCE_TYPE, 'before'), max_length=5,
+                            help_text=get_help(RESOURCE_DCTYPE), default='0')
+    # (0-1) subtype
+    subtype = models.CharField("Subtype of this resource (optional)", choices=build_choice_list(RESOURCE_TYPE), max_length=5,
+                            help_text=get_help(RESOURCE_SUBTYPE), blank=True, null=True)
+    # (0-n) modality
+    modality = models.ManyToManyField(Modality, blank=True)
+    # (0-n)
+    annotation = models.ManyToManyField(Annotation, blank=True)
+    # (0-1)
+    media = models.ForeignKey(Media, blank=True, null=True)
+    # == totalSize (0-n)
+    totalSize = models.ManyToManyField(TotalSize, blank=True)
+    # == writtenCorpus (0-1)
+    writtenCorpus = models.ForeignKey(WrittenCorpus, blank=True, null=True)
+    # speechCorpus (0-1)
+    speechCorpus = models.ForeignKey(SpeechCorpus, blank=True, null=True)
+
+    def __str__(self):
+        idt = m2m_identifier(self.collection_set)
+        return "[{}] {}: {}".format(
+            idt,
+            choice_english(RESOURCE_TYPE, self.type),
+            m2m_combi(self.annotation))
 
 
 class Collection(models.Model):
