@@ -875,7 +875,10 @@ class WrittenCorpus(models.Model):
     characterEncoding = models.ManyToManyField(CharacterEncoding, blank=True)
 
     def __str__(self):
-        return m2m_combi(self.characterEncoding)
+        idt = m2m_identifier(self.collection_set)
+        return "[{}]: {}".format(
+            idt,
+            m2m_combi(self.characterEncoding))
 
 
 class RecordingEnvironment(models.Model):
@@ -1021,7 +1024,9 @@ class SpeechCorpus(models.Model):
     audioFormat = models.ManyToManyField(AudioFormat, blank=True)
 
     def __str__(self):
-        return "rec:{}, ch:{}, cnv:{}".format(
+        idt = m2m_identifier(self.collection_set)
+        return "[{}] rec:{}, ch:{}, cnv:{}".format(
+          idt,
           m2m_combi(self.recordingEnvironment), 
           m2m_combi(self.channel),
           m2m_combi(self.conversationalType))
