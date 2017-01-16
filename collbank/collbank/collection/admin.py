@@ -36,6 +36,8 @@ def get_formfield_qs(modelThis, instanceThis, parentName, bNoEmpty = False):
     qs = modelThis.objects.filter(**{parentName: instanceThis})
     if not bNoEmpty and len(qs) == 0:
         qs = modelThis.objects.filter(**{parentName: None})
+    else:
+        qs = qs | modelThis.objects.filter(**{parentName: None})
     return qs
 
 class TitleInline(admin.TabularInline):
@@ -626,6 +628,7 @@ class ResourceSizeInline(admin.TabularInline):
 class ResourceForm(forms.ModelForm):
     # model = Resource
     current_dctype = ''
+    chosen_type = '0'
 
     def __init__(self, *args, **kwargs):
         super(ResourceForm, self).__init__(*args, **kwargs)
@@ -636,6 +639,15 @@ class ResourceForm(forms.ModelForm):
         model = Resource
         fields = ['type', 'DCtype', 'subtype', 'modality', 'media', 'description']
         widgets = { 'subtype': forms.Select }
+
+    def save(self, *args, **kwargs):
+        """Override the default saving"""
+        # Set the value of 'type'
+        self.instance.type = self.chosen_type
+        # Perform the actual saving
+        return super(ResourceForm, self).save(*args, **kwargs)
+
+
 
 
 class ResourceAdmin(admin.ModelAdmin):
@@ -658,48 +670,60 @@ class ResourceAdmin(admin.ModelAdmin):
         # Get the instance before the form gets generated
         self.instance = obj
         self.coll = Collection.objects.filter(resource=obj)
+        self.chosen_type = ''
         # Use one line to explicitly pass on the current object in [obj]
         kwargs['formfield_callback'] = partial(self.formfield_for_dbfield, request=request, obj=obj)
         # Standard processing from here
         form = super(ResourceAdmin, self).get_form(request, obj, **kwargs)
+
+        #if form.is_valid(self):
+        #    form.cleaned_data["type"] = arBack["DCtype"]
+
         return form
 
     def formfield_for_dbfield(self, db_field, **kwargs):
-      itemThis = kwargs.pop('obj', None)
-      formfield = super(ResourceAdmin, self).formfield_for_dbfield(db_field, **kwargs)
-      # Adapt the queryset
-      if db_field.name == "media":
-          formfield.queryset = get_formfield_qs(Media, self.instance, "resource")
-      #elif db_field.name == "speechCorpus":                          # ForeignKey
-      #    qs = get_formfield_qs(SpeechCorpus, self.instance, "resource")
-      #    qs2 = get_formfield_qs(SpeechCorpus, self.coll, "collection")
-      #    qsCombi = SpeechCorpus.objects.filter(Q(id=qs) | Q(id=qs2)).distinct()
-      #    formfield.queryset = qsCombi
-      #elif db_field.name == "writtenCorpus":                         # ForeignKey
-      #    qs = get_formfield_qs(WrittenCorpus, self.instance, "resource")
-      #    qs2 = get_formfield_qs(WrittenCorpus, self.coll, "collection")
-      #    qsCombi = WrittenCorpus.objects.filter(Q(id=qs) | Q(id=qs2)).distinct()
-      #    formfield.queryset = qsCombi
-      elif db_field.name == "DCtype":
-          # Take note of the selected DC type
-          if itemThis != None and itemThis.DCtype != None and  itemThis.DCtype != '' and itemThis.DCtype != '-':
-              # Get the DCtype list
-              arDCtype = db_field.choices
-              # Get the element from this list
-              sDCtype = get_tuple_value(arDCtype, itemThis.DCtype)
-              self.current_dctype = sDCtype
-              self.form.current_dctype = sDCtype
-      elif db_field.name == "subtype":
-          if itemThis != None and itemThis.subtype != '' and itemThis.subtype != '-':
-              # Note which DCtype was selected
-              db_field.choices = build_choice_list(RESOURCE_TYPE, 'after', self.current_dctype)
-      elif db_field.name == "modality" :                         # M2M
-          formfield.queryset = get_formfield_qs(Modality, self.instance, "resource")
-      elif db_field.name == "annotation" :                       # M2M
-          formfield.queryset = get_formfield_qs(Annotation, self.instance, "resource")
-      elif db_field.name == "totalSize" :                        # M2M
-          formfield.queryset = get_formfield_qs(TotalSize, self.instance, "resource")
-      return formfield
+        arBack = None
+        if "request" in kwargs:
+            arBack = kwargs["request"].POST
+        itemThis = kwargs.pop('obj', None)
+        formfield = super(ResourceAdmin, self).formfield_for_dbfield(db_field, **kwargs)
+        # Adapt the queryset
+        if db_field.name == "media":
+            formfield.queryset = get_formfield_qs(Media, self.instance, "resource")
+        elif db_field.name == "type":
+            formfield.initial = self.form.chosen_type
+        elif db_field.name == "DCtype":
+            # Get the DCtype list
+            arDCtype = db_field.choices
+            # Take note of the selected DC type
+            if itemThis != None and itemThis.DCtype != None and  itemThis.DCtype != '' and itemThis.DCtype != '-':
+                # Get the element from this list
+                sDCtype = get_tuple_value(arDCtype, itemThis.DCtype)
+                self.current_dctype = sDCtype
+                self.form.current_dctype = sDCtype
+            elif "DCtype" in arBack:
+                # Get the selected element from the item
+                sDCtype = get_tuple_value(arDCtype, arBack["DCtype"])
+                self.current_dctype = sDCtype
+                self.form.current_dctype = sDCtype
+                # self.form.base_fields["type"] = arBack["DCtype"]
+                self.form.chosen_type = arBack["DCtype"]
+                formfield.initial = arBack["DCtype"]
+        elif db_field.name == "subtype":
+            if itemThis != None and itemThis.subtype != '' and itemThis.subtype != '-':
+                # Note which DCtype was selected
+                db_field.choices = build_choice_list(RESOURCE_TYPE, 'after', self.current_dctype)
+            elif "subtype" in arBack:
+                # Note which DCtype was selected
+                db_field.choices = build_choice_list(RESOURCE_TYPE, 'after', self.current_dctype)
+                formfield.initial = arBack["subtype"]
+        elif db_field.name == "modality" :                         # M2M
+            formfield.queryset = get_formfield_qs(Modality, self.instance, "resource")
+        elif db_field.name == "annotation" :                       # M2M
+            formfield.queryset = get_formfield_qs(Annotation, self.instance, "resource")
+        elif db_field.name == "totalSize" :                        # M2M
+            formfield.queryset = get_formfield_qs(TotalSize, self.instance, "resource")
+        return formfield
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         formfield = super(ResourceAdmin, self).formfield_for_foreignkey(db_field, **kwargs)
