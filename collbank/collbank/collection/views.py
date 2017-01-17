@@ -207,7 +207,7 @@ class CollectionListView(ListView):
             qs = Collection.objects.order_by(order)
         if not bAscending:
             qs = qs.reverse()
-        context['overview_list'] = qs
+        context['overview_list'] = qs.select_related()
         context['order_heads'] = self.order_heads
         # Return the calculated context
         return context
