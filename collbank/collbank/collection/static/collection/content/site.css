@@ -42,6 +42,11 @@ input[type="checkbox"].input-validation-error {
     display: none;
 }
 
+.coll-xml {
+  background-color: lightgoldenrodyellow;
+  color: darkred;
+}
+
 /* My own modifications */
 a.list-group-item-info:hover {
   background-color: lightyellow !important;
