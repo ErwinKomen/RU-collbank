@@ -33,12 +33,24 @@ def init_choices(obj, sFieldName, sSet):
         obj.fields[sFieldName].help_text = get_help(sSet)
 
 def get_formfield_qs(modelThis, instanceThis, parentName, bNoEmpty = False):
+    """Get the queryset for [modelThis]
+    
+    Restrict it to the field named [parentName] equalling [instanceThis]
+    If [bNoEmpty] is FALSE and the filtered result is empty, then get a list of all
+    instances from the [modelThis] that are not bound to [parentName] """
+
+    # Perform the initial filtering of modelThis
     qs = modelThis.objects.filter(**{parentName: instanceThis})
+    # Check if the filtered result is empty
     if not bNoEmpty and len(qs) == 0:
+        # Get all the instances of [modelThis] that are not bound to [parentName]
         qs = modelThis.objects.filter(**{parentName: None})
     else:
+        # Combine the filtered result with all unbound instances of [modelThis]
+        # Note: this makes sure that NEWLY created instances are available
         qs = qs | modelThis.objects.filter(**{parentName: None})
-    return qs
+    # Return the queryset that we have created
+    return qs.select_related()
 
 class TitleInline(admin.TabularInline):
     model = Collection.title.through
@@ -634,11 +646,20 @@ class ResourceForm(forms.ModelForm):
         super(ResourceForm, self).__init__(*args, **kwargs)
         #if (self.fields != None):
         #    self.fields['subtype'].choices = build_choice_list(RESOURCE_TYPE, 'after', self.current_dctype)
+        #if (self.fields != None):
+        #    arX = self.fields['subtype'].choices
+        #    arY = self.fields['DCtype'].choices
+        #    sChosen = self['DCtype'].data
+        #    if sChosen != None:
+        #        self.chosen_type = sChosen
+        #        # Get the element from this list
+        #        sDCtype = get_tuple_value(arY, self.chosen_type)
+        #        self.current_dctype = sDCtype
 
     class Meta:
         model = Resource
         fields = ['type', 'DCtype', 'subtype', 'modality', 'media', 'description']
-        widgets = { 'subtype': forms.Select }
+        # widgets = { 'subtype': forms.Select }
 
     def save(self, *args, **kwargs):
         """Override the default saving"""
@@ -669,15 +690,12 @@ class ResourceAdmin(admin.ModelAdmin):
     def get_form(self, request, obj=None, **kwargs):
         # Get the instance before the form gets generated
         self.instance = obj
-        self.coll = Collection.objects.filter(resource=obj)
+        self.coll = Collection.objects.filter(resource=obj).select_related()
         self.chosen_type = ''
         # Use one line to explicitly pass on the current object in [obj]
         kwargs['formfield_callback'] = partial(self.formfield_for_dbfield, request=request, obj=obj)
         # Standard processing from here
         form = super(ResourceAdmin, self).get_form(request, obj, **kwargs)
-
-        #if form.is_valid(self):
-        #    form.cleaned_data["type"] = arBack["DCtype"]
 
         return form
 
@@ -696,12 +714,7 @@ class ResourceAdmin(admin.ModelAdmin):
             # Get the DCtype list
             arDCtype = db_field.choices
             # Take note of the selected DC type
-            if itemThis != None and itemThis.DCtype != None and  itemThis.DCtype != '' and itemThis.DCtype != '-':
-                # Get the element from this list
-                sDCtype = get_tuple_value(arDCtype, itemThis.DCtype)
-                self.current_dctype = sDCtype
-                self.form.current_dctype = sDCtype
-            elif "DCtype" in arBack:
+            if "DCtype" in arBack:
                 # Get the selected element from the item
                 sDCtype = get_tuple_value(arDCtype, arBack["DCtype"])
                 self.current_dctype = sDCtype
@@ -709,14 +722,22 @@ class ResourceAdmin(admin.ModelAdmin):
                 # self.form.base_fields["type"] = arBack["DCtype"]
                 self.form.chosen_type = arBack["DCtype"]
                 formfield.initial = arBack["DCtype"]
+            elif itemThis != None and itemThis.DCtype != None and  itemThis.DCtype != '' and itemThis.DCtype != '-':
+                # Get the element from this list
+                sDCtype = get_tuple_value(arDCtype, itemThis.DCtype)
+                self.current_dctype = sDCtype
+                self.form.current_dctype = sDCtype
         elif db_field.name == "subtype":
-            if itemThis != None and itemThis.subtype != '' and itemThis.subtype != '-':
+            arChoices = db_field.choices
+            if "subtype" in arBack:
                 # Note which DCtype was selected
-                db_field.choices = build_choice_list(RESOURCE_TYPE, 'after', self.current_dctype)
-            elif "subtype" in arBack:
-                # Note which DCtype was selected
-                db_field.choices = build_choice_list(RESOURCE_TYPE, 'after', self.current_dctype)
+                # ERWIN db_field.choices = build_choice_list(RESOURCE_TYPE, 'after', self.current_dctype)
                 formfield.initial = arBack["subtype"]
+                self.form.chosen_type = arBack["subtype"]
+            elif itemThis != None and itemThis.subtype != '' and itemThis.subtype != '-':
+                # Note which DCtype was selected
+                # ERWIN db_field.choices = build_choice_list(RESOURCE_TYPE, 'after', self.current_dctype)
+                formfield.initial = formfield.initial
         elif db_field.name == "modality" :                         # M2M
             formfield.queryset = get_formfield_qs(Modality, self.instance, "resource")
         elif db_field.name == "annotation" :                       # M2M
@@ -730,12 +751,12 @@ class ResourceAdmin(admin.ModelAdmin):
         if db_field.name == "speechCorpus":                            # ForeignKey
           qs = get_formfield_qs(SpeechCorpus, self.instance, "resource", True)
           qs2 = get_formfield_qs(SpeechCorpus, self.coll, "collection", True)
-          qsCombi = SpeechCorpus.objects.filter(Q(id=qs) | Q(id=qs2)).distinct()
+          qsCombi = SpeechCorpus.objects.filter(Q(id=qs) | Q(id=qs2)).distinct().select_related()
           formfield.queryset = qsCombi
         elif db_field.name == "writtenCorpus":                         # ForeignKey
           qs = get_formfield_qs(WrittenCorpus, self.instance, "resource", True)
           qs2 = get_formfield_qs(WrittenCorpus, self.coll, "collection", True)
-          qsCombi = WrittenCorpus.objects.filter(Q(id=qs) | Q(id=qs2)).distinct()
+          qsCombi = WrittenCorpus.objects.filter(Q(id=qs) | Q(id=qs2)).distinct().select_related()
           formfield.queryset = qsCombi
         return formfield
 
@@ -808,7 +829,7 @@ class AnnotationAdmin(admin.ModelAdmin):
               # Add it to this model
               itemThis.formatAnn.add(formatNew)
           # Now show it
-          formfield.queryset = AnnotationFormat.objects.filter(annotation=itemThis.pk)
+          formfield.queryset = AnnotationFormat.objects.filter(annotation=itemThis.pk).select_related()
       elif db_field.name == "type" and itemThis and itemThis.formatAnn.count() == 0:
           # Create a new format object
           formatNew = AnnotationFormat.objects.create(name = itemThis.format)
@@ -1809,7 +1830,7 @@ class FieldChoiceAdmin(admin.ModelAdmin):
 
         if obj.machine_value == None:
             # Check out the query-set and make sure that it exists
-            qs = FieldChoice.objects.filter(field=obj.field)
+            qs = FieldChoice.objectss.filter(field=obj.field)
             if len(qs) == 0:
                 # The field does not yet occur within FieldChoice
                 # Future: ask user if that is what he wants (don't know how...)

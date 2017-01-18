@@ -1062,9 +1062,13 @@ class Resource(models.Model):
 
     def __str__(self):
         idt = m2m_identifier(self.collection_set)
+        if self.subtype == None:
+            iType = self.DCtype
+        else:
+            iType = self.subtype
         return "[{}] {}: {}".format(
             idt,
-            choice_english(RESOURCE_TYPE, self.type),
+            choice_english(RESOURCE_TYPE, iType),
             m2m_combi(self.annotation))
 
 
