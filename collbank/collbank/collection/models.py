@@ -28,6 +28,8 @@ CHARACTERENCODING = "writtencorpus.characterencoding.name"
 SPEECHCORPUS_RECORDINGENVIRONMENT = "speechcorpus.recordingenvironment"
 SPEECHCORPUS_CHANNEL = "speechcorpus.channel"
 SPEECHCORPUS_CONVERSATIONALTYPE = "speechcorpus.conversationaltype"
+WRITTENCORPUS_AUTHORNUMBER = "writtencorpus.author.number"
+WRITTENCORPUS_AUTHORDEMOGRAPHICS = "writtencorpus.author.demographics"
 
 ACCESS_AVAILABILITY = "access.availability"
 ACCESS_MEDIUM = "access.medium.format"
@@ -871,8 +873,12 @@ class WrittenCorpus(models.Model):
     class Meta:
         verbose_name_plural = "Written corpora"
 
-    # characterEncoding (0-n; c: ) 
+    # characterEncoding   (0-n; c: ) 
     characterEncoding = models.ManyToManyField(CharacterEncoding, blank=True)
+    # numberOfAuthors:    (0-1;f)
+    numberOfAuthors = models.IntegerField("Number of authors", blank=True, help_text=get_help(WRITTENCORPUS_AUTHORNUMBER), default=0)
+    # authorDemographics: (0-1;f)
+    authorDemographics = models.TextField("Author demographics", blank=True, help_text=get_help(WRITTENCORPUS_AUTHORDEMOGRAPHICS), default='-')
 
     def __str__(self):
         idt = m2m_identifier(self.collection_set)

@@ -755,12 +755,12 @@ class ResourceAdmin(admin.ModelAdmin):
         if db_field.name == "speechCorpus":                            # ForeignKey
           qs = get_formfield_qs(SpeechCorpus, self.instance, "resource", True)
           qs2 = get_formfield_qs(SpeechCorpus, self.coll, "collection", True)
-          qsCombi = SpeechCorpus.objects.filter(Q(id=qs) | Q(id=qs2)).distinct().select_related()
+          qsCombi = SpeechCorpus.objects.filter(Q(id__in=qs) | Q(id__in=qs2)).distinct().select_related()
           formfield.queryset = qsCombi
         elif db_field.name == "writtenCorpus":                         # ForeignKey
           qs = get_formfield_qs(WrittenCorpus, self.instance, "resource", True)
           qs2 = get_formfield_qs(WrittenCorpus, self.coll, "collection", True)
-          qsCombi = WrittenCorpus.objects.filter(Q(id=qs) | Q(id=qs2)).distinct().select_related()
+          qsCombi = WrittenCorpus.objects.filter(Q(id__in=qs) | Q(id__in=qs2)).distinct().select_related()
           formfield.queryset = qsCombi
         return formfield
 
@@ -1795,6 +1795,34 @@ class SpeechCorpusAdmin(admin.ModelAdmin):
         }
 
 
+class CharacterEncodingInline(admin.TabularInline):
+    model = WrittenCorpus.characterEncoding.through
+    extra = 0
+
+    def get_formset(self, request, obj = None, **kwargs):
+        # Get the currently selected WrittenCorpus object's identifier
+        self.instance = obj
+        return super(CharacterEncodingInline, self).get_formset(request, obj, **kwargs)
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        formfield = super(CharacterEncodingInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
+        # Look for the field's name as it is used in the WrittenCorpus model
+        if db_field.name == "characterEncoding":
+            formfield.queryset = get_formfield_qs(CharacterEncoding, self.instance, "writtencorpus")
+        return formfield
+
+
+class WrittenCorpusAdmin(admin.ModelAdmin):
+    inlines = [CharacterEncodingInline]
+    fieldsets = ( ('Searchable', {'fields': ()}),
+                  ('Other',      {'fields': ('numberOfAuthors', 'authorDemographics')}),
+                )
+    formfield_overrides = {
+        models.TextField: {'widget': Textarea(attrs={'rows': 1, 'cols':30})},
+        }
+
+
+
 class ValidationMethodForm(forms.ModelForm):
 
     class Meta:
@@ -1922,7 +1950,7 @@ admin.site.register(Project, ProjectAdmin)
 
 # -- writtencorpus
 admin.site.register(CharacterEncoding, CharacterEncodingAdmin)
-admin.site.register(WrittenCorpus)
+admin.site.register(WrittenCorpus, WrittenCorpusAdmin)
 # -- speechcorpus
 admin.site.register(RecordingEnvironment, RecordingEnvironmentAdmin)
 admin.site.register(Channel, ChannelAdmin)
