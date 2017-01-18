@@ -637,6 +637,23 @@ class ResourceSizeInline(admin.TabularInline):
         return formfield
 
 
+class MediaInline(admin.TabularInline):
+    model = Resource.medias.through
+    extra = 0
+
+    def get_formset(self, request, obj = None, **kwargs):
+        # Get the currently selected Collection object's identifier
+        self.instance = obj
+        return super(MediaInline, self).get_formset(request, obj, **kwargs)
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        formfield = super(MediaInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
+        # Look for the field's name as it is used in the Collection model
+        if db_field.name == "medias":
+            formfield.queryset = get_formfield_qs(Media, self.instance, "resource")
+        return formfield
+
+
 class ResourceForm(forms.ModelForm):
     # model = Resource
     current_dctype = ''
@@ -644,22 +661,11 @@ class ResourceForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(ResourceForm, self).__init__(*args, **kwargs)
-        #if (self.fields != None):
-        #    self.fields['subtype'].choices = build_choice_list(RESOURCE_TYPE, 'after', self.current_dctype)
-        #if (self.fields != None):
-        #    arX = self.fields['subtype'].choices
-        #    arY = self.fields['DCtype'].choices
-        #    sChosen = self['DCtype'].data
-        #    if sChosen != None:
-        #        self.chosen_type = sChosen
-        #        # Get the element from this list
-        #        sDCtype = get_tuple_value(arY, self.chosen_type)
-        #        self.current_dctype = sDCtype
 
     class Meta:
         model = Resource
-        fields = ['type', 'DCtype', 'subtype', 'modality', 'media', 'description']
-        # widgets = { 'subtype': forms.Select }
+        fields = ['type', 'DCtype', 'subtype', 'modality', 'medias', 'description']
+        # NOT NEEDED: widgets = { 'subtype': forms.Select }
 
     def save(self, *args, **kwargs):
         """Override the default saving"""
@@ -669,14 +675,12 @@ class ResourceForm(forms.ModelForm):
         return super(ResourceForm, self).save(*args, **kwargs)
 
 
-
-
 class ResourceAdmin(admin.ModelAdmin):
     form = ResourceForm
 
     # filter_horizontal = ('annotation','totalSize',)
-    inlines = [AnnotationInline, ResourceSizeInline, ModalityInline]
-    fieldsets = ( ('Searchable', {'fields': ('DCtype', 'subtype', 'media', 'speechCorpus',)}),
+    inlines = [MediaInline, AnnotationInline, ResourceSizeInline, ModalityInline]
+    fieldsets = ( ('Searchable', {'fields': ('DCtype', 'subtype', 'speechCorpus',)}),
                   ('Other',      {'fields': ('description', 'writtenCorpus',)}),
                 )
     formfield_overrides = {
@@ -706,7 +710,7 @@ class ResourceAdmin(admin.ModelAdmin):
         itemThis = kwargs.pop('obj', None)
         formfield = super(ResourceAdmin, self).formfield_for_dbfield(db_field, **kwargs)
         # Adapt the queryset
-        if db_field.name == "media":
+        if db_field.name == "medias":
             formfield.queryset = get_formfield_qs(Media, self.instance, "resource")
         elif db_field.name == "type":
             formfield.initial = self.form.chosen_type

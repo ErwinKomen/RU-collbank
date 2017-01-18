@@ -273,12 +273,10 @@ class CollectionDetailView(DetailView):
                 add_element("1", ann_this, "mode", ann, fieldchoice=ANNOTATION_MODE)
                 # format (1)
                 add_element("1", ann_this, "format", ann, fieldchoice=ANNOTATION_FORMAT)
-            # media (0-1)
-            if res_this.media != None:
-                # Set the media sub-element
+            # media (0-n)
+            for med_this in res_this.medias.all():
+                # Add the media sub-element
                 med = ET.SubElement(res, "media")
-                # Get the media element
-                med_this = res_this.media
                 # format (0-n)
                 add_element("0-n", med_this, "format", med, foreign="name", fieldchoice=MEDIA_FORMAT)
             # totalSize (0-n)
