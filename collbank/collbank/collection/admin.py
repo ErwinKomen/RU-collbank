@@ -675,11 +675,151 @@ class ResourceForm(forms.ModelForm):
         return super(ResourceForm, self).save(*args, **kwargs)
 
 
+class ResourceRecEnvInline(admin.TabularInline):
+    model = Resource.recordingEnvironment.through
+    extra = 0
+
+    def get_formset(self, request, obj = None, **kwargs):
+        # Get the currently selected SpeechCorpus object's identifier
+        self.instance = obj
+        return super(ResourceRecEnvInline, self).get_formset(request, obj, **kwargs)
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        formfield = super(ResourceRecEnvInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
+        # Look for the field's name as it is used in the SpeechCorpus model
+        if db_field.name == "recordingenvironment":
+            formfield.queryset = get_formfield_qs(RecordingEnvironment, self.instance, "resource")
+        return formfield
+
+
+class ResourceChannelInline(admin.TabularInline):
+    model = Resource.channel.through
+    extra = 0
+
+    def get_formset(self, request, obj = None, **kwargs):
+        # Get the currently selected SpeechCorpus object's identifier
+        self.instance = obj
+        return super(ResourceChannelInline, self).get_formset(request, obj, **kwargs)
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        formfield = super(ResourceChannelInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
+        # Look for the field's name as it is used in the SpeechCorpus model
+        if db_field.name == "channel":
+            formfield.queryset = get_formfield_qs(Channel, self.instance, "resource")
+        return formfield
+
+
+class ResourceRecCondInline(admin.TabularInline):
+    model = Resource.recordingConditions.through
+    extra = 0
+
+    def get_formset(self, request, obj = None, **kwargs):
+        # Get the currently selected SpeechCorpus object's identifier
+        self.instance = obj
+        return super(ResourceRecCondInline, self).get_formset(request, obj, **kwargs)
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        formfield = super(ResourceRecCondInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
+        # Look for the field's name as it is used in the SpeechCorpus model
+        if db_field.name == "recordingcondition":
+            formfield.queryset = get_formfield_qs(RecordingCondition, self.instance, "resource")
+        return formfield
+
+
+class ResourceSocContextInline(admin.TabularInline):
+    model = Resource.socialContext.through
+    extra = 0
+
+    def get_formset(self, request, obj = None, **kwargs):
+        # Get the currently selected SpeechCorpus object's identifier
+        self.instance = obj
+        return super(ResourceSocContextInline, self).get_formset(request, obj, **kwargs)
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        formfield = super(ResourceSocContextInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
+        # Look for the field's name as it is used in the SpeechCorpus model
+        if db_field.name == "socialcontext":
+            formfield.queryset = get_formfield_qs(SocialContext, self.instance, "resource")
+        return formfield
+
+
+class ResourcePlanTypeInline(admin.TabularInline):
+    model = Resource.planningType.through
+    extra = 0
+
+    def get_formset(self, request, obj = None, **kwargs):
+        # Get the currently selected SpeechCorpus object's identifier
+        self.instance = obj
+        return super(ResourcePlanTypeInline, self).get_formset(request, obj, **kwargs)
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        formfield = super(ResourcePlanTypeInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
+        # Look for the field's name as it is used in the SpeechCorpus model
+        if db_field.name == "planningtype":
+            formfield.queryset = get_formfield_qs(PlanningType, self.instance, "resource")
+        return formfield
+
+
+class ResourceInteractivityInline(admin.TabularInline):
+    model = Resource.interactivity.through
+    extra = 0
+
+    def get_formset(self, request, obj = None, **kwargs):
+        # Get the currently selected SpeechCorpus object's identifier
+        self.instance = obj
+        return super(ResourceInteractivityInline, self).get_formset(request, obj, **kwargs)
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        formfield = super(ResourceInteractivityInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
+        # Look for the field's name as it is used in the SpeechCorpus model
+        if db_field.name == "interactivity":
+            formfield.queryset = get_formfield_qs(Interactivity, self.instance, "resource")
+        return formfield
+
+
+class ResourceInvolvementInline(admin.TabularInline):
+    model = Resource.involvement.through
+    extra = 0
+
+    def get_formset(self, request, obj = None, **kwargs):
+        # Get the currently selected SpeechCorpus object's identifier
+        self.instance = obj
+        return super(ResourceInvolvementInline, self).get_formset(request, obj, **kwargs)
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        formfield = super(ResourceInvolvementInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
+        # Look for the field's name as it is used in the SpeechCorpus model
+        if db_field.name == "involvement":
+            formfield.queryset = get_formfield_qs(Involvement, self.instance, "resource")
+        return formfield
+
+
+class ResourceAudienceInline(admin.TabularInline):
+    model = Resource.audience.through
+    extra = 0
+
+    def get_formset(self, request, obj = None, **kwargs):
+        # Get the currently selected Resource object's identifier
+        self.instance = obj
+        return super(ResourceAudienceInline, self).get_formset(request, obj, **kwargs)
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        formfield = super(ResourceAudienceInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
+        # Look for the field's name as it is used in the SpeechCorpus model
+        if db_field.name == "audience":
+            formfield.queryset = get_formfield_qs(Audience, self.instance, "resource")
+        return formfield
+
+
 class ResourceAdmin(admin.ModelAdmin):
     form = ResourceForm
 
     # filter_horizontal = ('annotation','totalSize',)
-    inlines = [MediaInline, AnnotationInline, ResourceSizeInline, ModalityInline]
+    inlines = [MediaInline, AnnotationInline, ResourceSizeInline, ModalityInline,
+               ResourceRecEnvInline, ResourceChannelInline, ResourceRecCondInline, 
+               ResourceSocContextInline, ResourcePlanTypeInline,
+               ResourceInteractivityInline, ResourceInvolvementInline,
+               ResourceAudienceInline ]
     fieldsets = ( ('Searchable', {'fields': ('DCtype', 'subtype', 'speechCorpus',)}),
                   ('Other',      {'fields': ('description', 'writtenCorpus',)}),
                 )
@@ -1489,38 +1629,38 @@ class ProjectAdmin(admin.ModelAdmin):
         return formfield
 
 
-class SpeechCorpusRecEnvInline(admin.TabularInline):
-    model = SpeechCorpus.recordingEnvironment.through
-    extra = 0
+#class SpeechCorpusRecEnvInline(admin.TabularInline):
+#    model = SpeechCorpus.recordingEnvironment.through
+#    extra = 0
 
-    def get_formset(self, request, obj = None, **kwargs):
-        # Get the currently selected SpeechCorpus object's identifier
-        self.instance = obj
-        return super(SpeechCorpusRecEnvInline, self).get_formset(request, obj, **kwargs)
+#    def get_formset(self, request, obj = None, **kwargs):
+#        # Get the currently selected SpeechCorpus object's identifier
+#        self.instance = obj
+#        return super(SpeechCorpusRecEnvInline, self).get_formset(request, obj, **kwargs)
 
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        formfield = super(SpeechCorpusRecEnvInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
-        # Look for the field's name as it is used in the SpeechCorpus model
-        if db_field.name == "recordingenvironment":
-            formfield.queryset = get_formfield_qs(RecordingEnvironment, self.instance, "speechcorpus")
-        return formfield
+#    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+#        formfield = super(SpeechCorpusRecEnvInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
+#        # Look for the field's name as it is used in the SpeechCorpus model
+#        if db_field.name == "recordingenvironment":
+#            formfield.queryset = get_formfield_qs(RecordingEnvironment, self.instance, "speechcorpus")
+#        return formfield
 
 
-class SpeechCorpusChannelInline(admin.TabularInline):
-    model = SpeechCorpus.channel.through
-    extra = 0
+#class SpeechCorpusChannelInline(admin.TabularInline):
+#    model = SpeechCorpus.channel.through
+#    extra = 0
 
-    def get_formset(self, request, obj = None, **kwargs):
-        # Get the currently selected SpeechCorpus object's identifier
-        self.instance = obj
-        return super(SpeechCorpusChannelInline, self).get_formset(request, obj, **kwargs)
+#    def get_formset(self, request, obj = None, **kwargs):
+#        # Get the currently selected SpeechCorpus object's identifier
+#        self.instance = obj
+#        return super(SpeechCorpusChannelInline, self).get_formset(request, obj, **kwargs)
 
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        formfield = super(SpeechCorpusChannelInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
-        # Look for the field's name as it is used in the SpeechCorpus model
-        if db_field.name == "channel":
-            formfield.queryset = get_formfield_qs(Channel, self.instance, "speechcorpus")
-        return formfield
+#    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+#        formfield = super(SpeechCorpusChannelInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
+#        # Look for the field's name as it is used in the SpeechCorpus model
+#        if db_field.name == "channel":
+#            formfield.queryset = get_formfield_qs(Channel, self.instance, "speechcorpus")
+#        return formfield
 
 
 class SpeechCorpusConvTypeInline(admin.TabularInline):
@@ -1540,89 +1680,89 @@ class SpeechCorpusConvTypeInline(admin.TabularInline):
         return formfield
 
 
-class SpeechCorpusRecCondInline(admin.TabularInline):
-    model = SpeechCorpus.recordingConditions.through
-    extra = 0
+#class SpeechCorpusRecCondInline(admin.TabularInline):
+#    model = SpeechCorpus.recordingConditions.through
+#    extra = 0
 
-    def get_formset(self, request, obj = None, **kwargs):
-        # Get the currently selected SpeechCorpus object's identifier
-        self.instance = obj
-        return super(SpeechCorpusRecCondInline, self).get_formset(request, obj, **kwargs)
+#    def get_formset(self, request, obj = None, **kwargs):
+#        # Get the currently selected SpeechCorpus object's identifier
+#        self.instance = obj
+#        return super(SpeechCorpusRecCondInline, self).get_formset(request, obj, **kwargs)
 
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        formfield = super(SpeechCorpusRecCondInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
-        # Look for the field's name as it is used in the SpeechCorpus model
-        if db_field.name == "recordingcondition":
-            formfield.queryset = get_formfield_qs(RecordingCondition, self.instance, "speechcorpus")
-        return formfield
-
-
-class SpeechCorpusSocContextInline(admin.TabularInline):
-    model = SpeechCorpus.socialContext.through
-    extra = 0
-
-    def get_formset(self, request, obj = None, **kwargs):
-        # Get the currently selected SpeechCorpus object's identifier
-        self.instance = obj
-        return super(SpeechCorpusSocContextInline, self).get_formset(request, obj, **kwargs)
-
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        formfield = super(SpeechCorpusSocContextInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
-        # Look for the field's name as it is used in the SpeechCorpus model
-        if db_field.name == "socialcontext":
-            formfield.queryset = get_formfield_qs(SocialContext, self.instance, "speechcorpus")
-        return formfield
+#    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+#        formfield = super(SpeechCorpusRecCondInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
+#        # Look for the field's name as it is used in the SpeechCorpus model
+#        if db_field.name == "recordingcondition":
+#            formfield.queryset = get_formfield_qs(RecordingCondition, self.instance, "speechcorpus")
+#        return formfield
 
 
-class SpeechCorpusPlanTypeInline(admin.TabularInline):
-    model = SpeechCorpus.planningType.through
-    extra = 0
+#class SpeechCorpusSocContextInline(admin.TabularInline):
+#    model = SpeechCorpus.socialContext.through
+#    extra = 0
 
-    def get_formset(self, request, obj = None, **kwargs):
-        # Get the currently selected SpeechCorpus object's identifier
-        self.instance = obj
-        return super(SpeechCorpusPlanTypeInline, self).get_formset(request, obj, **kwargs)
+#    def get_formset(self, request, obj = None, **kwargs):
+#        # Get the currently selected SpeechCorpus object's identifier
+#        self.instance = obj
+#        return super(SpeechCorpusSocContextInline, self).get_formset(request, obj, **kwargs)
 
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        formfield = super(SpeechCorpusPlanTypeInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
-        # Look for the field's name as it is used in the SpeechCorpus model
-        if db_field.name == "planningtype":
-            formfield.queryset = get_formfield_qs(PlanningType, self.instance, "speechcorpus")
-        return formfield
-
-
-class SpeechCorpusInteractivityInline(admin.TabularInline):
-    model = SpeechCorpus.interactivity.through
-    extra = 0
-
-    def get_formset(self, request, obj = None, **kwargs):
-        # Get the currently selected SpeechCorpus object's identifier
-        self.instance = obj
-        return super(SpeechCorpusInteractivityInline, self).get_formset(request, obj, **kwargs)
-
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        formfield = super(SpeechCorpusInteractivityInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
-        # Look for the field's name as it is used in the SpeechCorpus model
-        if db_field.name == "interactivity":
-            formfield.queryset = get_formfield_qs(Interactivity, self.instance, "speechcorpus")
-        return formfield
+#    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+#        formfield = super(SpeechCorpusSocContextInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
+#        # Look for the field's name as it is used in the SpeechCorpus model
+#        if db_field.name == "socialcontext":
+#            formfield.queryset = get_formfield_qs(SocialContext, self.instance, "speechcorpus")
+#        return formfield
 
 
-class SpeechCorpusInvolvementInline(admin.TabularInline):
-    model = SpeechCorpus.involvement.through
-    extra = 0
+#class SpeechCorpusPlanTypeInline(admin.TabularInline):
+#    model = SpeechCorpus.planningType.through
+#    extra = 0
 
-    def get_formset(self, request, obj = None, **kwargs):
-        # Get the currently selected SpeechCorpus object's identifier
-        self.instance = obj
-        return super(SpeechCorpusInvolvementInline, self).get_formset(request, obj, **kwargs)
+#    def get_formset(self, request, obj = None, **kwargs):
+#        # Get the currently selected SpeechCorpus object's identifier
+#        self.instance = obj
+#        return super(SpeechCorpusPlanTypeInline, self).get_formset(request, obj, **kwargs)
 
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        formfield = super(SpeechCorpusInvolvementInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
-        # Look for the field's name as it is used in the SpeechCorpus model
-        if db_field.name == "involvement":
-            formfield.queryset = get_formfield_qs(Involvement, self.instance, "speechcorpus")
-        return formfield
+#    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+#        formfield = super(SpeechCorpusPlanTypeInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
+#        # Look for the field's name as it is used in the SpeechCorpus model
+#        if db_field.name == "planningtype":
+#            formfield.queryset = get_formfield_qs(PlanningType, self.instance, "speechcorpus")
+#        return formfield
+
+
+#class SpeechCorpusInteractivityInline(admin.TabularInline):
+#    model = SpeechCorpus.interactivity.through
+#    extra = 0
+
+#    def get_formset(self, request, obj = None, **kwargs):
+#        # Get the currently selected SpeechCorpus object's identifier
+#        self.instance = obj
+#        return super(SpeechCorpusInteractivityInline, self).get_formset(request, obj, **kwargs)
+
+#    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+#        formfield = super(SpeechCorpusInteractivityInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
+#        # Look for the field's name as it is used in the SpeechCorpus model
+#        if db_field.name == "interactivity":
+#            formfield.queryset = get_formfield_qs(Interactivity, self.instance, "speechcorpus")
+#        return formfield
+
+
+#class SpeechCorpusInvolvementInline(admin.TabularInline):
+#    model = SpeechCorpus.involvement.through
+#    extra = 0
+
+#    def get_formset(self, request, obj = None, **kwargs):
+#        # Get the currently selected SpeechCorpus object's identifier
+#        self.instance = obj
+#        return super(SpeechCorpusInvolvementInline, self).get_formset(request, obj, **kwargs)
+
+#    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+#        formfield = super(SpeechCorpusInvolvementInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
+#        # Look for the field's name as it is used in the SpeechCorpus model
+#        if db_field.name == "involvement":
+#            formfield.queryset = get_formfield_qs(Involvement, self.instance, "speechcorpus")
+#        return formfield
 
 
 class AudienceForm(forms.ModelForm):
@@ -1745,21 +1885,21 @@ class SocialContextAdmin(admin.ModelAdmin):
     form = SocialContextForm
 
 
-class SpeechCorpusAudienceInline(admin.TabularInline):
-    model = SpeechCorpus.audience.through
-    extra = 0
+#class SpeechCorpusAudienceInline(admin.TabularInline):
+#    model = SpeechCorpus.audience.through
+#    extra = 0
 
-    def get_formset(self, request, obj = None, **kwargs):
-        # Get the currently selected SpeechCorpus object's identifier
-        self.instance = obj
-        return super(SpeechCorpusAudienceInline, self).get_formset(request, obj, **kwargs)
+#    def get_formset(self, request, obj = None, **kwargs):
+#        # Get the currently selected SpeechCorpus object's identifier
+#        self.instance = obj
+#        return super(SpeechCorpusAudienceInline, self).get_formset(request, obj, **kwargs)
 
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        formfield = super(SpeechCorpusAudienceInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
-        # Look for the field's name as it is used in the SpeechCorpus model
-        if db_field.name == "audience":
-            formfield.queryset = get_formfield_qs(Audience, self.instance, "speechcorpus")
-        return formfield
+#    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+#        formfield = super(SpeechCorpusAudienceInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
+#        # Look for the field's name as it is used in the SpeechCorpus model
+#        if db_field.name == "audience":
+#            formfield.queryset = get_formfield_qs(Audience, self.instance, "speechcorpus")
+#        return formfield
 
 
 class SpeechCorpusAudioFormatInline(admin.TabularInline):
@@ -1782,10 +1922,14 @@ class SpeechCorpusAudioFormatInline(admin.TabularInline):
 class SpeechCorpusAdmin(admin.ModelAdmin):
     # filter_horizontal = ('recordingEnvironment', 'channel', 'conversationalType', 'recordingConditions', 
     #                      'socialContext', 'planningType', 'interactivity', 'involvement', 'audience', 'audioFormat')
-    inlines = [SpeechCorpusRecEnvInline, SpeechCorpusChannelInline, SpeechCorpusConvTypeInline,
-               SpeechCorpusRecCondInline, SpeechCorpusSocContextInline, SpeechCorpusPlanTypeInline,
-               SpeechCorpusInteractivityInline, SpeechCorpusInvolvementInline,
-               SpeechCorpusAudienceInline, SpeechCorpusAudioFormatInline]
+
+    # Can be removed when issue #29 is completed
+    #inlines = [SpeechCorpusRecEnvInline, SpeechCorpusChannelInline, SpeechCorpusConvTypeInline,
+    #           SpeechCorpusRecCondInline, SpeechCorpusSocContextInline, SpeechCorpusPlanTypeInline,
+    #           SpeechCorpusInteractivityInline, SpeechCorpusInvolvementInline,
+    #           SpeechCorpusAudienceInline, SpeechCorpusAudioFormatInline]
+
+    inlines = [SpeechCorpusConvTypeInline, SpeechCorpusAudioFormatInline]
     fieldsets = ( ('Searchable', {'fields': ()}),
                   ('Other',      {'fields': ('durationOfEffectiveSpeech', 'durationOfFullDatabase', 'numberOfSpeakers', 
                                              'speakerDemographics')}),

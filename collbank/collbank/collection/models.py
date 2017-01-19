@@ -999,14 +999,8 @@ class SpeechCorpus(models.Model):
     class Meta:
         verbose_name_plural = "Speech corpora"
 
-    # recordingEnvironment (0-n;c)
-    recordingEnvironment = models.ManyToManyField(RecordingEnvironment, blank=True)
-    # channel (0-n;c)
-    channel = models.ManyToManyField(Channel, blank=True)
     # conversationalTYpe (0-n;c)
     conversationalType = models.ManyToManyField(ConversationalType, blank=True)
-    # recordingConditions (0-n; f)
-    recordingConditions = models.ManyToManyField(RecordingCondition, blank=True)
     # durationOfEffectiveSpeech (0-1; f)
     durationOfEffectiveSpeech = models.TextField("Duration of effective speech",blank=True, help_text=get_help('speechcorpus.durationOfEffectiveSpeech'), default='0')
     # durationOfFullDatabase (0-1; f)
@@ -1016,6 +1010,14 @@ class SpeechCorpus(models.Model):
     additional = models.IntegerField("Number of speakers", blank=True, help_text=get_help('speechcorpus.numberOfSpeakers'), default=0)
     # speakerDemographics (0-1; f)
     speakerDemographics = models.TextField("Speaker demographics",blank=True, help_text=get_help('speechcorpus.speakerDemographics'), default='-')
+
+    # =============== Verhuist naar [Resource] =================================
+    # recordingEnvironment (0-n;c)
+    recordingEnvironment = models.ManyToManyField(RecordingEnvironment, blank=True)
+    # recordingConditions (0-n; f)
+    recordingConditions = models.ManyToManyField(RecordingCondition, blank=True)
+    # channel (0-n;c)
+    channel = models.ManyToManyField(Channel, blank=True)
     # socialContext (0-n; c)
     socialContext = models.ManyToManyField(SocialContext, blank=True)
     # planningType (0-n; c)
@@ -1026,6 +1028,8 @@ class SpeechCorpus(models.Model):
     involvement = models.ManyToManyField(Involvement, blank=True)
     # audience (0-n; c)
     audience = models.ManyToManyField(Audience, blank=True)
+    # ===============================================================================
+
     # audioFormat (0-n)
     audioFormat = models.ManyToManyField(AudioFormat, blank=True)
 
@@ -1055,6 +1059,26 @@ class Resource(models.Model):
                             help_text=get_help(RESOURCE_SUBTYPE), blank=True, null=True)
     # (0-n) modality
     modality = models.ManyToManyField(Modality, blank=True)
+
+    # =============== Komt van [SpeechCorpus] =======================================
+    # recordingEnvironment (0-n;c)
+    recordingEnvironment = models.ManyToManyField(RecordingEnvironment, blank=True)
+    # recordingConditions (0-n; f)
+    recordingConditions = models.ManyToManyField(RecordingCondition, blank=True)
+    # channel (0-n;c)
+    channel = models.ManyToManyField(Channel, blank=True)
+    # socialContext (0-n; c)
+    socialContext = models.ManyToManyField(SocialContext, blank=True)
+    # planningType (0-n; c)
+    planningType = models.ManyToManyField(PlanningType, blank=True)
+    # interactivity (0-n; c)
+    interactivity = models.ManyToManyField(Interactivity, blank=True)
+    # involvement (0-n; c)
+    involvement = models.ManyToManyField(Involvement, blank=True)
+    # audience (0-n; c)
+    audience = models.ManyToManyField(Audience, blank=True)
+    # ===============================================================================
+
     # (0-n)
     annotation = models.ManyToManyField(Annotation, blank=True)
     # (0-n)
