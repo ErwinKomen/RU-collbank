@@ -65,8 +65,8 @@ function tabinline_add_copy() {
           // Find and adapt the history link's content to a current
           var sCurrent = $(".historylink").first().attr("href").replace("/history", "");
           // Create a new place to go to
-          sHref = "/admin/copy/?model=" + sModel + "&id=" + sId + "&current=" + sCurrent;
-          var sAddNode = "<a class='related-widget-wrapper-link copy-related' title='Make a copy' href='" + sHref + "'>copy</a>";
+          sHref = sHref.replace("collection", "copy") + "/?_popup=0&model=" + sModel + "&id=" + sId + "&current=" + sCurrent;
+          var sAddNode = "<a class='copy-related' title='Make a copy' href='" + sHref + "'>copy</a>";
           // Append the new node
           $(this).append(sAddNode);
         }
