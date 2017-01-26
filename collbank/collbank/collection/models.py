@@ -285,6 +285,12 @@ class Title(models.Model):
         idt = m2m_identifier(self.collection_set)
         return "[{}] {}".format(idt,self.name)
 
+    def get_copy(self):
+        # Make a clean copy
+        new_copy = get_instance_copy(self)
+        # Return the new copy
+        return new_copy
+
 
 class Owner(models.Model):
     """The legal owner"""
@@ -919,6 +925,15 @@ class WrittenCorpus(models.Model):
         return "[{}]: {}".format(
             idt,
             m2m_combi(self.characterEncoding))
+
+    def get_copy(self):
+        # Make a clean copy
+        new_copy = get_instance_copy(self)
+        # Copy M2M relationship: conversationalType
+        copy_m2m(self, new_copy, 'characterEncoding')
+        # Return the new copy
+        return new_copy
+
 
 
 class RecordingEnvironment(models.Model):

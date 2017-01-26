@@ -40,6 +40,8 @@ urlpatterns = [
     url(r'^reload_collbank/$', collbank.collection.views.reload_collbank, name='reload'),
     # url(r'^overview$', collbank.collection.views.overview, name='overview'),
     url(r'^overview$', CollectionListView.as_view(), name='overview'),
+    # url(r'^copy/$', collbank.collection.views.copy_item, name='copy'),
+    url(r'^admin/copy/$', collbank.collection.admin.copy_item, name='copyadmin'),
     # url(r'^output/(?P<collection_id>[0-9]+)/$', CollectionDetailView.as_view(), name='output'),
     url(r'^output/(?P<pk>\d+)', CollectionDetailView.as_view(), name='output'),
     url(r'^subtype_choices/', collbank.collection.views.subtype_choices),
