@@ -8,6 +8,7 @@ Each resource in the collection is characterised by its own annotations.
 from django.db import models
 from django.contrib.auth.models import User
 from datetime import datetime
+import copy  # (1) use python copy
 import sys
 
 MAX_IDENTIFIER_LEN = 10
@@ -150,6 +151,22 @@ def m2m_identifier(items):
         qs = items.all()
         sBack = "-".join([thing.identifier for thing in qs])
     return sBack
+
+def get_instance_copy(item):
+    new_copy = copy.copy(item)
+    new_copy.id = None          # Reset the id
+    new_copy.save()             # Save it preliminarily
+    return new_copy
+
+def copy_m2m(inst_src, inst_dst, field, lst_m2m = None):
+    # Copy M2M relationship: conversationalType    
+    for item in getattr(inst_src, field).all():
+        newItem = get_instance_copy(item)
+        # Possibly copy more m2m
+        if lst_m2m != None:
+            for deeper in lst_m2m:
+                copy_m2m(item, newItem, deeper)
+        getattr(inst_dst, field).add(newItem)
 
 def get_ident(qs):
     if qs == None:
@@ -338,11 +355,20 @@ class Annotation(models.Model):
             choice_english(ANNOTATION_MODE,self.mode), 
             m2m_combi(self.formatAnn))
 
+    def get_copy(self):
+        # Make a clean copy
+        new_copy = get_instance_copy(self)
+        # Copy the m2m field
+        copy_m2m(self, new_copy, "formatAnn")
+        # Return the new copy
+        return new_copy
+
 
 class TotalSize(models.Model):
     """Total size of the collection"""
 
-    size = models.IntegerField("Size of the collection", default=0)
+    # size = models.IntegerField("Size of the collection", default=0)
+    size = models.CharField("Size of the collection", default="unknown", max_length=80)
     sizeUnit = models.CharField("Units", help_text=get_help(SIZEUNIT), max_length=50, default='MB')
 
     def __str__(self):
@@ -379,6 +405,11 @@ class Modality(models.Model):
         return "[{}] {}".format(idt,choice_english(RESOURCE_MODALITY, self.name))
         #  return choice_english(RESOURCE_MODALITY, self.name)
 
+    def get_copy(self):
+        # Make a clean copy
+        new_copy = get_instance_copy(self)
+        # Return the new copy
+        return new_copy
 
 
 
@@ -388,9 +419,11 @@ class TemporalProvenance(models.Model):
     """Temporal coverage of the collection"""
 
     # == Start year: yyyy
-    startYear = models.IntegerField("First year covered by the collection", default=datetime.now().year)
+    # startYear = models.IntegerField("First year covered by the collection", default=datetime.now().year)
+    startYear = models.CharField("First year covered by the collection", max_length=20, default=str(datetime.now().year))
     # == End year: yyyy
-    endYear = models.IntegerField("Last year covered by the collection", default=datetime.now().year)
+    # endYear = models.IntegerField("Last year covered by the collection", default=datetime.now().year)
+    endYear = models.CharField("Last year covered by the collection", max_length=20, default=str(datetime.now().year))
 
     def __str__(self):
         return "{}-{}".format(self.startYear, self.endYear)
@@ -876,7 +909,8 @@ class WrittenCorpus(models.Model):
     # characterEncoding   (0-n; c: ) 
     characterEncoding = models.ManyToManyField(CharacterEncoding, blank=True)
     # numberOfAuthors:    (0-1;f)
-    numberOfAuthors = models.IntegerField("Number of authors", blank=True, help_text=get_help(WRITTENCORPUS_AUTHORNUMBER), default=0)
+    # numberOfAuthors = models.IntegerField("Number of authors", blank=True, help_text=get_help(WRITTENCORPUS_AUTHORNUMBER), default=0)
+    numberOfAuthors = models.CharField("Number of authors", blank=True, help_text=get_help(WRITTENCORPUS_AUTHORNUMBER), max_length=20, default="unknown")
     # authorDemographics: (0-1;f)
     authorDemographics = models.TextField("Author demographics", blank=True, help_text=get_help(WRITTENCORPUS_AUTHORDEMOGRAPHICS), default='-')
 
@@ -1041,6 +1075,17 @@ class SpeechCorpus(models.Model):
           m2m_combi(self.channel),
           m2m_combi(self.conversationalType))
 
+    def get_copy(self):
+        # Make a clean copy
+        new_copy = get_instance_copy(self)
+        # Copy M2M relationship: conversationalType
+        copy_m2m(self, new_copy, 'conversationalType')
+        # Copy M2M relationship: audioFormat
+        copy_m2m(self, new_copy, 'audioFormat')
+        # Return the new copy
+        return new_copy
+
+
 
 class Resource(models.Model):
     """A resource is part of a collection"""
@@ -1100,6 +1145,24 @@ class Resource(models.Model):
             idt,
             choice_english(RESOURCE_TYPE, iType),
             m2m_combi(self.annotation))
+
+    def get_copy(self):
+        # Make a clean copy
+        new_copy = get_instance_copy(self)
+        # Copy the m2m fields
+        copy_m2m(self, new_copy, "modality")
+        copy_m2m(self, new_copy, "annotation")
+        copy_m2m(self, new_copy, "totalSize")
+        # Copying Medias requires special attention...
+        copy_m2m(self, new_copy, "medias", ["format"])
+        # Check and copy FK fields
+        if self.writtenCorpus != None:
+            new_copy.writtenCorpus = self.writtenCorpus.get_copy()
+        if self.speechCorpus != None:
+            new_copy.speechCorpus = self.speechCorpus.get_copy()
+        # Return the new copy
+        return new_copy
+
 
 
 class Collection(models.Model):
