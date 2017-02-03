@@ -50,6 +50,7 @@
     <Folder Include="collbank\collection\" />
     <Folder Include="collbank\collection\migrations\" />
     <Folder Include="collbank\collection\fixtures\" />
+    <Folder Include="collbank\collection\templatetags\" />
     <Folder Include="collbank\collection\static\" />
     <Folder Include="collbank\collection\static\collection\" />
     <Folder Include="collbank\collection\static\collection\content\" />
