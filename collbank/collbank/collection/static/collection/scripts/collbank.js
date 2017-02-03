@@ -1,9 +1,12 @@
 ﻿(function ($) {
   $(function () {
     $(document).ready(function () {
+      // Bind the keyup and change events
       $('#id_DCtype').bind('keyup', type_change);
       $('#id_DCtype').bind('change', type_change);
       $('#id_subtype >option').show();
+      // Add 'copy' action to inlines
+      tabinline_add_copy();
     });
   });
 })(django.jQuery);
@@ -34,4 +37,39 @@ function type_change() {
       }
     }
   })(jQuery);
+}
+
+/**
+ * tabinline_add_copy
+ *   Add a COPY button to all tabular inlines available
+ */
+function tabinline_add_copy() {
+  $(".tabular .related-widget-wrapper").each(
+    function (idx, obj) {
+      // Find the first <a> child
+      var chgNode = $(this).children("a").first();
+      var sHref = $(chgNode).attr("href");
+      if (sHref !== undefined) {
+        // Remove from /change onwards
+        var iChangePos = sHref.lastIndexOf("/change");
+        if (iChangePos > 0) {
+          sHref = sHref.substr(0, sHref.lastIndexOf("/change"));
+          // Get the id
+          var lastSlash = sHref.lastIndexOf("/");
+          var sId = sHref.substr(lastSlash + 1);
+          sHref = sHref.substr(0, lastSlash);
+          // Get the model name
+          lastSlash = sHref.lastIndexOf("/");
+          var sModel = sHref.substr(lastSlash + 1);
+          sHref = sHref.substr(0, lastSlash);
+          // Find and adapt the history link's content to a current
+          var sCurrent = $(".historylink").first().attr("href").replace("/history", "");
+          // Create a new place to go to
+          sHref = sHref.replace("collection", "copy") + "/?_popup=0&model=" + sModel + "&id=" + sId + "&current=" + sCurrent;
+          var sAddNode = "<a class='copy-related' title='Make a copy' href='" + sHref + "'>copy</a>";
+          // Append the new node
+          $(this).append(sAddNode);
+        }
+      }
+    });
 }
