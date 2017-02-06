@@ -8,8 +8,13 @@
 {% if LANGUAGE_BIDI %}<link rel="stylesheet" type="text/css" href="{% block stylesheet_rtl %}{% static "admin/css/rtl.css" %}{% endblock %}" />{% endif %}
 {% block extrahead %}{% endblock %}
 {% block blockbots %}<meta name="robots" content="NONE,NOARCHIVE" />{% endblock %}
+    {% load staticfiles %}
+    {% load static %}
     <link rel="stylesheet" type="text/css" href="{% static 'collection/content/bootstrap.min.css' %}" />
     <link rel="stylesheet" type="text/css" href="{% static 'collection/content/site.css' %}" />
+    <script src="{% static 'collection/scripts/modernizr-2.6.2.js' %}"></script>
+    <script src="{% static 'collection/scripts/jquery-1.10.2.js' %}"></script>
+    <script src="{% static 'collection/scripts/bootstrap.js' %}"></script>
     <script src="{% static 'collection/scripts/modernizr-2.6.2.js' %}"></script>
     <script src="{% static 'collection/scripts/collbank.js' %}"></script>
 </head>

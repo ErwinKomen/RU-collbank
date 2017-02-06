@@ -178,7 +178,12 @@ class CollectionListView(ListView):
                    {'name': 'Description', 'order': '', 'type': 'str'}]
 
     def render_to_response(self, context, **response_kwargs):
-        return super(CollectionListView, self).render_to_response(context, **response_kwargs)
+        """Check if downloading is needed or not"""
+        sType = self.request.GET.get('submit_type', '')
+        if sType == 'xml':
+            return self.download_to_xml(context)
+        else:
+            return super(CollectionListView, self).render_to_response(context, **response_kwargs)
 
     def get_context_data(self, **kwargs):
         # Get the base implementation first of the context
@@ -211,6 +216,29 @@ class CollectionListView(ListView):
         context['order_heads'] = self.order_heads
         # Return the calculated context
         return context
+
+    def convert_to_xml(self, context):
+        """Convert all available collection objects to XML"""
+
+        # Dummy
+        xmlstr = ""
+
+        # Return this string
+        return xmlstr
+    
+    def download_to_xml(self, context):
+        """Make the XML representation of ALL collections downloadable"""
+
+        # Construct a file name based on the identifier
+        # NOT NEEDED HERE? sFileName = 'collection-{}'.format(getattr(context['collection'], 'identifier'))
+        # Get the XML of this collection
+        sXmlStr = self.convert_to_xml(context)
+        # Create the HttpResponse object with the appropriate CSV header.
+        response = HttpResponse(sXmlStr, content_type='text/xml')
+        response['Content-Disposition'] = 'attachment; filename="collbank_all.xml"'
+
+        # Return the result
+        return response
 
 
 class CollectionDetailView(DetailView):

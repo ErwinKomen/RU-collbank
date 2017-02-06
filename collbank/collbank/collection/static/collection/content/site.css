@@ -135,3 +135,8 @@ div.inline-group a.add-related {
         background-color: #d35400;
     }
 }
+
+#header  .navbar-custom  .open .dropdown-menu li  a:link,
+#header  .navbar-custom  .open .dropdown-menu li  a:visited {
+  color: black !important;
+}
