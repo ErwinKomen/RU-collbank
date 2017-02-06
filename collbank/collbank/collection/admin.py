@@ -478,6 +478,8 @@ class ProvenanceAdmin(admin.ModelAdmin):
                 )
 
     def get_form(self, request, obj=None, **kwargs):
+        # Get the currently selected Collection object's identifier
+        self.instance = obj
         # Use one line to explicitly pass on the current object in [obj]
         kwargs['formfield_callback'] = partial(self.formfield_for_dbfield, request=request, obj=obj)
         # Standard processing from here
