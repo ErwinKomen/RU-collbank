@@ -38,6 +38,17 @@ def add_element(optionality, col_this, el_name, crp, **kwargs):
             if field_choice != "": col_value = choice_english(field_choice, col_value)
             # Make sure the value is a string
             col_value = str(col_value)
+            # Do we need to discern parts?
+            if "part" in kwargs:
+                arPart = col_value.split(":")
+                iPart = kwargs["part"]
+                if iPart == 1:
+                    col_value = arPart[0]
+                elif iPart == 2:
+                    if len(arPart) == 2:
+                        col_value = arPart[1]
+                    else:
+                        col_value = ""
             if col_value != "":
                 descr_element = ET.SubElement(crp, sub_name)
                 descr_element.text = col_value
@@ -73,9 +84,9 @@ def add_collection_xml(col_this, crp):
         add_element("1", res_this, "type", res, fieldchoice =RESOURCE_TYPE)
         # TODO: possibly divide this into DCtype and (optional) subtype
         # DCtype (1)
-        add_element("1", res_this, "DCtype", res, fieldchoice =RESOURCE_TYPE)
+        add_element("1", res_this, "DCtype", res, fieldchoice =RESOURCE_TYPE, part=1)
         # subtype (0-1)
-        add_element("0-1", res_this, "subtype", res, fieldchoice =RESOURCE_TYPE)
+        add_element("0-1", res_this, "subtype", res, fieldchoice =RESOURCE_TYPE, part=2)
         # modality (1-n)
         add_element("1-n", res_this, "modality", res, foreign="name", fieldchoice=RESOURCE_MODALITY )
         # recording Environment (0-n)
