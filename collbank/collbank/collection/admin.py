@@ -361,11 +361,14 @@ class CollectionAdmin(admin.ModelAdmin):
     inlines = [TitleInline, OwnerInline, ResourceInline, GenreInline, ProvenanceInline,
                LanguageInline, LanguageDisorderInline, RelationInline, CollectionDomainInline,
                TotalSizeInline, PidInline, ResourceCreatorInline, ProjectInline]
-    fieldsets = ( ('MOVING_TO_RESOURCE', {'fields': ('speechCorpus', 'writtenCorpus',)}),
-                  ('Searchable', {'fields': ('identifier', 'linguality',  )}),
+    #fieldsets = ( ('MOVING_TO_RESOURCE', {'fields': ('speechCorpus', 'writtenCorpus',)}),
+    #              ('Searchable', {'fields': ('identifier', 'linguality',  )}),
+    #              ('Other',      {'fields': ('description', 'clarinCentre', 'access', 'version', 'documentation', 'validation', )}),
+    #            )
+
+    fieldsets = ( ('Searchable', {'fields': ('identifier', 'linguality',  )}),
                   ('Other',      {'fields': ('description', 'clarinCentre', 'access', 'version', 'documentation', 'validation', )}),
                 )
-
     # FUTURE after issue #27: without speechCorpus and writtenCorpus
     #fieldsets = ( ('Searchable', {'fields': ('identifier', 'linguality', )}),
     #              ('Other',      {'fields': ('description', 'clarinCentre', 'access', 'version', 'documentation', 'validation', )}),

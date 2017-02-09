@@ -13,9 +13,10 @@ import json
 from datetime import datetime
 from xml.dom import minidom
 import xml.etree.ElementTree as ET
+from lxml import etree
 import os
 from collbank.collection.models import *
-from collbank.settings import OUTPUT_XML, APP_PREFIX, WSGI_FILE
+from collbank.settings import OUTPUT_XML, APP_PREFIX, WSGI_FILE, STATIC_ROOT, WRITABLE_DIR, COUNTRY_CODES, LANGUAGE_CODE_LIST
 from collbank.collection.admin import CollectionAdmin
 
 # General help functions
@@ -35,6 +36,8 @@ def add_element(optionality, col_this, el_name, crp, **kwargs):
     if optionality == "0-1" or optionality == "1":
         col_value = col_this_el
         if optionality == "1" or col_value != None:
+            if foreign != "" and not isinstance(col_this_el, str):
+                col_value = getattr(col_this_el, foreign)
             if field_choice != "": col_value = choice_english(field_choice, col_value)
             # Make sure the value is a string
             col_value = str(col_value)
@@ -74,6 +77,20 @@ def add_collection_xml(col_this, crp):
     add_element("0-1", col_this, "description", crp)
     # owner (0-n)
     add_element("0-n", col_this, "owner", crp, foreign="name")
+    # genre (0-n)
+    add_element("0-n", col_this, "genre", crp, foreign="name", fieldchoice=GENRE_NAME)
+    # languageDisorder(0-n)
+    add_element("0-n", col_this, "languageDisorder", crp, foreign="name")
+    # domain (0-n)
+    for domain_this in col_this.domain.all():
+        # Add the domains
+        add_element("0-n", domain_this, "name", crp, foreign="name", subname="domain")
+    # clarinCentre (0-1)
+    add_element("0-1", col_this, "clarinCentre", crp)
+    # PID (0-n)
+    add_element("0-n", col_this, "pid", crp, foreign="code", subname="PID")
+    # version (0-1)
+    add_element("0-1", col_this, "version", crp)
     # resource (1-n)
     for res_this in col_this.resource.all():
         # Add the resource top-element
@@ -163,8 +180,6 @@ def add_collection_xml(col_this, crp):
             med = ET.SubElement(res, "media")
             # format (0-n)
             add_element("0-n", med_this, "format", med, foreign="name", fieldchoice=MEDIA_FORMAT)
-    # genre (0-n)
-    add_element("0-n", col_this, "genre", crp, foreign="name", fieldchoice=GENRE_NAME)
     # provenance (0-n)
     for prov_this in col_this.provenance.all():
         # Set the provenance sub-element
@@ -183,7 +198,17 @@ def add_collection_xml(col_this, crp):
             # Create sub-element
             geo = ET.SubElement(prov, "geographicProvenance")
             # country (0-1)
-            add_element("0-1", geo_this, "country", geo, fieldchoice=PROVENANCE_GEOGRAPHIC_COUNTRY)
+            # add_element("0-1", geo_this, "country", geo, fieldchoice=PROVENANCE_GEOGRAPHIC_COUNTRY)
+            cntry = geo_this.country
+            if cntry != None:
+                # Look up the country in the list
+                (sEnglish, sAlpha2) = get_country(cntry)
+                # Set the values 
+                cntMain = ET.SubElement(geo, "Country")
+                cntMainName = ET.SubElement(cntMain, "CountryName")
+                cntMainCoding = ET.SubElement(cntMain, "CountryCoding")
+                cntMainName.text = sEnglish
+                cntMainCoding.text = sAlpha2
             # place (0-n)
             add_element("0-n", geo_this, "place", geo, foreign="name")
     # linguality (0-1)
@@ -199,28 +224,33 @@ def add_collection_xml(col_this, crp):
         add_element("0-n", linguality_this, "lingualityVariant", ling, foreign="name", fieldchoice=LINGUALITY_VARIANT)
         add_element("0-n", linguality_this, "multilingualityType", ling, foreign="name", fieldchoice=LINGUALITY_MULTI)
     # language (1-n)
-    add_element("1-n", col_this, "language", crp, foreign="name", fieldchoice="language.name")
-    # languageDisorder(0-n)
-    add_element("0-n", col_this, "languageDisorder", crp, foreign="name")
+    # add_element("1-n", col_this, "language", crp, foreign="name", fieldchoice="language.name")
+    for lng_this in col_this.language.all():
+        (sLngName, sLngCode) = get_language(lng_this.name)
+        lngMain = ET.SubElement(crp, "Language")
+        lngMainName = ET.SubElement(lngMain, "LanguageName")
+        lngMainName.text = sLngName
+        lngMainCode = ET.SubElement(lngMain, "ISO639")
+        lngMainCodeVal = ET.SubElement(lngMainCode, "iso-639-3-code")
+        lngMainCodeVal.text = sLngCode
     # relation (0-n)
-    add_element("0-n", col_this, "relation", crp, foreign="name", fieldchoice=RELATION_NAME)
-    # domain (0-n)
-    for domain_this in col_this.domain.all():
-        # Add the domains
-        add_element("0-n", domain_this, "name", crp, foreign="name", subname="domain")
-    # clarinCentre (0-1)
-    add_element("0-1", col_this, "clarinCentre", crp)
+    # add_element("0-n", col_this, "relation", crp, foreign="name", fieldchoice=RELATION_NAME, subname="dc-relation")
+    for rel_this in col_this.relation.all():
+        # sRelName = choice_english(RELATION_NAME, rel_this.name)
+        relMain = ET.SubElement(crp, "dc-relation")
+        relMainVal = ET.SubElement(relMain, "relation")
+        relMainVal.text = rel_this.name
     # access (0-1)
     access_this = col_this.access
     if access_this != None:
         # Set the access sub-element
         acc = ET.SubElement(crp, "access")
         # Process the access elements
-        add_element("1", access_this, "name", acc)
+        # add_element("1", access_this, "name", acc)
         add_element("0-n", access_this, "availability", acc, foreign="name", fieldchoice=ACCESS_AVAILABILITY)
         add_element("0-n", access_this, "licenseName", acc, foreign="name")
-        add_element("0-n", access_this, "licenseUrl", acc, foreign="name")
-        add_element("0-1", access_this, "nonCommercialUsageOnly", acc, fieldchoice=ACCESS_NONCOMMERCIAL)
+        add_element("0-n", access_this, "licenseUrl", acc, foreign="name", subname="licenseURL")
+        add_element("0-1", access_this, "nonCommercialUsageOnly", acc, foreign="name", fieldchoice=ACCESS_NONCOMMERCIAL)
         # contact (0-n)
         for contact_this in access_this.contact.all():
             # Add this contact
@@ -241,10 +271,6 @@ def add_collection_xml(col_this, crp):
             add_element("1", size_this, "size", tot)
             # Add the sizeUnit part
             add_element("1", size_this, "sizeUnit", tot)
-    # PID (0-n)
-    add_element("0-n", col_this, "pid", crp, foreign="code", subname="PID")
-    # version (0-1)
-    add_element("0-1", col_this, "version", crp)
     # resourceCreator (0-n)
     for rescrea_this in col_this.resourceCreator.all():
         # Add sub element
@@ -261,7 +287,15 @@ def add_collection_xml(col_this, crp):
         add_element("0-n", doc_this, "documentationType", doc, foreign="format", fieldchoice=DOCUMENTATION_TYPE)
         add_element("0-n", doc_this, "fileName", doc, foreign="name")
         add_element("0-n", doc_this, "url", doc, foreign="name")
-        add_element("1-n", doc_this, "language", doc, foreign="name", fieldchoice="language.name")
+        # add_element("1-n", doc_this, "language", doc, foreign="name", fieldchoice="language.name")
+        for lng_this in doc_this.language.all():
+            (sLngName, sLngCode) = get_language(lng_this.name)
+            lngMain = ET.SubElement(doc, "Language")
+            lngMainName = ET.SubElement(lngMain, "LanguageName")
+            lngMainName.text = sLngName
+            lngMainCode = ET.SubElement(lngMain, "ISO639")
+            lngMainCodeVal = ET.SubElement(lngMainCode, "iso-639-3-code")
+            lngMainCodeVal.text = sLngCode
     # validation (0-1)
     val_this = col_this.validation
     if val_this != None:
@@ -278,8 +312,103 @@ def add_collection_xml(col_this, crp):
         add_element("0-1", proj_this, "title", proj)
         add_element("0-n", proj_this, "funder", proj, foreign="name")
         add_element("0-1", proj_this, "URL", proj, foreign="name")
-
     # There's no return value -- all has been added to [crp]
+
+def get_country(cntryCode):
+    # Get the country string according to field-choice
+    sCountry = choice_english(PROVENANCE_GEOGRAPHIC_COUNTRY, cntryCode)
+    sCountryAlt = sCountry + " (the)"
+    # Walk all country codes
+    for tplCountry in COUNTRY_CODES:
+        if sCountry == tplCountry[1] or sCountryAlt == tplCountry[1]:
+            return (tplCountry[1], tplCountry[0])
+    # Empty
+    return (None, None)
+
+def get_language(lngCode):
+    # Get the language string according to the field choice
+    sLanguage = choice_english("language.name", lngCode)
+    # Walk all language codes
+    for tplLang in LANGUAGE_CODE_LIST:
+        if sLanguage == tplLang[2]:
+            return (sLanguage, tplLang[0])
+    # Empty
+    return (None, None)
+
+
+def validateXml(xmlstr):
+    """Validate an XML string against an XSD schema
+    
+    The first argument is a string containing the XML.
+    The XSD schema that is being used must be present in the static files section.
+    """
+
+    # Get the XSD definition
+    schema = getSchema()
+    if schema == None: return False
+
+    # Load the XML string into a document
+    xml = etree.XML(xmlstr)
+
+    # Perform the validation
+    validation = schema.validate(xml)
+    # Return a tuple with the boolean validation and a possible error log
+    return (validation, schema.error_log, )
+
+def getSchema():
+    # Get the XSD file into an LXML structure
+    # fSchema = os.path.abspath(os.path.join(STATIC_ROOT, "collection", "xsd", "CorpusCollection.xsd.txt"))
+    fSchema = os.path.abspath(os.path.join(WRITABLE_DIR, "xsd", "CorpusCollection.xsd.txt"))
+    with open(fSchema, encoding="utf-8", mode="r") as f:  
+        sText = f.read()                        
+        # doc = etree.parse(f)
+        doc = etree.XML(sText)                                                    
+    
+    # Load the schema
+    try:                                                                        
+        schema = etree.XMLSchema(doc)                                           
+        return schema
+    except lxml.etree.XMLSchemaParseError as e:                                 
+        print(e)                                                              
+        return None
+
+def xsd_error_list(lError, sXmlStr):
+    """Transform a list of XSD error objects into a list of strings"""
+
+    lHtml = []
+    lHtml.append("<html><body><h3>Fouten in het XML bestand</h3><table>")
+    lHtml.append("<thead><th>line</th><th>column</th><th>level</th><th>domain</th><th>type</th><th>message</th></thead>")
+    lHtml.append("<tbody>")
+    for oError in lError:
+        lHtml.append("<tr><td>" + str(oError.line) + "</td>" +
+                     "<td>" +str(oError.column) + "</td>" +
+                     "<td>" +oError.level_name + "</td>" + 
+                     "<td>" +oError.domain_name + "</td>" + 
+                     "<td>" +oError.type_name + "</td>" + 
+                     "<td>" +oError.message + "</td>")
+    lHtml.append("</tbody></table>")
+    # Add the XML string
+    lHtml.append("<h3>Het XML bestand:</h3>")
+    lHtml.append("<div class='rawxml'><pre class='brush: xml;'>" + sXmlStr.replace("<", "&lt;").replace(">", "&gt;") + "</pre></div>")
+    # Finish the HTML feedback
+    lHtml.append("</body></html>")
+    return "\n".join(lHtml)
+
+
+def xsd_error_as_simple_string(error):
+    """
+    Returns a string based on an XSD error object with the format
+    LINE:COLUMN:LEVEL_NAME:DOMAIN_NAME:TYPE_NAME:MESSAGE.
+    """
+    parts = [
+        error.line,
+        error.column,
+        error.level_name,
+        error.domain_name,
+        error.type_name,
+        error.message
+    ]
+    return ':'.join([str(item) for item in parts])
 
 def home(request):
     """Renders the home page."""
@@ -429,12 +558,14 @@ class CollectionListView(ListView):
         # Define the top-level of the xml output
         topattributes = {'xmlns:xsi':"http://www.w3.org/2001/XMLSchema-instance",
                          'xmlns:xsd':"http://www.w3.org/2001/XMLSchema",
-                         'CMDIVersion':'1.1',
+                         'CMDVersion':'1.1',
                          'xmlns':"http://www.clarin.eu/cmd/"}
         top = ET.Element('CMD', topattributes)
 
         # Add an empty header
         ET.SubElement(top, "Header", {})
+        # Add an empty Resources
+        ET.SubElement(top, "Resources", {})
         # Start components and this collection component
         cmp     = ET.SubElement(top, "Components")
         # Add a <CorpusCollection> root that contains a list of <collection> objects
@@ -451,8 +582,14 @@ class CollectionListView(ListView):
         # Convert the XML to a string
         xmlstr = minidom.parseString(ET.tostring(top,encoding='utf-8')).toprettyxml(indent="  ")
 
+        # Validate the XML against the XSD
+        (bValid, oError) = validateXml(xmlstr)
+        if not bValid:
+            # Provide an error message
+            return (False, xsd_error_list(oError, xmlstr))
+
         # Return this string
-        return xmlstr
+        return (True, xmlstr)
     
     def download_to_xml(self, context):
         """Make the XML representation of ALL collections downloadable"""
@@ -460,10 +597,14 @@ class CollectionListView(ListView):
         # Construct a file name based on the identifier
         # NOT NEEDED HERE? sFileName = 'collection-{}'.format(getattr(context['collection'], 'identifier'))
         # Get the XML of this collection
-        sXmlStr = self.convert_to_xml(context)
-        # Create the HttpResponse object with the appropriate CSV header.
-        response = HttpResponse(sXmlStr, content_type='text/xml')
-        response['Content-Disposition'] = 'attachment; filename="collbank_all.xml"'
+        (bValid, sXmlStr) = self.convert_to_xml(context)
+        if bValid:
+            # Create the HttpResponse object with the appropriate CSV header.
+            response = HttpResponse(sXmlStr, content_type='text/xml')
+            response['Content-Disposition'] = 'attachment; filename="collbank_all.xml"'
+        else:
+            # Return the error response
+            response = HttpResponse(sXmlStr)
 
         # Return the result
         return response
@@ -492,12 +633,17 @@ class CollectionDetailView(DetailView):
         # Define the top-level of the xml output
         topattributes = {'xmlns:xsi':"http://www.w3.org/2001/XMLSchema-instance",
                          'xmlns:xsd':"http://www.w3.org/2001/XMLSchema",
-                         'CMDIVersion':'1.1',
+                         'CMDVersion':'1.1',
                          'xmlns':"http://www.clarin.eu/cmd/"}
         top = ET.Element('CMD', topattributes)
 
         # Add an empty header
         ET.SubElement(top, "Header", {})
+        # Add obligatory Resources
+        rsc = ET.SubElement(top, "Resources", {})
+        ET.SubElement(rsc, "ResourceProxyList")
+        ET.SubElement(rsc, "JournalFileProxyList")
+        ET.SubElement(rsc, "ResourceRelationList")
         # Start components and this collection component
         cmp = ET.SubElement(top, "Components")
         # Add a <CorpusCollection> root that contains a list of <collection> objects
@@ -514,21 +660,15 @@ class CollectionDetailView(DetailView):
         # Convert the XML to a string
         xmlstr = minidom.parseString(ET.tostring(top,encoding='utf-8')).toprettyxml(indent="  ")
 
+        # Validate the XML against the XSD
+        (bValid, oError) = validateXml(xmlstr)
+        if not bValid:
+            # Get error messages for all the errors
+
+            return (False, xsd_error_list(oError, xmlstr))
+
         # Return this string
-        return xmlstr
-
-    def render_to_xml(self, context):
-        """Return the XML representation in the browser"""
-
-        # Save the to a standard location
-        sXmlStr = self.convert_to_xml(context)
-        sFileName = OUTPUT_XML
-        sFullPath = ""
-        with open(sFileName, encoding="utf-8", mode="w+") as f:
-            sFullPath = f.name
-            f.write(sXmlStr)
-        # Show result from that location
-        return HttpResponse(open(sFullPath, encoding="utf-8").read(), content_type='text/xml')
+        return (True, xmlstr)
 
     def download_to_xml(self, context):
         """Make the XML representation of this collection downloadable"""
@@ -536,10 +676,14 @@ class CollectionDetailView(DetailView):
         # Construct a file name based on the identifier
         sFileName = 'collection-{}'.format(getattr(context['collection'], 'identifier'))
         # Get the XML of this collection
-        sXmlStr = self.convert_to_xml(context)
-        # Create the HttpResponse object with the appropriate CSV header.
-        response = HttpResponse(sXmlStr, content_type='text/xml')
-        response['Content-Disposition'] = 'attachment; filename="'+sFileName+'.xml"'
+        (bValid, sXmlStr) = self.convert_to_xml(context)
+        if bValid:
+            # Create the HttpResponse object with the appropriate CSV header.
+            response = HttpResponse(sXmlStr, content_type='text/xml')
+            response['Content-Disposition'] = 'attachment; filename="'+sFileName+'.xml"'
+        else:
+            # Return the error response
+            response = HttpResponse(sXmlStr)
 
         # Return the result
         return response

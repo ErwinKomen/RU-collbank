@@ -466,7 +466,7 @@ class Provenance(models.Model):
     """Temporal and/or geographic provenance of the collection"""
 
     # temporalProvenance (0-1) 
-    temporalProvenance = models.ForeignKey(TemporalProvenance, blank=True)
+    temporalProvenance = models.ForeignKey(TemporalProvenance, blank=True, null=True)
     # geographicProvenance (0-n) 
     geographicProvenance = models.ManyToManyField(GeographicProvenance, blank=True)
 
