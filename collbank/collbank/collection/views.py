@@ -59,12 +59,15 @@ def add_element(optionality, col_this, el_name, crp, **kwargs):
         # Test for obligatory foreign
         if foreign == "": return False
         for t in col_this_el.all():
-            title_element = ET.SubElement(crp, sub_name)
             col_value = getattr(t, foreign)
             if field_choice != "": col_value = choice_english(field_choice, col_value)
             # Make sure the value is a string
             col_value = str(col_value)
-            title_element.text = col_value
+            if col_value == "(empty)": 
+                col_value = "unknown"
+            else:
+                title_element = ET.SubElement(crp, sub_name)
+                title_element.text = col_value
     # Return positively
     return True
             
@@ -98,7 +101,7 @@ def add_collection_xml(col_this, crp):
         # description (0-1)
         add_element("0-1", res_this, "description", res)
         # type (1) -- THIS MAY DISAPPEAR
-        add_element("1", res_this, "type", res, fieldchoice =RESOURCE_TYPE)
+        # add_element("1", res_this, "type", res, fieldchoice =RESOURCE_TYPE)
         # TODO: possibly divide this into DCtype and (optional) subtype
         # DCtype (1)
         add_element("1", res_this, "DCtype", res, fieldchoice =RESOURCE_TYPE, part=1)
@@ -173,7 +176,9 @@ def add_collection_xml(col_this, crp):
             # mode (1)
             add_element("1", ann_this, "mode", ann, fieldchoice=ANNOTATION_MODE)
             # format (1)
-            add_element("1", ann_this, "format", ann, fieldchoice=ANNOTATION_FORMAT)
+            # add_element("1", ann_this, "format", ann, fieldchoice=ANNOTATION_FORMAT)
+            # formatAnn (1-n)
+            add_element("1-n", ann_this, "formatAnn", ann, foreign="name", subname="format", fieldchoice=ANNOTATION_FORMAT)
         # media (0-n)
         for med_this in res_this.medias.all():
             # Add the media sub-element
@@ -197,8 +202,9 @@ def add_collection_xml(col_this, crp):
         for geo_this in prov_this.geographicProvenance.all():
             # Create sub-element
             geo = ET.SubElement(prov, "geographicProvenance")
+            # place (0-n)
+            add_element("0-n", geo_this, "place", geo, foreign="name")
             # country (0-1)
-            # add_element("0-1", geo_this, "country", geo, fieldchoice=PROVENANCE_GEOGRAPHIC_COUNTRY)
             cntry = geo_this.country
             if cntry != None:
                 # Look up the country in the list
@@ -209,8 +215,6 @@ def add_collection_xml(col_this, crp):
                 cntMainCoding = ET.SubElement(cntMain, "CountryCoding")
                 cntMainName.text = sEnglish
                 cntMainCoding.text = sAlpha2
-            # place (0-n)
-            add_element("0-n", geo_this, "place", geo, foreign="name")
     # linguality (0-1)
     linguality_this = col_this.linguality
     if linguality_this != None:
@@ -227,12 +231,16 @@ def add_collection_xml(col_this, crp):
     # add_element("1-n", col_this, "language", crp, foreign="name", fieldchoice="language.name")
     for lng_this in col_this.language.all():
         (sLngName, sLngCode) = get_language(lng_this.name)
-        lngMain = ET.SubElement(crp, "Language")
-        lngMainName = ET.SubElement(lngMain, "LanguageName")
-        lngMainName.text = sLngName
-        lngMainCode = ET.SubElement(lngMain, "ISO639")
-        lngMainCodeVal = ET.SubElement(lngMainCode, "iso-639-3-code")
-        lngMainCodeVal.text = sLngCode
+        # Validation
+        if sLngCode == "" or sLngCode == None:
+            bStop = True
+        else:
+            lngMain = ET.SubElement(crp, "Language")
+            lngMainName = ET.SubElement(lngMain, "LanguageName")
+            lngMainName.text = sLngName
+            lngMainCode = ET.SubElement(lngMain, "ISO639")
+            lngMainCodeVal = ET.SubElement(lngMainCode, "iso-639-3-code")
+            lngMainCodeVal.text = sLngCode
     # relation (0-n)
     # add_element("0-n", col_this, "relation", crp, foreign="name", fieldchoice=RELATION_NAME, subname="dc-relation")
     for rel_this in col_this.relation.all():
@@ -251,6 +259,10 @@ def add_collection_xml(col_this, crp):
         add_element("0-n", access_this, "licenseName", acc, foreign="name")
         add_element("0-n", access_this, "licenseUrl", acc, foreign="name", subname="licenseURL")
         add_element("0-1", access_this, "nonCommercialUsageOnly", acc, foreign="name", fieldchoice=ACCESS_NONCOMMERCIAL)
+        add_element("0-n", access_this, "website", acc, foreign="name")
+        add_element("0-1", access_this, "ISBN", acc, foreign="name")
+        add_element("0-1", access_this, "ISLRN", acc, foreign="name")
+        add_element("0-n", access_this, "medium", acc, foreign="format", fieldchoice=ACCESS_MEDIUM)
         # contact (0-n)
         for contact_this in access_this.contact.all():
             # Add this contact
@@ -258,10 +270,6 @@ def add_collection_xml(col_this, crp):
             add_element("1", contact_this, "person", cnt)
             add_element("1", contact_this, "address", cnt)
             add_element("1", contact_this, "email", cnt)
-        add_element("0-n", access_this, "website", acc, foreign="name")
-        add_element("0-1", access_this, "ISBN", acc, foreign="name")
-        add_element("0-1", access_this, "ISLRN", acc, foreign="name")
-        add_element("0-n", access_this, "medium", acc, foreign="format", fieldchoice=ACCESS_MEDIUM)
     # totalSize (0-n) -- NOTE: this is on the COLLECTION level; there also is totalsize on the RESOURCE level
     if col_this.totalSize != None:
         for size_this in col_this.totalSize.all():
@@ -311,12 +319,12 @@ def add_collection_xml(col_this, crp):
         # Process the project properties
         add_element("0-1", proj_this, "title", proj)
         add_element("0-n", proj_this, "funder", proj, foreign="name")
-        add_element("0-1", proj_this, "URL", proj, foreign="name")
+        add_element("0-1", proj_this, "URL", proj, foreign="name", subname="url")
     # There's no return value -- all has been added to [crp]
 
 def get_country(cntryCode):
     # Get the country string according to field-choice
-    sCountry = choice_english(PROVENANCE_GEOGRAPHIC_COUNTRY, cntryCode)
+    sCountry = choice_english(PROVENANCE_GEOGRAPHIC_COUNTRY, cntryCode).strip()
     sCountryAlt = sCountry + " (the)"
     # Walk all country codes
     for tplCountry in COUNTRY_CODES:
