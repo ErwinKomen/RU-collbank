@@ -8077,7 +8077,8 @@ LANGUAGE_CODE_LIST = [
         ("zyp", "00136139-001", "Zyphe"),
         ("zza", "00131000-001", "Zaza; Dimili; Dimli; Kirdki; Kirmanjki; Zazaki"),
         ("zzj", "00136140-001", "Zuojiang Zhuang"),
-        ("---", "unknown", "Unknown")
+        ("---", "unknown", "Unknown"),
+        ("---", "other", "Other")
 ]
 
 

@@ -336,12 +336,14 @@ def get_country(cntryCode):
     return (None, None)
 
 def get_language(lngCode):
+    if str(lngCode) == "493": 
+        x = 1
     # Get the language string according to the field choice
-    sLanguage = choice_english("language.name", lngCode)
+    sLanguage = choice_english("language.name", lngCode).lower()
     # Walk all language codes
     for tplLang in LANGUAGE_CODE_LIST:
         # Check in column #2 for the language name (must be complete match)
-        if sLanguage == tplLang[2]:
+        if sLanguage == tplLang[2].lower():
             # Return the language code from column #0
             return (sLanguage, tplLang[0])
     # Empty
