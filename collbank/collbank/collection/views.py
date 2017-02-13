@@ -328,7 +328,9 @@ def get_country(cntryCode):
     sCountryAlt = sCountry + " (the)"
     # Walk all country codes
     for tplCountry in COUNTRY_CODES:
+        # Check for country name or alternative country name
         if sCountry == tplCountry[1] or sCountryAlt == tplCountry[1]:
+            # REturn the correct country name and code
             return (tplCountry[1], tplCountry[0])
     # Empty
     return (None, None)
@@ -338,7 +340,9 @@ def get_language(lngCode):
     sLanguage = choice_english("language.name", lngCode)
     # Walk all language codes
     for tplLang in LANGUAGE_CODE_LIST:
+        # Check in column #2 for the language name (must be complete match)
         if sLanguage == tplLang[2]:
+            # Return the language code from column #0
             return (sLanguage, tplLang[0])
     # Empty
     return (None, None)
@@ -572,8 +576,11 @@ class CollectionListView(ListView):
 
         # Add an empty header
         ET.SubElement(top, "Header", {})
-        # Add an empty Resources
-        ET.SubElement(top, "Resources", {})
+        # Add obligatory Resources
+        rsc = ET.SubElement(top, "Resources", {})
+        ET.SubElement(rsc, "ResourceProxyList")
+        ET.SubElement(rsc, "JournalFileProxyList")
+        ET.SubElement(rsc, "ResourceRelationList")
         # Start components and this collection component
         cmp     = ET.SubElement(top, "Components")
         # Add a <CorpusCollection> root that contains a list of <collection> objects

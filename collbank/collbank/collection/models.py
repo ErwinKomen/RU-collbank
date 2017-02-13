@@ -75,8 +75,8 @@ CLARIN_CENTRE = "clarincentre.name"
 class FieldChoice(models.Model):
 
     field = models.CharField(max_length=50)
-    english_name = models.CharField(max_length=50)
-    dutch_name = models.CharField(max_length=50)
+    english_name = models.CharField(max_length=100)
+    dutch_name = models.CharField(max_length=100)
     machine_value = models.IntegerField(help_text="The actual numeric value stored in the database. Created automatically.")
 
     def __str__(self):
@@ -1165,7 +1165,7 @@ class Resource(models.Model):
     # (0-1) subtype
     subtype = models.CharField("Subtype of this resource (optional)", choices=build_choice_list(RESOURCE_TYPE), max_length=5,
                             help_text=get_help(RESOURCE_SUBTYPE), blank=True, null=True)
-    # (0-n) modality
+    # (1-n) modality
     modality = models.ManyToManyField(Modality, blank=True)
 
     # =============== Komt van [SpeechCorpus] =======================================

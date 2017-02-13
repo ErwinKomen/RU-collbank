@@ -1015,6 +1015,7 @@ LANGUAGE_CODE_LIST = [
         ("beo", "00134722-001", "Beami"),
         ("bep", "00134721-001", "Besoa"),
         ("beq", "00134720-001", "Beembe"),
+        ("ber", "Collective",   "Berber languages"),
         ("bes", "00134915-001", "Besme"),
         ("bet", "00133738-001", "Guiberoua Béte"),
         ("beu", "00133737-001", "Blagar"),
@@ -3041,7 +3042,6 @@ LANGUAGE_CODE_LIST = [
         ("jay", "00131179-001", "Yan-nhangu"),
         ("jaz", "00131178-001", "Jawe"),
         ("jbe", "00131169-001", "Judeo-Berber"),
-        ("jbe", "Should be [ber]", "Berber languages"),
         ("jbj", "00131176-001", "Arandai"),
         ("jbn", "00131184-001", "Nafusi"),
         ("jbo", "00138357-001", "Lojban"),
@@ -8076,7 +8076,8 @@ LANGUAGE_CODE_LIST = [
         ("zyn", "00136138-001", "Yongnan Zhuang"),
         ("zyp", "00136139-001", "Zyphe"),
         ("zza", "00131000-001", "Zaza; Dimili; Dimli; Kirdki; Kirmanjki; Zazaki"),
-        ("zzj", "00136140-001", "Zuojiang Zhuang")
+        ("zzj", "00136140-001", "Zuojiang Zhuang"),
+        ("---", "unknown", "Unknown")
 ]
 
 
