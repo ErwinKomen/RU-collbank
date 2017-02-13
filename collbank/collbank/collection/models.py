@@ -8,6 +8,8 @@ Each resource in the collection is characterised by its own annotations.
 from django.db import models
 from django.contrib.auth.models import User
 from datetime import datetime
+# from collbank.settings import COUNTRY_CODES, LANGUAGE_CODE_LIST
+
 import copy  # (1) use python copy
 import sys
 
@@ -58,6 +60,17 @@ LINGUALITY_VARIANT = "linguality.lingualityvariant"
 LINGUALITY_MULTI = "linguality.multilingualitytype"
 CLARIN_CENTRE = "clarincentre.name"
 
+#settings_choices = [
+#    {'name': "language.name",
+#     'list': LANGUAGE_CODE_LIST,
+#     'colCode': 0,
+#     'colText': 2 },
+#    {'name': "country.name",
+#     'list': COUNTRY_CODES,
+#     'colCode': 0,
+#     'colText': 1 }
+#    ]
+
 
 class FieldChoice(models.Model):
 
@@ -73,6 +86,41 @@ class FieldChoice(models.Model):
     class Meta:
         ordering = ['field','machine_value']
 
+
+#def build_choice_settings(field):
+#    """Create a list of choice-tuples using settings_choices."""
+
+#    choice_list = [];
+#    unique_list = [];   # Check for uniqueness
+
+#    try:
+#        # Try find [field] in [settings_choices]
+#        idx = next((obj for obj in settings_choices if object.name == field), -1)
+#        # Are we positive?
+#        if idx >=0:
+#            # Get all elements
+#            lstSettings = settings_choices[idx]['list']
+#            colCode = settings_choices[idx]['colCode']
+#            colText = settings_choices[idx]['colText']
+#            # More validation
+#            if lstSettings != None:
+#                # Copy all elements
+#                for choice in lstSettings:
+#                    # Copy this choice
+#                    choice_list.append(lstSettings[colCode], lstSettings[colText])
+#                # Sort the result
+#                choice_list = sorted(choice_list,key=lambda x: x[1]);
+#        else:
+#            # Take a default list
+#            choice_list = [('0','-'),('1','N/A')]
+
+#    except:
+#        print("Unexpected error:", sys.exc_info()[0])
+#        choice_list = [('0','-'),('1','N/A')];
+
+#    # Signbank returns: [('0','-'),('1','N/A')] + choice_list
+#    # We do not use defaults
+#    return choice_list;
 
 def build_choice_list(field, position=None, subcat=None):
     """Create a list of choice-tuples"""
