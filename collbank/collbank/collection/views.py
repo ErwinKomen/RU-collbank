@@ -9,6 +9,7 @@ from django.http import HttpRequest, HttpResponse
 from django.template import RequestContext, loader
 from django.contrib.admin.templatetags.admin_list import result_headers
 from django.db.models.functions import Lower
+from django.utils import timezone
 import json
 from datetime import datetime
 from xml.dom import minidom
@@ -18,6 +19,7 @@ import os
 from collbank.collection.models import *
 from collbank.settings import OUTPUT_XML, APP_PREFIX, WSGI_FILE, STATIC_ROOT, WRITABLE_DIR, COUNTRY_CODES, LANGUAGE_CODE_LIST
 from collbank.collection.admin import CollectionAdmin
+from collbank.collection.forms import *
 
 # Local variables
 XSI_CMD = "http://www.clarin.eu/cmd/"
@@ -655,13 +657,30 @@ class CollectionDetailView(DetailView):
     model = Collection
     export_xml = True
     context_object_name = 'collection'
+    template_name = 'collection/coll_detail.html'
+
+    #def get_form(self):
+    #    # Instantiate a form
+    #    form = self.form_class(instance=self.object)
+    #    # Possibly modify form-fields
+    #    return form
+
+    def get_object(self):
+        obj = super(CollectionDetailView,self).get_object()
+        form = CollectionForm(instance=obj)
+        return form
+
+    def get_context_data(self, **kwargs):
+        context = super(CollectionDetailView, self).get_context_data(**kwargs)
+        context['now'] = timezone.now()
+        return context
 
     def render_to_response(self, context, **response_kwargs):
         """Check if downloading is needed or not"""
         sType = self.request.GET.get('submit_type', '')
         if sType == 'xml':
             return self.download_to_xml(context)
-        elif self.export_xml:
+        elif self.export_xml and sType != '':
             return self.render_to_xml(context)
         else:
             return super(CollectionDetailView, self).render_to_response(context, **response_kwargs)

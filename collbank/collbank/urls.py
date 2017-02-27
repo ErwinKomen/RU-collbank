@@ -37,6 +37,7 @@ urlpatterns = [
     url(r'^about', collbank.collection.views.about, name='about'),
     url(r'^definitions$', RedirectView.as_view(url='/'+pfx+'admin/'), name='definitions'),
     url(r'^collections$', RedirectView.as_view(url='/'+pfx+'admin/collection/collection/'), name='collections'),
+    url(r'^collection/(?P<pk>\d+)', CollectionDetailView.as_view(), name='coll_detail'),
     url(r'^reload_collbank/$', collbank.collection.views.reload_collbank, name='reload'),
     url(r'^overview/$', CollectionListView.as_view(), name='overview'),
     url(r'^admin/copy/$', collbank.collection.admin.copy_item, name='copyadmin'),

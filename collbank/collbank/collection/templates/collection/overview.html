@@ -42,6 +42,7 @@
             <td><a href="/{{app_prefix }}admin/collection/collection/{{coll.pk}}/change/">{{coll.identifier}}</a></td>
             <td>{{coll.description}}
               <span class="coll-xml"><a class="btn btn-success btn-xs" href="/{{app_prefix }}output/{{coll.pk}}?submit_type=xml">xml</a></span>
+              <span class="coll-xml"><a class="btn btn-error btn-xs" href="/{{app_prefix }}collection/{{coll.pk}}?submit_type=">edit</a></span>
             </td>
           </tr>
         {% endfor %}
