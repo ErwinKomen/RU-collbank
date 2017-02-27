@@ -9,6 +9,7 @@ from django.http import HttpRequest, HttpResponse
 from django.template import RequestContext, loader
 from django.contrib.admin.templatetags.admin_list import result_headers
 from django.db.models.functions import Lower
+from django.utils import timezone
 import json
 from datetime import datetime
 from xml.dom import minidom
@@ -18,6 +19,12 @@ import os
 from collbank.collection.models import *
 from collbank.settings import OUTPUT_XML, APP_PREFIX, WSGI_FILE, STATIC_ROOT, WRITABLE_DIR, COUNTRY_CODES, LANGUAGE_CODE_LIST
 from collbank.collection.admin import CollectionAdmin
+from collbank.collection.forms import *
+
+# Local variables
+XSI_CMD = "http://www.clarin.eu/cmd/"
+XSD_ID = "clarin.eu:cr1:p_1459844210473"
+XSI_XSD = "https://catalog.clarin.eu/ds/ComponentRegistry/rest/registry/1.1/profiles/" + XSD_ID + "/xsd/"
 
 # General help functions
 def add_element(optionality, col_this, el_name, crp, **kwargs):
@@ -70,6 +77,34 @@ def add_element(optionality, col_this, el_name, crp, **kwargs):
                 title_element.text = col_value
     # Return positively
     return True
+    
+def make_collection_top():
+    """Create the top-level elements for a collection"""
+
+    # Define the top-level of the xml output
+    topattributes = {'xmlns': "http://www.clarin.eu/cmd/" ,
+                     'xmlns:xsd':"http://www.w3.org/2001/XMLSchema/",
+                     'xmlns:xsi': "http://www.w3.org/2001/XMLSchema-instance/",
+                     'xsi:schemaLocation': XSI_CMD + " " + XSI_XSD,
+                     'CMDVersion':'1.1'}
+    # topattributes = {'CMDVersion':'1.1'}
+    top = ET.Element('CMD', topattributes)
+
+    # Add a header
+    hdr = ET.SubElement(top, "Header", {})
+    mdSelf = ET.SubElement(hdr, "MdSelfLink")
+    mdProf = ET.SubElement(hdr, "MdProfile")
+    mdProf.text = XSD_ID
+    # Add obligatory Resources
+    rsc = ET.SubElement(top, "Resources", {})
+    lproxy = ET.SubElement(rsc, "ResourceProxyList")
+    # TODO: add resource proxy's under [lproxy]
+
+    ET.SubElement(rsc, "JournalFileProxyList")
+    ET.SubElement(rsc, "ResourceRelationList")
+    # Return the resulting top-level element
+    return top
+        
             
 def add_collection_xml(col_this, crp):
     """Add the collection information from [col_this] to XML element [crp]"""
@@ -569,20 +604,9 @@ class CollectionListView(ListView):
     def convert_to_xml(self, context):
         """Convert all available collection objects to XML"""
 
-        # Define the top-level of the xml output
-        topattributes = {'xmlns:xsi':"http://www.w3.org/2001/XMLSchema-instance",
-                         'xmlns:xsd':"http://www.w3.org/2001/XMLSchema",
-                         'CMDVersion':'1.1',
-                         'xmlns':"http://www.clarin.eu/cmd/"}
-        top = ET.Element('CMD', topattributes)
+        # Create a top-level element, including CMD, Header and Resources
+        top = make_collection_top()
 
-        # Add an empty header
-        ET.SubElement(top, "Header", {})
-        # Add obligatory Resources
-        rsc = ET.SubElement(top, "Resources", {})
-        ET.SubElement(rsc, "ResourceProxyList")
-        ET.SubElement(rsc, "JournalFileProxyList")
-        ET.SubElement(rsc, "ResourceRelationList")
         # Start components and this collection component
         cmp     = ET.SubElement(top, "Components")
         # Add a <CorpusCollection> root that contains a list of <collection> objects
@@ -633,13 +657,30 @@ class CollectionDetailView(DetailView):
     model = Collection
     export_xml = True
     context_object_name = 'collection'
+    template_name = 'collection/coll_detail.html'
+
+    #def get_form(self):
+    #    # Instantiate a form
+    #    form = self.form_class(instance=self.object)
+    #    # Possibly modify form-fields
+    #    return form
+
+    def get_object(self):
+        obj = super(CollectionDetailView,self).get_object()
+        form = CollectionForm(instance=obj)
+        return form
+
+    def get_context_data(self, **kwargs):
+        context = super(CollectionDetailView, self).get_context_data(**kwargs)
+        context['now'] = timezone.now()
+        return context
 
     def render_to_response(self, context, **response_kwargs):
         """Check if downloading is needed or not"""
         sType = self.request.GET.get('submit_type', '')
         if sType == 'xml':
             return self.download_to_xml(context)
-        elif self.export_xml:
+        elif self.export_xml and sType != '':
             return self.render_to_xml(context)
         else:
             return super(CollectionDetailView, self).render_to_response(context, **response_kwargs)
@@ -647,20 +688,9 @@ class CollectionDetailView(DetailView):
     def convert_to_xml(self, context):
         """Convert the 'collection' object from the context to XML"""
 
-        # Define the top-level of the xml output
-        topattributes = {'xmlns:xsi':"http://www.w3.org/2001/XMLSchema-instance",
-                         'xmlns:xsd':"http://www.w3.org/2001/XMLSchema",
-                         'CMDVersion':'1.1',
-                         'xmlns':"http://www.clarin.eu/cmd/"}
-        top = ET.Element('CMD', topattributes)
+        # Create a top-level element, including CMD, Header and Resources
+        top = make_collection_top()
 
-        # Add an empty header
-        ET.SubElement(top, "Header", {})
-        # Add obligatory Resources
-        rsc = ET.SubElement(top, "Resources", {})
-        ET.SubElement(rsc, "ResourceProxyList")
-        ET.SubElement(rsc, "JournalFileProxyList")
-        ET.SubElement(rsc, "ResourceRelationList")
         # Start components and this collection component
         cmp = ET.SubElement(top, "Components")
         # Add a <CorpusCollection> root that contains a list of <collection> objects
