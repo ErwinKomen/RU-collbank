@@ -176,7 +176,7 @@ class GenreForm(forms.ModelForm):
 
     class Meta:
         model = Genre
-        fields = ['name']
+        fields = '__all__' # ['name']
 
     def __init__(self, *args, **kwargs):
         super(GenreForm, self).__init__(*args, **kwargs)
@@ -358,9 +358,6 @@ class ProjectInline(admin.TabularInline):
 
 
 class CollectionAdmin(admin.ModelAdmin):
-    inlines = [TitleInline, OwnerInline, ResourceInline, GenreInline, ProvenanceInline,
-               LanguageInline, LanguageDisorderInline, RelationInline, CollectionDomainInline,
-               TotalSizeInline, PidInline, ResourceCreatorInline, ProjectInline]
     #fieldsets = ( ('MOVING_TO_RESOURCE', {'fields': ('speechCorpus', 'writtenCorpus',)}),
     #              ('Searchable', {'fields': ('identifier', 'linguality',  )}),
     #              ('Other',      {'fields': ('description', 'clarinCentre', 'access', 'version', 'documentation', 'validation', )}),
@@ -373,6 +370,10 @@ class CollectionAdmin(admin.ModelAdmin):
     #fieldsets = ( ('Searchable', {'fields': ('identifier', 'linguality', )}),
     #              ('Other',      {'fields': ('description', 'clarinCentre', 'access', 'version', 'documentation', 'validation', )}),
     #            )
+
+    inlines = [TitleInline, OwnerInline, ResourceInline, GenreInline, ProvenanceInline,
+               LanguageInline, LanguageDisorderInline, RelationInline, CollectionDomainInline,
+               TotalSizeInline, PidInline, ResourceCreatorInline, ProjectInline]
 
     list_display = ['id', 'do_identifier', 'get_title', 'description']
     search_fields = ['identifier', 'title__name', 'description']
