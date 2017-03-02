@@ -327,7 +327,10 @@ def get_help(field):
 class Title(models.Model):
     """Title of this collection"""
 
+    # [1; f]
     name = models.TextField("Title used for the collection as a whole", help_text=get_help('title'))
+    # [1]     Each collection can have [1-n] titles
+    collection = models.ForeignKey(Collection, blank=False, null=False, default=1)
 
     def __str__(self):
         idt = m2m_identifier(self.collection_set)
@@ -343,7 +346,10 @@ class Title(models.Model):
 class Owner(models.Model):
     """The legal owner"""
 
+    # [1; f]
     name = models.TextField("One of the collection or resource owners", help_text=get_help('owner'))
+    # [1]     Each collection can have [0-n] owvers
+    collection = models.ForeignKey(Collection, blank=False, null=False, default=1)
 
     def __str__(self):
         idt = m2m_identifier(self.collection_set)
@@ -419,11 +425,13 @@ class Annotation(models.Model):
 
 
 class TotalSize(models.Model):
-    """Total size of the collection"""
+    """Total size of the resource"""
 
     # size = models.IntegerField("Size of the collection", default=0)
     size = models.CharField("Size of the collection", default="unknown", max_length=80)
     sizeUnit = models.CharField("Units", help_text=get_help(SIZEUNIT), max_length=50, default='MB')
+    # [1]     Each resource can have [0-n] total-sizes
+    resource = models.ForeignKey("Resource", blank=False, null=False, default=1)
 
     def __str__(self):
         idt = m2m_identifier(self.collection_set)
@@ -434,6 +442,21 @@ class TotalSize(models.Model):
             else:
                 idt = m2m_identifier(lst[0].collection_set)
         return "[{}] {} {}".format(idt,self.size,self.sizeUnit)
+
+
+class TotalCollectionSize(models.Model):
+    """Total size of the collection"""
+
+    # [1]
+    size = models.CharField("Size of the collection", default="unknown", max_length=80)
+    # [1]
+    sizeUnit = models.CharField("Units", help_text=get_help(SIZEUNIT), max_length=50, default='MB')
+    # [1]     Each collection can have [0-n] total-sizes
+    collection = models.ForeignKey("Collection", blank=False, null=False, default=1)
+
+    def __str__(self):
+        return "[{}] {} {}".format(self.collection.identifier,self.size,self.sizeUnit)
+
 
 
 class Modality(models.Model):
@@ -517,6 +540,8 @@ class Provenance(models.Model):
     temporalProvenance = models.ForeignKey(TemporalProvenance, blank=True, null=True)
     # geographicProvenance (0-n) 
     geographicProvenance = models.ManyToManyField(GeographicProvenance, blank=True)
+    # [1]     Each collection can have [0-n] provenances
+    collection = models.ForeignKey(Collection, blank=False, null=False, default=1)
 
     def __str__(self):
         idt = m2m_identifier(self.collection_set)
@@ -531,6 +556,8 @@ class Genre(models.Model):
 
     # (0-n; c)
     name = models.CharField("Collection genre", choices=build_choice_list(GENRE_NAME), max_length=5, help_text=get_help(GENRE_NAME), default='0')
+    # [1]     Each collection can have [1-n] genres
+    collection = models.ForeignKey(Collection, blank=False, null=False, default=1)
 
     def __str__(self):
         idt = m2m_identifier(self.collection_set)
@@ -616,6 +643,8 @@ class Linguality(models.Model):
     lingualityVariant = models.ManyToManyField(LingualityVariant, blank=True)
     # -	multilingualityType (0-n;c)
     multilingualityType = models.ManyToManyField(MultilingualityType, blank=True)
+    # [1]     Each collection can have [0-n] lingualities
+    collection = models.ForeignKey(Collection, blank=False, null=False, default=1)
 
     def __str__(self):
         return "t:{}, n:{}, a:{}, s:{}, v:{}, m:{}".format(
@@ -644,7 +673,10 @@ class Language(models.Model):
 class LanguageDisorder(models.Model):
     """Language that is used in this collection"""
 
+    # [1]
     name = models.CharField("Language disorder", max_length=50, help_text=get_help("languagedisorder.name"), default='unknown')
+    # [1]     Each collection can have [0-n] language disorders
+    collection = models.ForeignKey(Collection, blank=False, null=False, default=1)
 
     def __str__(self):
         idt = m2m_identifier(self.collection_set)
@@ -655,21 +687,14 @@ class LanguageDisorder(models.Model):
 class Relation(models.Model):
     """Language that is used in this collection"""
 
+    # [1]
     name = models.CharField("Relation with something else", max_length=80, help_text=get_help(RELATION_NAME ), default='-')
+    # [1]     Each collection can have [0-n] relations
+    collection = models.ForeignKey(Collection, blank=False, null=False, default=1)
 
     def __str__(self):
         idt = m2m_identifier(self.collection_set)
         return "[{}] {}".format(idt,self.name)
-
-
-class DomainDescription(models.Model):
-    """Domain Description"""
-
-    # description
-    name = models.TextField("Domain", help_text=get_help(DOMAIN_NAME), default='0')
-
-    def __str__(self):
-        return self.name
 
 
 class Domain(models.Model):
@@ -677,11 +702,25 @@ class Domain(models.Model):
 
     # domain (0-n;f) 
     name = models.ManyToManyField(DomainDescription, blank=True)
+    # [1]     Each collection can have [0-n] domains
+    collection = models.ForeignKey(Collection, blank=False, null=False, default=1)
 
     def __str__(self):
         idt = m2m_identifier(self.collection_set)
         sName = m2m_combi(self.name)
         return "[{}] {}".format(idt,sName)
+
+
+class DomainDescription(models.Model):
+    """Domain Description"""
+
+    # description
+    name = models.TextField("Domain", help_text=get_help(DOMAIN_NAME), default='0')
+    # [1]     Each domain can have [1-n] domaindescriptions
+    domain = models.ForeignKey(Domain, blank=False, null=False, default=1)
+
+    def __str__(self):
+        return self.name
 
 
 class AccessAvailability(models.Model):
@@ -781,6 +820,8 @@ class Access(models.Model):
     ISLRN = models.TextField("ISLRN of collection", help_text=get_help('access.ISLRN'), blank=True)
     # medium (0-n; c)
     medium = models.ManyToManyField(AccessMedium, blank=True)
+    # [1]     Each collection can have [0-n] Access-es
+    collection = models.ForeignKey("Collection", blank=False, null=False, default=1)
 
     def __str__(self):
         sName = self.name
@@ -794,7 +835,10 @@ class PID(models.Model):
     class Meta:
         verbose_name_plural = "PIDs"
 
+    # [1]
     code = models.TextField("Persistent identifier of the collection", help_text=get_help('PID'))
+    # [1]     Each collection can have [0-n] PIDs
+    collection = models.ForeignKey("Collection", blank=False, null=False, default=1)
 
     def __str__(self):
         idt = m2m_identifier(self.collection_set)
@@ -822,8 +866,12 @@ class Person(models.Model):
 class ResourceCreator(models.Model):
     """Creator of this resource"""
 
+    # [1]
     organization = models.ManyToManyField(Organization, blank=False)
+    # [1]
     person = models.ManyToManyField(Person, blank=False)
+    # [1]     Each collection can have [0-n] resource creators
+    collection = models.ForeignKey(Collection, blank=False, null=False, default=1)
 
     def __str__(self):
         idt = m2m_identifier(self.collection_set)
@@ -937,6 +985,8 @@ class Project(models.Model):
     funder = models.ManyToManyField(ProjectFunder, blank=True)
     # url (0-1; f)
     URL = models.ForeignKey(ProjectUrl, blank=True, null=True)
+    # [1]     Each collection can have [0-n] projects
+    collection = models.ForeignKey("Collection", blank=False, null=False, default=1)
 
     def __str__(self):
         idt = m2m_identifier(self.collection_set)
@@ -1168,6 +1218,9 @@ class Resource(models.Model):
     # (1-n) modality
     modality = models.ManyToManyField(Modality, blank=True)
 
+    # [1]     Each collection can have [1-n] resources
+    collection = models.ForeignKey(Collection, blank=False, null=False, default=1)
+
     # =============== Komt van [SpeechCorpus] =======================================
     # recordingEnvironment (0-n;c)
     recordingEnvironment = models.ManyToManyField(RecordingEnvironment, blank=True)
@@ -1233,46 +1286,45 @@ class Collection(models.Model):
 
     # INTERNAL FIELD: identifier (1)
     identifier = models.CharField("Unique short collection identifier (10 characters max)", max_length=MAX_IDENTIFIER_LEN, default='-')
-    # title (1-n;f) 
+    # title (1-n;f)             [many-to-one]
     title = models.ManyToManyField(Title, blank=False)
     # == description (0-1;f) 
     description = models.TextField("Describes the collection as a whole", blank=True, help_text=get_help('description'))
-    # == owner (0-n;f) 
+    # == owner (0-n;f)          [many-to-one]
     owner = models.ManyToManyField( Owner, blank=True)
-    # resource (1-n)
+    # resource (1-n)            [many-to-one]
     resource = models.ManyToManyField(Resource, blank=False)
-    # == genre (0-n; c:)  
+    # == genre (0-n; c:)        [many-to-one]
     genre = models.ManyToManyField(Genre, blank=True)
-    # provenance (0-n) 
+    # provenance (0-n)          [many-to-one]
     provenance = models.ManyToManyField(Provenance, blank=True)
-    # provenance = models.ForeignKey(Provenance, blank=True, null=True)
     # linguality (0-1)
     linguality = models.ForeignKey(Linguality, blank=True, null=True)
-    # language (1-n; c)
+    # language (1-n; c)   Many-to-Many!!
     language = models.ManyToManyField(Language, blank=False)
-    # languageDisorder (0-n;f) 
+    # languageDisorder (0-n;f)  [many-to-one]
     languageDisorder = models.ManyToManyField(LanguageDisorder, blank=True)
-    # relation (0-n;f) 
+    # relation (0-n;f)          [many-to-one]
     relation = models.ManyToManyField(Relation, blank=True)
-    # == domain (0-n;f) 
+    # == domain (0-n;f)         [many-to-one]
     domain = models.ManyToManyField(Domain, blank=True)
     # == clarinCentre (0-1; f)
     clarinCentre = models.TextField("Clarin centre in charge", blank=True, help_text=get_help('clarincentre.name'))
     # == access (0-1)
     access = models.ForeignKey(Access, blank=True, null=True)
-    # == totalSize (0-n)
+    # == totalSize (0-n)        [many-to-one] - verander in 'TotalCollectionSize'
     totalSize = models.ManyToManyField(TotalSize, blank=True)
-    # == PID (0-n)
+    # == PID (0-n)              [many-to-one]
     pid = models.ManyToManyField(PID, blank=True)
     # == version (0-1; f)
     version = models.TextField("Version of the collection", blank=True, help_text=get_help('version'))
-    # == resourceCreator (0-n)
+    # == resourceCreator (0-n)  [many-to-one]
     resourceCreator = models.ManyToManyField(ResourceCreator, blank=True)
     # == documentation (0-1)
     documentation = models.ForeignKey(Documentation, blank=True, null=True)
     # == validation (0-1)
     validation = models.ForeignKey(Validation, blank=True, null=True)
-    # == project (0-n)
+    # == project (0-n)          [many-to-one]
     project = models.ManyToManyField(Project, blank=True)
     # == writtenCorpus (0-1)
     writtenCorpus = models.ForeignKey(WrittenCorpus, blank=True, null=True)
