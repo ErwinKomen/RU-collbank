@@ -17,7 +17,7 @@ from django.core.urlresolvers import reverse, reverse_lazy
 from django.views.generic.base import RedirectView
 from django.contrib import admin
 from collbank.settings import APP_PREFIX
-from collbank.collection.models import one_time_startup
+# from collbank.collection.models import one_time_startup
 admin.autodiscover()
 
 # set admin site names
@@ -71,4 +71,4 @@ urlpatterns = [
     url(r'^admin/', include(admin.site.urls), name='admin_base'),
 ]
 
-one_time_startup()
+# one_time_startup()

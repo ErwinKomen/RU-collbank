@@ -250,36 +250,36 @@ def get_tuple_index(lstTuples, sValue):
             iBack = lstFound[0][0]
     return iBack
 
-def one_time_startup():
-    """Execute things that only need to be done once on startup"""
-    iChanges = 0
+#def one_time_startup():
+#    """Execute things that only need to be done once on startup"""
+#    iChanges = 0
 
-    try:
-        # Make a list of all DCtype values
-        arTypeChoices = Resource._meta.get_field('type').choices
-        arDCtypeChoices = Resource._meta.get_field('DCtype').choices
-        # Walk all existing 'Resource' objects
-        for resThis in Resource.objects.all():
-            # Check if the Type needs updating
-            if resThis.DCtype == '' or resThis.DCtype == '0':
-                # The type needs updating
-                sType = get_tuple_value(arTypeChoices, resThis.type)
-                # (1) Get the correct value
-                arType = sType.partition(':')
-                if len(arType) == 1:
-                    resThis.DCtype = get_tuple_index(arTypeChoices, sType)
-                    resThis.subtype = ''
-                else:
-                    resThis.DCtype = get_tuple_index(arDCtypeChoices, arType[0])
-                    resThis.subtype = get_tuple_index(arTypeChoices, sType)
-                iChanges += 1
-                resThis.save()
+#    try:
+#        # Make a list of all DCtype values
+#        arTypeChoices = Resource._meta.get_field('type').choices
+#        arDCtypeChoices = Resource._meta.get_field('DCtype').choices
+#        # Walk all existing 'Resource' objects
+#        for resThis in Resource.objects.all():
+#            # Check if the Type needs updating
+#            if resThis.DCtype == '' or resThis.DCtype == '0':
+#                # The type needs updating
+#                sType = get_tuple_value(arTypeChoices, resThis.type)
+#                # (1) Get the correct value
+#                arType = sType.partition(':')
+#                if len(arType) == 1:
+#                    resThis.DCtype = get_tuple_index(arTypeChoices, sType)
+#                    resThis.subtype = ''
+#                else:
+#                    resThis.DCtype = get_tuple_index(arDCtypeChoices, arType[0])
+#                    resThis.subtype = get_tuple_index(arTypeChoices, sType)
+#                iChanges += 1
+#                resThis.save()
 
-        if iChanges > 0:
-            # Note the changes
-            print('OneTimeStartup Changes: ' + str(iChanges) + '\n',file=sys.stderr)
-    except:
-        print("OneTimeStartup Unexpected error:", sys.exc_info()[0],file=sys.stderr)
+#        if iChanges > 0:
+#            # Note the changes
+#            print('OneTimeStartup Changes: ' + str(iChanges) + '\n',file=sys.stderr)
+#    except:
+#        print("OneTimeStartup Unexpected error:", sys.exc_info()[0],file=sys.stderr)
 
   
 
@@ -330,11 +330,12 @@ class Title(models.Model):
     # [1; f]
     name = models.TextField("Title used for the collection as a whole", help_text=get_help('title'))
     # [1]     Each collection can have [1-n] titles
-    collection = models.ForeignKey(Collection, blank=False, null=False, default=1)
+    collection = models.ForeignKey("Collection", blank=False, null=False, default=1, related_name="collection12m_title")
 
     def __str__(self):
-        idt = m2m_identifier(self.collection_set)
-        return "[{}] {}".format(idt,self.name)
+        # idt = m2m_identifier(self.collection_set)
+        idt = self.collection.identifier
+        return "[{}] {}".format(idt,self.name[:50])
 
     def get_copy(self):
         # Make a clean copy
@@ -349,20 +350,12 @@ class Owner(models.Model):
     # [1; f]
     name = models.TextField("One of the collection or resource owners", help_text=get_help('owner'))
     # [1]     Each collection can have [0-n] owvers
-    collection = models.ForeignKey(Collection, blank=False, null=False, default=1)
+    collection = models.ForeignKey("Collection", blank=False, null=False, default=1, related_name="collection12m_owner")
 
     def __str__(self):
-        idt = m2m_identifier(self.collection_set)
-        return "[{}] {}".format(idt,self.name)
-
-
-class MediaFormat(models.Model):
-    """Format of a medium"""
-
-    name = models.CharField("Format of a medium", choices=build_choice_list(MEDIA_FORMAT), max_length=5, help_text=get_help(MEDIA_FORMAT), default='0')
-
-    def __str__(self):
-        return choice_english(MEDIA_FORMAT, self.name)
+        # idt = m2m_identifier(self.collection_set)
+        idt = self.collection.identifier
+        return "[{}] {}".format(idt,self.name[:50])
 
 
 class Media(models.Model):
@@ -372,10 +365,21 @@ class Media(models.Model):
         verbose_name_plural = "Media's"
 
     # format (0-n; c)
-    format = models.ManyToManyField(MediaFormat, blank=True)
+    format = models.ManyToManyField("MediaFormat", blank=True, related_name="mediam2m_mediaformat")
 
     def __str__(self):
         return m2m_combi(self.format)
+
+
+class MediaFormat(models.Model):
+    """Format of a medium"""
+
+    name = models.CharField("Format of a medium", choices=build_choice_list(MEDIA_FORMAT), max_length=5, help_text=get_help(MEDIA_FORMAT), default='0')
+    # [1]     Each [Media] object can have [0-n] MediaFormat items
+    media = models.ForeignKey(Media, blank=False, null=False, default=1, related_name="mediaformat12m_media")
+
+    def __str__(self):
+        return choice_english(MEDIA_FORMAT, self.name)
 
 
 class AnnotationFormat(models.Model):
@@ -406,7 +410,8 @@ class Annotation(models.Model):
             if len(lst) == 0:
                 idt = "(empty)"
             else:
-                qs = lst[0].collection_set
+                # qs = lst[0].collection_set
+                qs = lst[0].collectionm2m_resource
                 idt = m2m_identifier(qs)
 
         return "[{}] {}: {}, {}".format(
@@ -431,16 +436,17 @@ class TotalSize(models.Model):
     size = models.CharField("Size of the collection", default="unknown", max_length=80)
     sizeUnit = models.CharField("Units", help_text=get_help(SIZEUNIT), max_length=50, default='MB')
     # [1]     Each resource can have [0-n] total-sizes
-    resource = models.ForeignKey("Resource", blank=False, null=False, default=1)
+    resource = models.ForeignKey("Resource", blank=False, null=False, default=1, related_name="totalsize12m_resource")
 
     def __str__(self):
-        idt = m2m_identifier(self.collection_set)
-        if idt == '':
-            lst = self.resource_set.all()
-            if len(lst) == 0:
-                idt = "(empty)"
-            else:
-                idt = m2m_identifier(lst[0].collection_set)
+        #idt = m2m_identifier(self.collection_set)
+        #if idt == '':
+        #    lst = self.resource_set.all()
+        #    if len(lst) == 0:
+        #        idt = "(empty)"
+        #    else:
+        #        idt = m2m_identifier(lst[0].collection_set)
+        idt = self.resource.collection.id
         return "[{}] {} {}".format(idt,self.size,self.sizeUnit)
 
 
@@ -452,7 +458,7 @@ class TotalCollectionSize(models.Model):
     # [1]
     sizeUnit = models.CharField("Units", help_text=get_help(SIZEUNIT), max_length=50, default='MB')
     # [1]     Each collection can have [0-n] total-sizes
-    collection = models.ForeignKey("Collection", blank=False, null=False, default=1)
+    collection = models.ForeignKey("Collection", blank=False, null=False, default=1, related_name="collection12m_totalsize")
 
     def __str__(self):
         return "[{}] {} {}".format(self.collection.identifier,self.size,self.sizeUnit)
@@ -477,7 +483,8 @@ class Modality(models.Model):
             if len(lst) == 0:
                 idt = "(empty)"
             else:
-                qs = lst[0].collection_set
+                # qs = lst[0].collection_set
+                qs = lst[0].collectionm2m_resource
                 idt = m2m_identifier(qs)
         return "[{}] {}".format(idt,choice_english(RESOURCE_MODALITY, self.name))
         #  return choice_english(RESOURCE_MODALITY, self.name)
@@ -541,10 +548,11 @@ class Provenance(models.Model):
     # geographicProvenance (0-n) 
     geographicProvenance = models.ManyToManyField(GeographicProvenance, blank=True)
     # [1]     Each collection can have [0-n] provenances
-    collection = models.ForeignKey(Collection, blank=False, null=False, default=1)
+    collection = models.ForeignKey("Collection", blank=False, null=False, default=1, related_name="collection12m_provenance")
 
     def __str__(self):
-        idt = m2m_identifier(self.collection_set)
+        # idt = m2m_identifier(self.collection_set)
+        idt = self.collection.identifier
         return "[{}] temp:{}, geo:{}".format(
           idt,
           self.temporalProvenance, 
@@ -557,10 +565,11 @@ class Genre(models.Model):
     # (0-n; c)
     name = models.CharField("Collection genre", choices=build_choice_list(GENRE_NAME), max_length=5, help_text=get_help(GENRE_NAME), default='0')
     # [1]     Each collection can have [1-n] genres
-    collection = models.ForeignKey(Collection, blank=False, null=False, default=1)
+    collection = models.ForeignKey("Collection", blank=False, null=False, default=1, related_name="collection12m_genre")
 
     def __str__(self):
-        idt = m2m_identifier(self.collection_set)
+        # idt = m2m_identifier(self.collection_set)
+        idt = self.collection.identifier
         return "[{}] {}".format(idt,choice_english(GENRE_NAME, self.name))
 
 
@@ -643,8 +652,8 @@ class Linguality(models.Model):
     lingualityVariant = models.ManyToManyField(LingualityVariant, blank=True)
     # -	multilingualityType (0-n;c)
     multilingualityType = models.ManyToManyField(MultilingualityType, blank=True)
-    # [1]     Each collection can have [0-n] lingualities
-    collection = models.ForeignKey(Collection, blank=False, null=False, default=1)
+    # [1]     Each collection can have [0-1] lingualities
+    # collection = models.ForeignKey("Collection", blank=False, null=False, default=1, related_name="collection12m_linguality")
 
     def __str__(self):
         return "t:{}, n:{}, a:{}, s:{}, v:{}, m:{}".format(
@@ -663,6 +672,7 @@ class Language(models.Model):
 
     def __str__(self):
         idt = m2m_identifier(self.collection_set)
+        # idt = m2m_identifier(self.collectionm2m_resource)
         if idt == "" or idt == "-":
             sBack = "[DOC] " + choice_english("language.name", self.name)
         else:
@@ -676,10 +686,11 @@ class LanguageDisorder(models.Model):
     # [1]
     name = models.CharField("Language disorder", max_length=50, help_text=get_help("languagedisorder.name"), default='unknown')
     # [1]     Each collection can have [0-n] language disorders
-    collection = models.ForeignKey(Collection, blank=False, null=False, default=1)
+    collection = models.ForeignKey("Collection", blank=False, null=False, default=1, related_name="collection12m_languagedisorder")
 
     def __str__(self):
-        idt = m2m_identifier(self.collection_set)
+        # idt = m2m_identifier(self.collection_set)
+        idt = self.collection.identifier
         sName = self.name
         return "[{}] {}".format(idt, sName)
 
@@ -690,10 +701,11 @@ class Relation(models.Model):
     # [1]
     name = models.CharField("Relation with something else", max_length=80, help_text=get_help(RELATION_NAME ), default='-')
     # [1]     Each collection can have [0-n] relations
-    collection = models.ForeignKey(Collection, blank=False, null=False, default=1)
+    collection = models.ForeignKey("Collection", blank=False, null=False, default=1, related_name="collection12m_relation")
 
     def __str__(self):
-        idt = m2m_identifier(self.collection_set)
+        # idt = m2m_identifier(self.collection_set)
+        idt = self.collection.identifier
         return "[{}] {}".format(idt,self.name)
 
 
@@ -701,14 +713,18 @@ class Domain(models.Model):
     """Domain"""
 
     # domain (0-n;f) 
-    name = models.ManyToManyField(DomainDescription, blank=True)
+    name = models.ManyToManyField("DomainDescription", blank=True, related_name="domainm2m_domaindescription")
     # [1]     Each collection can have [0-n] domains
-    collection = models.ForeignKey(Collection, blank=False, null=False, default=1)
+    collection = models.ForeignKey("Collection", blank=False, null=False, default=1, related_name="collection12m_domain")
 
     def __str__(self):
-        idt = m2m_identifier(self.collection_set)
-        sName = m2m_combi(self.name)
-        return "[{}] {}".format(idt,sName)
+        # idt = m2m_identifier(self.collection_set)
+        if self.collection_id < 0:
+            return "Empty"
+        else:
+            idt = self.collection.identifier
+            sName = m2m_combi(self.name)
+            return "[{}] {}".format(idt,sName)
 
 
 class DomainDescription(models.Model):
@@ -717,10 +733,10 @@ class DomainDescription(models.Model):
     # description
     name = models.TextField("Domain", help_text=get_help(DOMAIN_NAME), default='0')
     # [1]     Each domain can have [1-n] domaindescriptions
-    domain = models.ForeignKey(Domain, blank=False, null=False, default=1)
+    domain = models.ForeignKey(Domain, blank=False, null=False, default=1, related_name="domaindescription12m_domain")
 
     def __str__(self):
-        return self.name
+        return self.name[:50]
 
 
 class AccessAvailability(models.Model):
@@ -741,7 +757,7 @@ class LicenseName(models.Model):
     name = models.TextField("Name of the license", help_text=get_help('access.licenseName'))
 
     def __str__(self):
-        return self.name
+        return self.name[:50]
 
 
 class LicenseUrl(models.Model):
@@ -774,7 +790,7 @@ class AccessContact(models.Model):
 
     def __str__(self):
         return "{}: {}, ({})".format(
-            self.person, self.address, self.email)
+            self.person, self.address[:30], self.email)
 
 
 class AccessWebsite(models.Model):
@@ -820,12 +836,10 @@ class Access(models.Model):
     ISLRN = models.TextField("ISLRN of collection", help_text=get_help('access.ISLRN'), blank=True)
     # medium (0-n; c)
     medium = models.ManyToManyField(AccessMedium, blank=True)
-    # [1]     Each collection can have [0-n] Access-es
-    collection = models.ForeignKey("Collection", blank=False, null=False, default=1)
 
     def __str__(self):
         sName = self.name
-        return sName
+        return sName[:50]
 
 
 
@@ -838,11 +852,12 @@ class PID(models.Model):
     # [1]
     code = models.TextField("Persistent identifier of the collection", help_text=get_help('PID'))
     # [1]     Each collection can have [0-n] PIDs
-    collection = models.ForeignKey("Collection", blank=False, null=False, default=1)
+    collection = models.ForeignKey("Collection", blank=False, null=False, default=1, related_name="collection12m_pid")
 
     def __str__(self):
-        idt = m2m_identifier(self.collection_set)
-        return "[{}] {}".format(idt,self.code)
+        # idt = m2m_identifier(self.collection_set)
+        idt = self.collection.identifier
+        return "[{}] {}".format(idt,self.code[:50])
 
 
 class Organization(models.Model):
@@ -851,7 +866,7 @@ class Organization(models.Model):
     name = models.TextField("Name of organization", help_text=get_help('resourceCreator.organization'))
 
     def __str__(self):
-        return self.name
+        return self.name[:50]
 
 
 class Person(models.Model):
@@ -860,7 +875,7 @@ class Person(models.Model):
     name = models.TextField("Name of person", help_text=get_help('resourceCreator.person'))
 
     def __str__(self):
-        return self.name
+        return self.name[:50]
 
 
 class ResourceCreator(models.Model):
@@ -871,10 +886,11 @@ class ResourceCreator(models.Model):
     # [1]
     person = models.ManyToManyField(Person, blank=False)
     # [1]     Each collection can have [0-n] resource creators
-    collection = models.ForeignKey(Collection, blank=False, null=False, default=1)
+    collection = models.ForeignKey("Collection", blank=False, null=False, default=1, related_name="collection12m_resourcecreator")
 
     def __str__(self):
-        idt = m2m_identifier(self.collection_set)
+        # idt = m2m_identifier(self.collection_set)
+        idt = self.collection.identifier
         return "[{}] o:{}|p:{}".format(
             idt,
             m2m_combi(self.organization),
@@ -896,7 +912,7 @@ class DocumentationFile(models.Model):
     name = models.TextField("File name for documentation", help_text=get_help('documentation.file'))
 
     def __str__(self):
-        return self.name
+        return self.name[:50]
 
 
 class DocumentationUrl(models.Model):
@@ -964,7 +980,7 @@ class ProjectFunder(models.Model):
     name = models.TextField("Funder of project", help_text=get_help('project.funder'))
 
     def __str__(self):
-        return self.name
+        return self.name[:50]
 
 
 class ProjectUrl(models.Model):
@@ -986,13 +1002,14 @@ class Project(models.Model):
     # url (0-1; f)
     URL = models.ForeignKey(ProjectUrl, blank=True, null=True)
     # [1]     Each collection can have [0-n] projects
-    collection = models.ForeignKey("Collection", blank=False, null=False, default=1)
+    collection = models.ForeignKey("Collection", blank=False, null=False, default=1, related_name="collection12m_project")
 
     def __str__(self):
-        idt = m2m_identifier(self.collection_set)
+        # idt = m2m_identifier(self.collection_set)
+        idt = self.collection.identifier
         sName = self.title
         if sName == "": sName = self.URL
-        return "[{}] {}".format(idt,sName)
+        return "[{}] {}".format(idt,sName[:50])
 
 
 class CharacterEncoding(models.Model):
@@ -1019,7 +1036,8 @@ class WrittenCorpus(models.Model):
     authorDemographics = models.TextField("Author demographics", blank=True, help_text=get_help(WRITTENCORPUS_AUTHORDEMOGRAPHICS), default='-')
 
     def __str__(self):
-        idt = m2m_identifier(self.collection_set)
+        # idt = m2m_identifier(self.collection_set)
+        idt = "TODO"
         return "[{}]: {}".format(
             idt,
             m2m_combi(self.characterEncoding))
@@ -1067,7 +1085,8 @@ class RecordingCondition(models.Model):
     name = models.TextField("Recording condition", help_text=get_help('speechcorpus.recordingConditions'))
 
     def __str__(self):
-        return self.name
+        # Max 80 characters
+        return self.name[:80]
 
 
 class SocialContext(models.Model):
@@ -1159,33 +1178,32 @@ class SpeechCorpus(models.Model):
     speakerDemographics = models.TextField("Speaker demographics",blank=True, help_text=get_help('speechcorpus.speakerDemographics'), default='-')
 
     # =============== Verhuist naar [Resource] =================================
-    # recordingEnvironment (0-n;c)
-    recordingEnvironment = models.ManyToManyField(RecordingEnvironment, blank=True)
-    # recordingConditions (0-n; f)
-    recordingConditions = models.ManyToManyField(RecordingCondition, blank=True)
-    # channel (0-n;c)
-    channel = models.ManyToManyField(Channel, blank=True)
-    # socialContext (0-n; c)
-    socialContext = models.ManyToManyField(SocialContext, blank=True)
-    # planningType (0-n; c)
-    planningType = models.ManyToManyField(PlanningType, blank=True)
-    # interactivity (0-n; c)
-    interactivity = models.ManyToManyField(Interactivity, blank=True)
-    # involvement (0-n; c)
-    involvement = models.ManyToManyField(Involvement, blank=True)
-    # audience (0-n; c)
-    audience = models.ManyToManyField(Audience, blank=True)
+    ## recordingEnvironment (0-n;c)
+    #recordingEnvironment = models.ManyToManyField(RecordingEnvironment, blank=True)
+    ## recordingConditions (0-n; f)
+    #recordingConditions = models.ManyToManyField(RecordingCondition, blank=True)
+    ## channel (0-n;c)
+    #channel = models.ManyToManyField(Channel, blank=True)
+    ## socialContext (0-n; c)
+    #socialContext = models.ManyToManyField(SocialContext, blank=True)
+    ## planningType (0-n; c)
+    #planningType = models.ManyToManyField(PlanningType, blank=True)
+    ## interactivity (0-n; c)
+    #interactivity = models.ManyToManyField(Interactivity, blank=True)
+    ## involvement (0-n; c)
+    #involvement = models.ManyToManyField(Involvement, blank=True)
+    ## audience (0-n; c)
+    #audience = models.ManyToManyField(Audience, blank=True)
     # ===============================================================================
 
     # audioFormat (0-n)
     audioFormat = models.ManyToManyField(AudioFormat, blank=True)
 
     def __str__(self):
-        idt = m2m_identifier(self.collection_set)
-        return "[{}] rec:{}, ch:{}, cnv:{}".format(
+        # idt = m2m_identifier(self.collection_set)
+        idt = "MOVED"
+        return "[{}] cnv:{}".format(
           idt,
-          m2m_combi(self.recordingEnvironment), 
-          m2m_combi(self.channel),
           m2m_combi(self.conversationalType))
 
     def get_copy(self):
@@ -1219,7 +1237,7 @@ class Resource(models.Model):
     modality = models.ManyToManyField(Modality, blank=True)
 
     # [1]     Each collection can have [1-n] resources
-    collection = models.ForeignKey(Collection, blank=False, null=False, default=1)
+    collection = models.ForeignKey("Collection", blank=False, null=False, default=1, related_name="collection12m_resource")
 
     # =============== Komt van [SpeechCorpus] =======================================
     # recordingEnvironment (0-n;c)
@@ -1245,14 +1263,15 @@ class Resource(models.Model):
     # (0-n)
     medias = models.ManyToManyField(Media, blank=True)
     # == totalSize (0-n)
-    totalSize = models.ManyToManyField(TotalSize, blank=True)
+    totalSize = models.ManyToManyField(TotalSize, blank=True, related_name="resourcem2m_totalsize")
     # == writtenCorpus (0-1)
     writtenCorpus = models.ForeignKey(WrittenCorpus, blank=True, null=True)
     # speechCorpus (0-1)
     speechCorpus = models.ForeignKey(SpeechCorpus, blank=True, null=True)
 
     def __str__(self):
-        idt = m2m_identifier(self.collection_set)
+        # idt = m2m_identifier(self.collection_set)
+        idt = self.collection.identifier
         if self.subtype == None:
             iType = self.DCtype
         else:
@@ -1287,49 +1306,51 @@ class Collection(models.Model):
     # INTERNAL FIELD: identifier (1)
     identifier = models.CharField("Unique short collection identifier (10 characters max)", max_length=MAX_IDENTIFIER_LEN, default='-')
     # title (1-n;f)             [many-to-one]
-    title = models.ManyToManyField(Title, blank=False)
+    title = models.ManyToManyField(Title, blank=False, related_name="collectionm2m_title")
     # == description (0-1;f) 
     description = models.TextField("Describes the collection as a whole", blank=True, help_text=get_help('description'))
     # == owner (0-n;f)          [many-to-one]
-    owner = models.ManyToManyField( Owner, blank=True)
+    owner = models.ManyToManyField( Owner, blank=True, related_name="collectionm2m_owner")
     # resource (1-n)            [many-to-one]
-    resource = models.ManyToManyField(Resource, blank=False)
+    resource = models.ManyToManyField(Resource, blank=False, related_name="collectionm2m_resource")
     # == genre (0-n; c:)        [many-to-one]
-    genre = models.ManyToManyField(Genre, blank=True)
+    genre = models.ManyToManyField(Genre, blank=True, related_name="collectionm2m_genre")
     # provenance (0-n)          [many-to-one]
-    provenance = models.ManyToManyField(Provenance, blank=True)
+    provenance = models.ManyToManyField(Provenance, blank=True, related_name="collectionm2m_provenance")
     # linguality (0-1)
-    linguality = models.ForeignKey(Linguality, blank=True, null=True)
+    linguality = models.ForeignKey(Linguality, blank=True, null=True)   # , related_name="collectionm2m_linguality")
     # language (1-n; c)   Many-to-Many!!
     language = models.ManyToManyField(Language, blank=False)
     # languageDisorder (0-n;f)  [many-to-one]
-    languageDisorder = models.ManyToManyField(LanguageDisorder, blank=True)
+    languageDisorder = models.ManyToManyField(LanguageDisorder, blank=True, related_name="collectionm2m_langdisorder")
     # relation (0-n;f)          [many-to-one]
-    relation = models.ManyToManyField(Relation, blank=True)
+    relation = models.ManyToManyField(Relation, blank=True, related_name="collectionm2m_relation")
     # == domain (0-n;f)         [many-to-one]
-    domain = models.ManyToManyField(Domain, blank=True)
+    domain = models.ManyToManyField(Domain, blank=True, related_name="collectionm2m_domain")
     # == clarinCentre (0-1; f)
     clarinCentre = models.TextField("Clarin centre in charge", blank=True, help_text=get_help('clarincentre.name'))
     # == access (0-1)
     access = models.ForeignKey(Access, blank=True, null=True)
     # == totalSize (0-n)        [many-to-one] - verander in 'TotalCollectionSize'
-    totalSize = models.ManyToManyField(TotalSize, blank=True)
+    totalSize = models.ManyToManyField(TotalSize, blank=True, related_name="collectionm2m_totalsize")
     # == PID (0-n)              [many-to-one]
-    pid = models.ManyToManyField(PID, blank=True)
+    pid = models.ManyToManyField(PID, blank=True, related_name="collectionm2m_pid")
     # == version (0-1; f)
     version = models.TextField("Version of the collection", blank=True, help_text=get_help('version'))
     # == resourceCreator (0-n)  [many-to-one]
-    resourceCreator = models.ManyToManyField(ResourceCreator, blank=True)
+    resourceCreator = models.ManyToManyField(ResourceCreator, blank=True, related_name="collectionm2m_resourcecreator")
     # == documentation (0-1)
     documentation = models.ForeignKey(Documentation, blank=True, null=True)
     # == validation (0-1)
     validation = models.ForeignKey(Validation, blank=True, null=True)
     # == project (0-n)          [many-to-one]
-    project = models.ManyToManyField(Project, blank=True)
-    # == writtenCorpus (0-1)
-    writtenCorpus = models.ForeignKey(WrittenCorpus, blank=True, null=True)
-    # speechCorpus (0-1)
-    speechCorpus = models.ForeignKey(SpeechCorpus, blank=True, null=True)
+    project = models.ManyToManyField(Project, blank=True, related_name="collectionm2m_project")
+
+    # ==== MOVED TO RESOURCE ====
+    ## == writtenCorpus (0-1)
+    #writtenCorpus = models.ForeignKey(WrittenCorpus, blank=True, null=True)
+    ## speechCorpus (0-1)
+    #speechCorpus = models.ForeignKey(SpeechCorpus, blank=True, null=True)
 
     class Meta:
         # This defines (amongst others) the default ordering in the admin listview of Collections

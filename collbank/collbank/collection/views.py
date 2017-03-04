@@ -161,7 +161,7 @@ def add_collection_xml(col_this, crp):
         # audience (0-n)
         add_element("0-n", res_this, "audience", res, foreign="name", fieldchoice=SPEECHCORPUS_AUDIENCE)
         # speechCorpus (0-1)
-        speech_this = col_this.speechCorpus
+        speech_this = res_this.speechCorpus
         if speech_this != None:
             # Set the sub-element
             speech = ET.SubElement(res, "speechCorpus")
@@ -184,7 +184,7 @@ def add_collection_xml(col_this, crp):
                 # bitResolution (0-1)
                 add_element("0-1", af_this, "bitResolution", af)
         # writtenCorpus (0-1)
-        writ_this = col_this.writtenCorpus
+        writ_this = res_this.writtenCorpus
         if writ_this != None:
             # Set the sub-element
             writ = ET.SubElement(res, "writtenCorpus")
@@ -658,7 +658,7 @@ class CollectionDetailView(DetailView):
     export_xml = True
     context_object_name = 'collection'
     template_name = 'collection/coll_detail.html'
-
+    
     #def get_form(self):
     #    # Instantiate a form
     #    form = self.form_class(instance=self.object)
@@ -667,12 +667,14 @@ class CollectionDetailView(DetailView):
 
     def get_object(self):
         obj = super(CollectionDetailView,self).get_object()
+        self.instance = obj
         form = CollectionForm(instance=obj)
         return form
 
     def get_context_data(self, **kwargs):
         context = super(CollectionDetailView, self).get_context_data(**kwargs)
         context['now'] = timezone.now()
+        context['collection'] = self.instance
         return context
 
     def render_to_response(self, context, **response_kwargs):
@@ -721,7 +723,8 @@ class CollectionDetailView(DetailView):
         """Make the XML representation of this collection downloadable"""
 
         # Construct a file name based on the identifier
-        sFileName = 'collection-{}'.format(getattr(context['collection'], 'identifier'))
+        colThis = self.instance
+        sFileName = 'collection-{}'.format(getattr(colThis, 'identifier'))
         # Get the XML of this collection
         (bValid, sXmlStr) = self.convert_to_xml(context)
         if bValid:

@@ -120,56 +120,52 @@ def copy_item(request=None):
     return redirect(sCurrent)
 
 
+class TitleAdminForm(forms.ModelForm):
+    
+    class Meta:
+        model = Title
+        fields = '__all__'
+        widgets = {
+            'name': forms.Textarea(attrs={'rows': 1})
+        }
+
 
 class TitleInline(admin.TabularInline):
-    model = Collection.title.through
+    model = Title # Collection.title.through
+    form = TitleAdminForm
     extra = 0
 
-    def get_formset(self, request, obj = None, **kwargs):
-        # Get the currently selected Collection object's identifier
-        self.instance = obj
-        return super(TitleInline, self).get_formset(request, obj, **kwargs)
 
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        formfield = super(TitleInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
-        # Look for the field's name as it is used in the Collection model
-        if db_field.name == "title":
-            formfield.queryset = get_formfield_qs(Title, self.instance, "collection")
-        return formfield
+class OwnerAdminForm(forms.ModelForm):
+    
+    class Meta:
+        model = Owner
+        fields = '__all__'
+        widgets = {
+            'name': forms.Textarea(attrs={'rows': 1})
+        }
 
 
 class OwnerInline(admin.TabularInline):
-    model = Collection.owner.through
+    model = Owner # Collection.owner.through
+    form = OwnerAdminForm
     extra = 0
 
-    def get_formset(self, request, obj = None, **kwargs):
-        # Get the currently selected Collection object's identifier
-        self.instance = obj
-        return super(OwnerInline, self).get_formset(request, obj, **kwargs)
 
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        formfield = super(OwnerInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
-        # Look for the field's name as it is used in the Collection model
-        if db_field.name == "owner":
-            formfield.queryset = get_formfield_qs(Owner, self.instance, "collection")
-        return formfield
+class ResourceAdminForm(forms.ModelForm):
+    
+    class Meta:
+        model = Resource
+        fields = '__all__'
+        widgets = {
+            'description': forms.Textarea(attrs={'rows': 1})
+        }
 
 
-class ResourceInline(admin.TabularInline):
-    model = Collection.resource.through
+class ResourceInline(admin.StackedInline):
+    model = Resource  # Collection.resource.through
+    form = ResourceAdminForm
     extra = 0
-
-    def get_formset(self, request, obj = None, **kwargs):
-        # Get the currently selected Collection object's identifier
-        self.instance = obj
-        return super(ResourceInline, self).get_formset(request, obj, **kwargs)
-
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        formfield = super(ResourceInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
-        # Look for the field's name as it is used in the Collection model
-        if db_field.name == "resource":
-            formfield.queryset = get_formfield_qs(Resource, self.instance, "collection")
-        return formfield
 
 
 class GenreForm(forms.ModelForm):
@@ -188,37 +184,14 @@ class GenreAdmin(admin.ModelAdmin):
 
 
 class GenreInline(admin.TabularInline):
-    model = Collection.genre.through
+    model = Genre   # Collection.genre.through
+    form = GenreForm
     extra = 0
-
-    def get_formset(self, request, obj = None, **kwargs):
-        # Get the currently selected Collection object's identifier
-        self.instance = obj
-        return super(GenreInline, self).get_formset(request, obj, **kwargs)
-
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        formfield = super(GenreInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
-        # Look for the field's name as it is used in the Collection model
-        if db_field.name == "genre":
-            formfield.queryset = get_formfield_qs(Genre, self.instance, "collection")
-        return formfield
 
 
 class ProvenanceInline(admin.TabularInline):
-    model = Collection.provenance.through
+    model = Provenance    #  Collection.provenance.through
     extra = 0
-
-    def get_formset(self, request, obj = None, **kwargs):
-        # Get the currently selected Collection object's identifier
-        self.instance = obj
-        return super(ProvenanceInline, self).get_formset(request, obj, **kwargs)
-
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        formfield = super(ProvenanceInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
-        # Look for the field's name as it is used in the Collection model
-        if db_field.name == "provenance":
-            formfield.queryset = get_formfield_qs(Provenance, self.instance, "collection")
-        return formfield
 
 
 class LanguageInline(admin.TabularInline):
@@ -239,147 +212,93 @@ class LanguageInline(admin.TabularInline):
 
 
 class LanguageDisorderInline(admin.TabularInline):
-    model = Collection.languageDisorder.through
+    model = LanguageDisorder    # Collection.languageDisorder.through
     extra = 0
-
-    def get_formset(self, request, obj = None, **kwargs):
-        # Get the currently selected Collection object's identifier
-        self.instance = obj
-        return super(LanguageDisorderInline, self).get_formset(request, obj, **kwargs)
-
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        formfield = super(LanguageDisorderInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
-        # Look for the field's name as it is used in the Collection model
-        if db_field.name == "languagedisorder":
-            formfield.queryset = get_formfield_qs(LanguageDisorder, self.instance, "collection")
-        return formfield
 
 
 class RelationInline(admin.TabularInline):
-    model = Collection.relation.through
+    model = Relation    # Collection.relation.through
     extra = 0
-
-    def get_formset(self, request, obj = None, **kwargs):
-        # Get the currently selected Collection object's identifier
-        self.instance = obj
-        return super(RelationInline, self).get_formset(request, obj, **kwargs)
-
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        formfield = super(RelationInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
-        # Look for the field's name as it is used in the Collection model
-        if db_field.name == "relation":
-            formfield.queryset = get_formfield_qs(Relation, self.instance, "collection")
-        return formfield
 
 
 class CollectionDomainInline(admin.TabularInline):
-    model = Collection.domain.through
+    model = Domain  # Collection.domain.through
     extra = 0
 
-    def get_formset(self, request, obj = None, **kwargs):
-        # Get the currently selected Collection object's identifier
-        self.instance = obj
-        return super(CollectionDomainInline, self).get_formset(request, obj, **kwargs)
 
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        formfield = super(CollectionDomainInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
-        # Look for the field's name as it is used in the Collection model
-        if db_field.name == "domain":
-            formfield.queryset = get_formfield_qs(Domain, self.instance, "collection")
-        return formfield
+#class TotalSizeInline(admin.TabularInline):
+#    model = Collection.totalSize.through
+#    extra = 0
 
+#    def get_formset(self, request, obj = None, **kwargs):
+#        # Get the currently selected Collection object's identifier
+#        self.instance = obj
+#        return super(TotalSizeInline, self).get_formset(request, obj, **kwargs)
 
-class TotalSizeInline(admin.TabularInline):
-    model = Collection.totalSize.through
+#    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+#        formfield = super(TotalSizeInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
+#        # Look for the field's name as it is used in the Collection model
+#        if db_field.name == "totalsize":
+#            formfield.queryset = get_formfield_qs(TotalSize, self.instance, "collection")
+#        return formfield
+class TotalCollectionSizeInline(admin.TabularInline):
+    model = TotalCollectionSize
     extra = 0
 
-    def get_formset(self, request, obj = None, **kwargs):
-        # Get the currently selected Collection object's identifier
-        self.instance = obj
-        return super(TotalSizeInline, self).get_formset(request, obj, **kwargs)
 
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        formfield = super(TotalSizeInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
-        # Look for the field's name as it is used in the Collection model
-        if db_field.name == "totalsize":
-            formfield.queryset = get_formfield_qs(TotalSize, self.instance, "collection")
-        return formfield
+class PidAdminForm(forms.ModelForm):
+    
+    class Meta:
+        model = PID
+        fields = '__all__'
+        widgets = {
+            'code': forms.Textarea(attrs={'rows': 1})
+        }
 
 
 class PidInline(admin.TabularInline):
-    model = Collection.pid.through
+    model = PID   # Collection.pid.through
+    form = PidAdminForm
     extra = 0
-
-    def get_formset(self, request, obj = None, **kwargs):
-        # Get the currently selected Collection object's identifier
-        self.instance = obj
-        return super(PidInline, self).get_formset(request, obj, **kwargs)
-
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        formfield = super(PidInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
-        # Look for the field's name as it is used in the Collection model
-        if db_field.name == "pid":
-            formfield.queryset = get_formfield_qs(PID, self.instance, "collection")
-        return formfield
 
 
 class ResourceCreatorInline(admin.TabularInline):
-    model = Collection.resourceCreator.through
+    model = ResourceCreator   #  Collection.resourceCreator.through
     extra = 0
 
-    def get_formset(self, request, obj = None, **kwargs):
-        # Get the currently selected Collection object's identifier
-        self.instance = obj
-        return super(ResourceCreatorInline, self).get_formset(request, obj, **kwargs)
 
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        formfield = super(ResourceCreatorInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
-        # Look for the field's name as it is used in the Collection model
-        if db_field.name == "resourcecreator":
-            formfield.queryset = get_formfield_qs(ResourceCreator, self.instance, "collection")
-        return formfield
+class ProjectAdminForm(forms.ModelForm):
+    
+    class Meta:
+        model = Project
+        fields = '__all__'
+        widgets = {
+            'title': forms.Textarea(attrs={'rows': 1})
+        }
 
 
-class ProjectInline(admin.TabularInline):
-    model = Collection.project.through
+class ProjectInline(admin.StackedInline):
+    model = Project   # Collection.project.through
+    form = ProjectAdminForm
     extra = 0
-
-    def get_formset(self, request, obj = None, **kwargs):
-        # Get the currently selected Collection object's identifier
-        self.instance = obj
-        return super(ProjectInline, self).get_formset(request, obj, **kwargs)
-
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        formfield = super(ProjectInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
-        # Look for the field's name as it is used in the Collection model
-        if db_field.name == "project":
-            formfield.queryset = get_formfield_qs(Project, self.instance, "collection")
-        return formfield
 
 
 class CollectionAdmin(admin.ModelAdmin):
-    #fieldsets = ( ('MOVING_TO_RESOURCE', {'fields': ('speechCorpus', 'writtenCorpus',)}),
-    #              ('Searchable', {'fields': ('identifier', 'linguality',  )}),
-    #              ('Other',      {'fields': ('description', 'clarinCentre', 'access', 'version', 'documentation', 'validation', )}),
-    #            )
-
     fieldsets = ( ('Searchable', {'fields': ('identifier', 'linguality',  )}),
                   ('Other',      {'fields': ('description', 'clarinCentre', 'access', 'version', 'documentation', 'validation', )}),
                 )
-    # FUTURE after issue #27: without speechCorpus and writtenCorpus
-    #fieldsets = ( ('Searchable', {'fields': ('identifier', 'linguality', )}),
-    #              ('Other',      {'fields': ('description', 'clarinCentre', 'access', 'version', 'documentation', 'validation', )}),
-    #            )
-
-    inlines = [TitleInline, OwnerInline, ResourceInline, GenreInline, ProvenanceInline,
-               LanguageInline, LanguageDisorderInline, RelationInline, CollectionDomainInline,
-               TotalSizeInline, PidInline, ResourceCreatorInline, ProjectInline]
 
     list_display = ['id', 'do_identifier', 'get_title', 'description']
     search_fields = ['identifier', 'title__name', 'description']
+
+    inlines = [TitleInline, OwnerInline, ResourceInline, GenreInline, ProvenanceInline,
+               LanguageInline, LanguageDisorderInline, RelationInline, CollectionDomainInline,
+               TotalCollectionSizeInline, PidInline, ResourceCreatorInline, ProjectInline]
+
     actions = ['export_xml']
     formfield_overrides = {
-        models.TextField: {'widget': Textarea(attrs={'rows': 1, 'cols':30})},
+        # models.TextField: {'widget': Textarea(attrs={'rows': 1, 'cols':30})},
+        models.TextField: {'widget': Textarea(attrs={'rows': 1})},
         }
 
     def get_ordering_field_columns():
@@ -900,8 +819,11 @@ class ResourceAdmin(admin.ModelAdmin):
     fieldsets = ( ('Searchable', {'fields': ('DCtype', 'subtype', 'speechCorpus',)}),
                   ('Other',      {'fields': ('description', 'writtenCorpus',)}),
                 )
+    #formfield_overrides = {
+    #    models.TextField: {'widget': Textarea(attrs={'rows': 2, 'cols':30})},
+    #    }
     formfield_overrides = {
-        models.TextField: {'widget': Textarea(attrs={'rows': 2, 'cols':30})},
+        models.TextField: {'widget': Textarea(attrs={'rows': 2})},
         }
     current_dctype = ''
 
@@ -1060,23 +982,6 @@ class AnnotationAdmin(admin.ModelAdmin):
       return formfield
 
 
-class FormatInline(admin.TabularInline):
-    model = Media.format.through
-    extra = 0
-
-    def get_formset(self, request, obj = None, **kwargs):
-        # Get the currently selected Collection object's identifier
-        self.instance = obj
-        return super(FormatInline, self).get_formset(request, obj, **kwargs)
-
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        formfield = super(FormatInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
-        # Look for the field's name as it is used in the Collection model
-        if db_field.name == "mediaformat":
-            formfield.queryset = get_formfield_qs(MediaFormat, self.instance, "media")
-        return formfield
-
-
 class MediaFormatForm(forms.ModelForm):
 
     class Meta:
@@ -1086,6 +991,24 @@ class MediaFormatForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(MediaFormatForm, self).__init__(*args, **kwargs)
         init_choices(self, 'name', MEDIA_FORMAT)
+
+
+class FormatInline(admin.TabularInline):
+    model = MediaFormat   #  Media.format.through
+    form = MediaFormatForm
+    extra = 0
+
+    #def get_formset(self, request, obj = None, **kwargs):
+    #    # Get the currently selected Collection object's identifier
+    #    self.instance = obj
+    #    return super(FormatInline, self).get_formset(request, obj, **kwargs)
+
+    #def formfield_for_foreignkey(self, db_field, request, **kwargs):
+    #    formfield = super(FormatInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
+    #    # Look for the field's name as it is used in the Collection model
+    #    if db_field.name == "mediaformat":
+    #        formfield.queryset = get_formfield_qs(MediaFormat, self.instance, "media")
+    #    return formfield
 
 
 class MediaFormatAdmin(admin.ModelAdmin):
@@ -1190,26 +1113,42 @@ class AudioFormatAdmin(admin.ModelAdmin):
     form = AudioFormatForm
 
 
-class DomainInline(admin.TabularInline):
-    model = Domain.name.through
+class DomainDescriptionAdminForm(forms.ModelForm):
+    
+    class Meta:
+        model = DomainDescription
+        fields = '__all__'
+        widgets = {
+            'name': forms.Textarea(attrs={'rows': 1, 'cols': 80})
+        }
+
+
+class DomainDescriptionInline(admin.TabularInline):
+    model = DomainDescription  
+    form = DomainDescriptionAdminForm
     extra = 0
 
-    def get_formset(self, request, obj = None, **kwargs):
-        # Get the currently selected Domain object's identifier
-        self.instance = obj
-        return super(DomainInline, self).get_formset(request, obj, **kwargs)
 
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        formfield = super(DomainInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
-        # Look for the field's name as it is used in the Collection model
-        if db_field.name == "domaindescription":
-            formfield.queryset = get_formfield_qs(DomainDescription, self.instance, "domain")
-        return formfield
+class DomainInline(admin.TabularInline):
+    model = Domain   #  Domain.name.through
+    extra = 0
+
+    #def get_formset(self, request, obj = None, **kwargs):
+    #    # Get the currently selected Domain object's identifier
+    #    self.instance = obj
+    #    return super(DomainInline, self).get_formset(request, obj, **kwargs)
+
+    #def formfield_for_foreignkey(self, db_field, request, **kwargs):
+    #    formfield = super(DomainInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
+    #    # Look for the field's name as it is used in the Collection model
+    #    if db_field.name == "domaindescription":
+    #        formfield.queryset = get_formfield_qs(DomainDescription, self.instance, "domain")
+    #    return formfield
 
 
 class DomainAdmin(admin.ModelAdmin):
     # filter_horizontal = ('name',)
-    inlines = [DomainInline]
+    inlines = [DomainDescriptionInline]
     fieldsets = ( ('Searchable', {'fields': ()}),
                   ('Other',      {'fields': ()}),
                 )
