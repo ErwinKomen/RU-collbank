@@ -1,10 +1,20 @@
 ﻿(function ($) {
   $(function () {
     $(document).ready(function () {
-      // Bind the keyup and change events
-      $('#id_DCtype').bind('keyup', type_change);
-      $('#id_DCtype').bind('change', type_change);
-      $('#id_subtype >option').show();
+      var i = 0,    // COunter
+        sIdDC = "", // ID
+        sIdSub = "";
+
+      for (i = 0; i < 10; i++) {
+        sIdDC = "id_collection12m_resource-" + i.toString() + "-DCtype";
+        sIdSub = "id_collection12m_resource-" + i.toString() + "-subtype";
+        if ($('#' + sIdDC).length > 0) {
+          // Bind the keyup and change events
+          $('#' + sIdDC).bind('keyup change', type_change);
+          $('#' + sIdSub + ' >option').show();
+          $('#' + sIdDC).each(type_change);
+        }
+      }
       // Add 'copy' action to inlines
       tabinline_add_copy();
     });
@@ -17,7 +27,9 @@ var $ = django.jQuery.noConflict();
 
 function type_change() {
   // Get the value of the selected [DCtype]
-  var dctype_type = $('#id_DCtype').val();
+  // var dctype_type = $('#id_DCtype').val();
+  var dctype_type = $(this).val();
+  var sIdSub = $(this).attr("id").replace("DCtype", "subtype");
   // Create the URL that is needed
   var url_prefix = $(".container[url_home]").attr("url_home");
   if (url_prefix === undefined) {
@@ -31,9 +43,10 @@ function type_change() {
     "dataType": "json",
     "cache": false,
     "success": function (json) {
-      $('#id_subtype >option').remove();
+      // $('#id_subtype >option').remove();
+      $('#'+sIdSub+' >option').remove();
       for (var j = 0; j < json.length; j++) {
-        $('#id_subtype').append($('<option></option>').val(json[j][0]).html(json[j][1]));
+        $('#' + sIdSub).append($('<option></option>').val(json[j][0]).html(json[j][1]));
       }
     }
   })(jQuery);

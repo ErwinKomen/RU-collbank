@@ -165,6 +165,7 @@ class ResourceAdminForm(forms.ModelForm):
 class ResourceInline(admin.StackedInline):
     model = Resource  # Collection.resource.through
     form = ResourceAdminForm
+    exclude = ['type']
     extra = 0
 
 
