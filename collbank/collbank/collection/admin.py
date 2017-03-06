@@ -1,4 +1,5 @@
 from django.contrib import admin
+import nested_admin
 from django.db.models import Q
 from django import forms
 from django.core.urlresolvers import resolve
@@ -152,23 +153,6 @@ class OwnerInline(admin.TabularInline):
     extra = 0
 
 
-class ResourceAdminForm(forms.ModelForm):
-    
-    class Meta:
-        model = Resource
-        fields = '__all__'
-        widgets = {
-            'description': forms.Textarea(attrs={'rows': 1})
-        }
-
-
-class ResourceInline(admin.StackedInline):
-    model = Resource  # Collection.resource.through
-    form = ResourceAdminForm
-    exclude = ['type']
-    extra = 0
-
-
 class GenreForm(forms.ModelForm):
 
     class Meta:
@@ -284,7 +268,67 @@ class ProjectInline(admin.StackedInline):
     extra = 0
 
 
-class CollectionAdmin(admin.ModelAdmin):
+class ModalityForm(forms.ModelForm):
+
+    class Meta:
+        model = Modality
+        fields = '__all__'
+
+    def __init__(self, *args, **kwargs):
+        super(ModalityForm, self).__init__(*args, **kwargs)
+        init_choices(self, 'name', RESOURCE_MODALITY)
+
+            
+class ModalityAdmin(admin.ModelAdmin):
+    form = ModalityForm
+
+
+# class ModalityInline(admin.TabularInline):
+class ModalityInline(nested_admin.NestedTabularInline):
+    model = Modality #   Resource.modality.through
+    form = ModalityForm
+    extra = 0
+
+
+class RecordingEnvironmentForm(forms.ModelForm):
+
+    class Meta:
+        model = RecordingEnvironment
+        fields = ['name']
+
+    def __init__(self, *args, **kwargs):
+        super(RecordingEnvironmentForm, self).__init__(*args, **kwargs)
+        init_choices(self, 'name', SPEECHCORPUS_RECORDINGENVIRONMENT)
+
+class RecordingEnvironmentAdmin(admin.ModelAdmin):
+    form = RecordingEnvironmentForm
+
+
+class ResourceRecEnvInline(nested_admin.NestedTabularInline):
+    model = RecordingEnvironment # Resource.recordingEnvironment.through
+    form = RecordingEnvironmentForm
+    extra = 0
+
+
+class ResourceAdminForm(forms.ModelForm):
+    
+    class Meta:
+        model = Resource
+        fields = '__all__'
+        widgets = {
+            'description': forms.Textarea(attrs={'rows': 1})
+        }
+
+
+class ResourceInline(nested_admin.NestedStackedInline):
+    model = Resource
+    form = ResourceAdminForm
+    exclude = ['type', 'recordingEnvironment']
+    inlines = [ModalityInline, ResourceRecEnvInline]
+    extra = 0
+
+
+class CollectionAdmin(nested_admin.NestedModelAdmin):
     fieldsets = ( ('Searchable', {'fields': ('identifier', 'linguality',  )}),
                   ('Other',      {'fields': ('description', 'clarinCentre', 'access', 'version', 'documentation', 'validation', )}),
                 )
@@ -304,6 +348,21 @@ class CollectionAdmin(admin.ModelAdmin):
 
     def get_ordering_field_columns():
         return self.ordering
+
+    def get_object(self, request, object_id, from_field=None):
+        """Get a copy of the selected object and its related values"""
+
+        # create a query
+        lstQ = []
+        lstQ.append(Q(id=object_id))
+
+        # Get the correct queryset
+        qs = Collection.objects.filter(*lstQ).select_related()
+        if qs.count() == 0:
+            obj = None
+        else:
+            obj = qs[0]
+        return obj
 
     def get_formset(self, request, obj = None, **kwargs):
         self.instance = obj
@@ -478,37 +537,6 @@ class AnnotationInline(admin.TabularInline):
         return formfield
 
 
-class ModalityForm(forms.ModelForm):
-
-    class Meta:
-        model = Modality
-        fields = ['name']
-
-    def __init__(self, *args, **kwargs):
-        super(ModalityForm, self).__init__(*args, **kwargs)
-        init_choices(self, 'name', RESOURCE_MODALITY)
-
-            
-class ModalityAdmin(admin.ModelAdmin):
-    form = ModalityForm
-
-
-class ModalityInline(admin.TabularInline):
-    model = Resource.modality.through
-    extra = 0
-
-    def get_formset(self, request, obj = None, **kwargs):
-        # Get the currently selected Resource object's identifier
-        self.instance = obj
-        return super(ModalityInline, self).get_formset(request, obj, **kwargs)
-
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        formfield = super(ModalityInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
-        # Look for the field's name as it is used in the Collection model
-        if db_field.name == "modality":
-            formfield.queryset = get_formfield_qs(Modality, self.instance, "resource")
-        return formfield
-
 
 class CharacterEncodingForm(forms.ModelForm):
 
@@ -659,8 +687,8 @@ class ResourceForm(forms.ModelForm):
 
     class Meta:
         model = Resource
-        # fields = ['type', 'DCtype', 'subtype',  'description']
-        fields = ['type', 'DCtype', 'subtype', 'modality', 'medias', 'description']
+        fields = ['type', 'DCtype', 'subtype', 'medias', 'description']
+        # fields = ['type', 'DCtype', 'subtype', 'modality', 'medias', 'description']
         # NOT NEEDED: widgets = { 'subtype': forms.Select }
 
     def save(self, *args, **kwargs):
@@ -670,22 +698,6 @@ class ResourceForm(forms.ModelForm):
         # Perform the actual saving
         return super(ResourceForm, self).save(*args, **kwargs)
 
-
-class ResourceRecEnvInline(admin.TabularInline):
-    model = Resource.recordingEnvironment.through
-    extra = 0
-
-    def get_formset(self, request, obj = None, **kwargs):
-        # Get the currently selected SpeechCorpus object's identifier
-        self.instance = obj
-        return super(ResourceRecEnvInline, self).get_formset(request, obj, **kwargs)
-
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        formfield = super(ResourceRecEnvInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
-        # Look for the field's name as it is used in the SpeechCorpus model
-        if db_field.name == "recordingenvironment":
-            formfield.queryset = get_formfield_qs(RecordingEnvironment, self.instance, "resource")
-        return formfield
 
 
 class ResourceChannelInline(admin.TabularInline):
@@ -1755,21 +1767,6 @@ class PlanningTypeForm(forms.ModelForm):
 
 class PlanningTypeAdmin(admin.ModelAdmin):
     form = PlanningTypeForm
-
-
-class RecordingEnvironmentForm(forms.ModelForm):
-
-    class Meta:
-        model = RecordingEnvironment
-        fields = ['name']
-
-    def __init__(self, *args, **kwargs):
-        super(RecordingEnvironmentForm, self).__init__(*args, **kwargs)
-        init_choices(self, 'name', SPEECHCORPUS_RECORDINGENVIRONMENT)
-
-
-class RecordingEnvironmentAdmin(admin.ModelAdmin):
-    form = RecordingEnvironmentForm
 
 
 class SocialContextForm(forms.ModelForm):

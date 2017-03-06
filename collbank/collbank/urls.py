@@ -16,6 +16,7 @@ from django.shortcuts import redirect
 from django.core.urlresolvers import reverse, reverse_lazy
 from django.views.generic.base import RedirectView
 from django.contrib import admin
+import nested_admin
 from collbank.settings import APP_PREFIX
 # from collbank.collection.models import one_time_startup
 admin.autodiscover()
@@ -69,6 +70,7 @@ urlpatterns = [
 
     # Uncomment the next line to enable the admin:
     url(r'^admin/', include(admin.site.urls), name='admin_base'),
+    url(r'^_nested_admin/', include('nested_admin.urls')),
 ]
 
 # one_time_startup()

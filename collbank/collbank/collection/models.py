@@ -473,30 +473,21 @@ class Modality(models.Model):
 
     name = models.CharField("Resource modality", choices=build_choice_list(RESOURCE_MODALITY), max_length=5, 
                             help_text=get_help(RESOURCE_MODALITY), default='0')
+    # [1] Link to the parent Resource instance
+    resource = models.ForeignKey("Resource", blank=False, null=False, default=-1, on_delete=models.CASCADE, related_name="modalities")
 
     def __str__(self):
-        qs = self.resource_set
-        if qs == None:
-            idt = ""
+        if self.resource_id >0 and self.resource.collection_id >0:
+            idt = self.resource.collection.identifier
         else:
-            lst = qs.all()
-            if len(lst) == 0:
-                idt = "(empty)"
-            else:
-                # qs = lst[0].collection_set
-                qs = lst[0].collectionm2m_resource
-                idt = m2m_identifier(qs)
+            idt = "EMPTY"
         return "[{}] {}".format(idt,choice_english(RESOURCE_MODALITY, self.name))
-        #  return choice_english(RESOURCE_MODALITY, self.name)
 
     def get_copy(self):
         # Make a clean copy
         new_copy = get_instance_copy(self)
         # Return the new copy
         return new_copy
-
-
-
 
 
 class TemporalProvenance(models.Model):
@@ -1055,7 +1046,10 @@ class WrittenCorpus(models.Model):
 class RecordingEnvironment(models.Model):
     """Environment for the recording"""
 
+    # [1]
     name = models.CharField("Environment for the recording", choices=build_choice_list(SPEECHCORPUS_RECORDINGENVIRONMENT), max_length=5, help_text=get_help(SPEECHCORPUS_RECORDINGENVIRONMENT), default='0')
+    # [1]
+    resource = models.ForeignKey("Resource", blank=False, null=False, default=-1 , on_delete=models.CASCADE, related_name="recordingenvironments")
 
     def __str__(self):
         return choice_english(SPEECHCORPUS_RECORDINGENVIRONMENT, self.name)
@@ -1233,15 +1227,13 @@ class Resource(models.Model):
     # (0-1) subtype
     subtype = models.CharField("Subtype of this resource (optional)", choices=build_choice_list(RESOURCE_TYPE), max_length=5,
                             help_text=get_help(RESOURCE_SUBTYPE), blank=True, null=True)
-    # (1-n) modality
-    modality = models.ManyToManyField(Modality, blank=True)
 
     # [1]     Each collection can have [1-n] resources
     collection = models.ForeignKey("Collection", blank=False, null=False, default=1, related_name="collection12m_resource")
 
     # =============== Komt van [SpeechCorpus] =======================================
     # recordingEnvironment (0-n;c)
-    recordingEnvironment = models.ManyToManyField(RecordingEnvironment, blank=True)
+    recordingEnvironment = models.ManyToManyField(RecordingEnvironment, blank=True, related_name="recenv_resources")
     # recordingConditions (0-n; f)
     recordingConditions = models.ManyToManyField(RecordingCondition, blank=True)
     # channel (0-n;c)

@@ -24,3 +24,6 @@ class CollectionForm(forms.ModelForm):
     class Meta:
         model = Collection
         fields = ['identifier', 'title', 'description']
+        labels = {'identifer': _('Identifier'), }
+        help_texts = { 'identifer': _('Enter a short but unique identifier of this collection.'), }
+
