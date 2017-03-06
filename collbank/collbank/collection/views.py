@@ -574,6 +574,7 @@ class CollectionListView(ListView):
         context = super(CollectionListView, self).get_context_data(**kwargs)
         # Add our own elements
         context['app_prefix'] = APP_PREFIX
+        # context['static_root'] = STATIC_ROOT
         # Figure out which ordering to take
         order = 'identifier'
         initial = self.request.GET

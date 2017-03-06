@@ -64,6 +64,11 @@ div.inline-group a.add-related {
   height: 35px;
 }
 
+.djn-group-nested h2 {
+    background-color: green !important;
+}
+
+
 /* navbar */
 .navbar-custom {
     background-color: blue;

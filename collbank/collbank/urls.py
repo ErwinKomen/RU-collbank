@@ -11,13 +11,15 @@ import collbank.collection.forms
 from collbank.collection.views import *
 
 # Uncomment the next lines to enable the admin:
+from django.conf import settings
 from django.conf.urls import include
+from django.conf.urls.static import static
 from django.shortcuts import redirect
 from django.core.urlresolvers import reverse, reverse_lazy
 from django.views.generic.base import RedirectView
 from django.contrib import admin
 import nested_admin
-from collbank.settings import APP_PREFIX
+from collbank.settings import APP_PREFIX, STATIC_ROOT, STATIC_URL
 # from collbank.collection.models import one_time_startup
 admin.autodiscover()
 
@@ -71,6 +73,7 @@ urlpatterns = [
     # Uncomment the next line to enable the admin:
     url(r'^admin/', include(admin.site.urls), name='admin_base'),
     url(r'^_nested_admin/', include('nested_admin.urls')),
-]
+]  # + static('/static/', document_root='/scratch2/www/collbank/live/repo/collbank/static/')
+# ]  + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 # one_time_startup()
