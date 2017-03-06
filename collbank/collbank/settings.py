@@ -47,7 +47,7 @@ SECRET_KEY = '485c409a-daf7-47d3-81af-257049728c58'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost', 'applejack.science.ru.nl']
 
 
 # Application definition

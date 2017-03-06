@@ -131,7 +131,7 @@ class TitleAdminForm(forms.ModelForm):
         }
 
 
-class TitleInline(admin.TabularInline):
+class TitleInline(nested_admin.NestedTabularInline):
     model = Title # Collection.title.through
     form = TitleAdminForm
     extra = 0
@@ -147,7 +147,7 @@ class OwnerAdminForm(forms.ModelForm):
         }
 
 
-class OwnerInline(admin.TabularInline):
+class OwnerInline(nested_admin.NestedTabularInline):
     model = Owner # Collection.owner.through
     form = OwnerAdminForm
     extra = 0
@@ -168,18 +168,18 @@ class GenreAdmin(admin.ModelAdmin):
     form = GenreForm
 
 
-class GenreInline(admin.TabularInline):
+class GenreInline(nested_admin.NestedTabularInline):
     model = Genre   # Collection.genre.through
     form = GenreForm
     extra = 0
 
 
-class ProvenanceInline(admin.TabularInline):
+class ProvenanceInline(nested_admin.NestedTabularInline):
     model = Provenance    #  Collection.provenance.through
     extra = 0
 
 
-class LanguageInline(admin.TabularInline):
+class LanguageInline(nested_admin.NestedTabularInline):
     model = Collection.language.through
     extra = 0
 
@@ -196,17 +196,17 @@ class LanguageInline(admin.TabularInline):
         return formfield
 
 
-class LanguageDisorderInline(admin.TabularInline):
+class LanguageDisorderInline(nested_admin.NestedTabularInline):
     model = LanguageDisorder    # Collection.languageDisorder.through
     extra = 0
 
 
-class RelationInline(admin.TabularInline):
+class RelationInline(nested_admin.NestedTabularInline):
     model = Relation    # Collection.relation.through
     extra = 0
 
 
-class CollectionDomainInline(admin.TabularInline):
+class CollectionDomainInline(nested_admin.NestedTabularInline):
     model = Domain  # Collection.domain.through
     extra = 0
 
@@ -226,7 +226,7 @@ class CollectionDomainInline(admin.TabularInline):
 #        if db_field.name == "totalsize":
 #            formfield.queryset = get_formfield_qs(TotalSize, self.instance, "collection")
 #        return formfield
-class TotalCollectionSizeInline(admin.TabularInline):
+class TotalCollectionSizeInline(nested_admin.NestedTabularInline):
     model = TotalCollectionSize
     extra = 0
 
@@ -241,13 +241,13 @@ class PidAdminForm(forms.ModelForm):
         }
 
 
-class PidInline(admin.TabularInline):
+class PidInline(nested_admin.NestedTabularInline):
     model = PID   # Collection.pid.through
     form = PidAdminForm
     extra = 0
 
 
-class ResourceCreatorInline(admin.TabularInline):
+class ResourceCreatorInline(nested_admin.NestedTabularInline):
     model = ResourceCreator   #  Collection.resourceCreator.through
     extra = 0
 
@@ -262,7 +262,7 @@ class ProjectAdminForm(forms.ModelForm):
         }
 
 
-class ProjectInline(admin.StackedInline):
+class ProjectInline(nested_admin.NestedStackedInline):
     model = Project   # Collection.project.through
     form = ProjectAdminForm
     extra = 0
@@ -420,7 +420,7 @@ class CollectionAdmin(nested_admin.NestedModelAdmin):
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         collThis = self.instance
-        formfield = super(CollectionAdmin, self).formfield_for_foreignkey(db_field, **kwargs)
+        formfield = super(CollectionAdmin, self).formfield_for_foreignkey(db_field, request, **kwargs)
         # Restrict the queryset where needed
         if db_field.name == "linguality":                                    # ForeignKey
             formfield.queryset = get_formfield_qs(Linguality, collThis, "collection")
