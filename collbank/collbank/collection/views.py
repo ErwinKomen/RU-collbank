@@ -37,7 +37,9 @@ def add_element(optionality, col_this, el_name, crp, **kwargs):
     if "foreign" in kwargs: foreign = kwargs["foreign"]
     field_choice = ""
     if "fieldchoice" in kwargs: field_choice = kwargs["fieldchoice"]
-    col_this_el = getattr(col_this, el_name)
+    field_name = el_name
+    if "field_name" in kwargs: field_name = kwargs["field_name"]
+    col_this_el = getattr(col_this, field_name)
     sub_name = el_name
     if "subname" in kwargs: sub_name = kwargs["subname"]
     if optionality == "0-1" or optionality == "1":
@@ -143,7 +145,7 @@ def add_collection_xml(col_this, crp):
         # subtype (0-1)
         add_element("0-1", res_this, "subtype", res, fieldchoice =RESOURCE_TYPE, part=2)
         # modality (1-n)
-        add_element("1-n", res_this, "modality", res, foreign="name", fieldchoice=RESOURCE_MODALITY )
+        add_element("1-n", res_this, "modality", res, field_name="modalities", foreign="name", fieldchoice=RESOURCE_MODALITY )
         # recording Environment (0-n)
         add_element("0-n", res_this, "recordingEnvironment", res, foreign="name", fieldchoice=SPEECHCORPUS_RECORDINGENVIRONMENT)
         # Recording conditions (0-n)

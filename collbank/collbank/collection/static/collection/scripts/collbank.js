@@ -48,6 +48,8 @@ function type_change() {
       for (var j = 0; j < json.length; j++) {
         $('#' + sIdSub).append($('<option></option>').val(json[j][0]).html(json[j][1]));
       }
+      // Set the selected value correctly
+      $("#"+sIdSub).val(parseInt(dctype_type,10));
     }
   })(jQuery);
 }
