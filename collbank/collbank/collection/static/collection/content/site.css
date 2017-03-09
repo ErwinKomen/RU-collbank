@@ -65,7 +65,18 @@ div.inline-group a.add-related {
 }
 
 .djn-group-nested h2 {
-    background-color: green !important;
+    background-color:lightseagreen !important;
+}
+
+.djn-inline-form fieldset h2 {
+    background-color: forestgreen;
+}
+
+.collection-resource-closed {
+  display: none;
+}
+.collection-resource-open {
+  display: block;
 }
 
 

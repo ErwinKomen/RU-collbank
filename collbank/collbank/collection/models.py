@@ -366,6 +366,8 @@ class Media(models.Model):
 
     # format (0-n; c)
     format = models.ManyToManyField("MediaFormat", blank=True, related_name="mediam2m_mediaformat")
+    # [1]
+    resource = models.ForeignKey("Resource", blank=False, null=False, default=-1 , on_delete=models.CASCADE, related_name="media_items")
 
     def __str__(self):
         return m2m_combi(self.format)
@@ -400,20 +402,25 @@ class Annotation(models.Model):
     format = models.CharField("Annotation format", choices=build_choice_list(ANNOTATION_FORMAT), max_length=5, help_text=get_help(ANNOTATION_FORMAT), default='0')
     # The [formatAnn] field is the m2m field that should now be used
     formatAnn = models.ManyToManyField(AnnotationFormat)
+    # [1]
+    resource = models.ForeignKey("Resource", blank=False, null=False, default=-1 , on_delete=models.CASCADE, related_name="annotations")
 
     def __str__(self):
-        qs = self.resource_set
-        if qs == None:
-            idt = ""
+        #qs = self.resource_set
+        #if qs == None:
+        #    idt = ""
+        #else:
+        #    lst = qs.all()
+        #    if len(lst) == 0:
+        #        idt = "(empty)"
+        #    else:
+        #        # qs = lst[0].collection_set
+        #        qs = lst[0].collectionm2m_resource
+        #        idt = m2m_identifier(qs)
+        if self.resource.collection_id > 0:
+            idt = self.resource.collection.identifier
         else:
-            lst = qs.all()
-            if len(lst) == 0:
-                idt = "(empty)"
-            else:
-                # qs = lst[0].collection_set
-                qs = lst[0].collectionm2m_resource
-                idt = m2m_identifier(qs)
-
+            idt = "EMPTY"
         return "[{}] {}: {}, {}".format(
             idt,
             choice_english(ANNOTATION_TYPE, self.type), 
@@ -446,7 +453,10 @@ class TotalSize(models.Model):
         #        idt = "(empty)"
         #    else:
         #        idt = m2m_identifier(lst[0].collection_set)
-        idt = self.resource.collection.id
+        if self.resource.collection_id >0:
+            idt = self.resource.collection.identifier
+        else:
+            idt = "EMPTY"
         return "[{}] {} {}".format(idt,self.size,self.sizeUnit)
 
 
@@ -511,6 +521,8 @@ class City(models.Model):
         verbose_name_plural = "Cities"
 
     name = models.CharField("Place (city)", max_length=80, help_text=get_help(PROVENANCE_GEOGRAPHIC_PLACE))
+    # [1]     Each Provenance can have [0-n] geographic provenances
+    geographicProvenance = models.ForeignKey("GeographicProvenance", blank=False, null=False, default=-1, related_name="cities")
 
     def __str__(self):
         return self.name
@@ -523,12 +535,14 @@ class GeographicProvenance(models.Model):
     # == country (0-1;c) (name+ISO-3166 code)
     country = models.CharField("Country included in this geographic coverage", choices=build_choice_list(PROVENANCE_GEOGRAPHIC_COUNTRY), max_length=5, help_text=get_help(PROVENANCE_GEOGRAPHIC_COUNTRY), default='0')
     # == place (0-n;f)
-    place = models.ManyToManyField(City, blank=True)
+    # place = models.ManyToManyField(City, blank=True, related_name="place_geoprovenances")
+    # [1]     Each Provenance can have [0-n] geographic provenances
+    provenance = models.ForeignKey("Provenance", blank=False, null=False, default=-1, related_name="g_provenances")
 
     def __str__(self):
-        return "{}: {}".format(
-            choice_english(PROVENANCE_GEOGRAPHIC_COUNTRY, self.country), 
-            m2m_combi(self.place))
+        cnt = choice_english(PROVENANCE_GEOGRAPHIC_COUNTRY, self.country)
+        cts = m2m_combi(self.cities)
+        return "{}: {}".format(cnt, cts)
 
 
 class Provenance(models.Model):
@@ -537,17 +551,16 @@ class Provenance(models.Model):
     # temporalProvenance (0-1) 
     temporalProvenance = models.ForeignKey(TemporalProvenance, blank=True, null=True)
     # geographicProvenance (0-n) 
-    geographicProvenance = models.ManyToManyField(GeographicProvenance, blank=True)
+    # geographicProvenance = models.ManyToManyField(GeographicProvenance, blank=True, related_name="geoprov_provenances")
     # [1]     Each collection can have [0-n] provenances
     collection = models.ForeignKey("Collection", blank=False, null=False, default=1, related_name="collection12m_provenance")
 
     def __str__(self):
         # idt = m2m_identifier(self.collection_set)
         idt = self.collection.identifier
-        return "[{}] temp:{}, geo:{}".format(
-          idt,
-          self.temporalProvenance, 
-          m2m_combi(self.geographicProvenance))
+        tmp = self.temporalProvenance
+        geo = m2m_combi(self.g_provenances)
+        return "[{}] temp:{}, geo:{}".format(idt, tmp, geo)
 
 
 class Genre(models.Model):
@@ -855,6 +868,8 @@ class Organization(models.Model):
     """Name of organization"""
 
     name = models.TextField("Name of organization", help_text=get_help('resourceCreator.organization'))
+    # [1]     Each resourceCreator can have [0-n] organizations
+    resourceCreator = models.ForeignKey("ResourceCreator", blank=False, null=False, default=-1, related_name="organizations")
 
     def __str__(self):
         return self.name[:50]
@@ -864,6 +879,8 @@ class Person(models.Model):
     """Name of person"""
 
     name = models.TextField("Name of person", help_text=get_help('resourceCreator.person'))
+    # [1]     Each resourceCreator can have [0-n] persons
+    resourceCreator = models.ForeignKey("ResourceCreator", blank=False, null=False, default=-1, related_name="persons")
 
     def __str__(self):
         return self.name[:50]
@@ -873,19 +890,18 @@ class ResourceCreator(models.Model):
     """Creator of this resource"""
 
     # [1]
-    organization = models.ManyToManyField(Organization, blank=False)
+    organization = models.ManyToManyField(Organization, blank=False, related_name="resourcecreatorm2m_organization")
     # [1]
-    person = models.ManyToManyField(Person, blank=False)
+    person = models.ManyToManyField(Person, blank=False, related_name="resourcecreatorm2m_person")
     # [1]     Each collection can have [0-n] resource creators
     collection = models.ForeignKey("Collection", blank=False, null=False, default=1, related_name="collection12m_resourcecreator")
 
     def __str__(self):
         # idt = m2m_identifier(self.collection_set)
         idt = self.collection.identifier
-        return "[{}] o:{}|p:{}".format(
-            idt,
-            m2m_combi(self.organization),
-            m2m_combi(self.person))
+        orgs = m2m_combi(self.organizations)
+        pers = m2m_combi(self.persons)
+        return "[{}] o:{}|p:{}".format(idt,orgs,pers)
 
 
 class DocumentationType(models.Model):
@@ -1059,6 +1075,8 @@ class Channel(models.Model):
     """Channel for the speech corpus"""
 
     name = models.CharField("Channel for the speech corpus", choices=build_choice_list(SPEECHCORPUS_CHANNEL), max_length=5, help_text=get_help(SPEECHCORPUS_CHANNEL), default='0')
+    # [1]
+    resource = models.ForeignKey("Resource", blank=False, null=False, default=-1 , on_delete=models.CASCADE, related_name="channels")
 
     def __str__(self):
         return choice_english(SPEECHCORPUS_CHANNEL, self.name)
@@ -1077,6 +1095,8 @@ class RecordingCondition(models.Model):
     """Recording condition"""
 
     name = models.TextField("Recording condition", help_text=get_help('speechcorpus.recordingConditions'))
+    # [1]
+    resource = models.ForeignKey("Resource", blank=False, null=False, default=-1 , on_delete=models.CASCADE, related_name="recordingconditions")
 
     def __str__(self):
         # Max 80 characters
@@ -1087,6 +1107,8 @@ class SocialContext(models.Model):
     """Social context"""
 
     name = models.CharField("Social context", choices=build_choice_list(SPEECHCORPUS_SOCIALCONTEXT), max_length=5, help_text=get_help(SPEECHCORPUS_SOCIALCONTEXT), default='0')
+    # [1]
+    resource = models.ForeignKey("Resource", blank=False, null=False, default=-1 , on_delete=models.CASCADE, related_name="socialcontexts")
 
     def __str__(self):
         return choice_english(SPEECHCORPUS_SOCIALCONTEXT, self.name)
@@ -1096,6 +1118,8 @@ class PlanningType(models.Model):
     """Type of planning"""
 
     name = models.CharField("Type of planning", choices=build_choice_list(SPEECHCORPUS_PLANNINGTYPE), max_length=5, help_text=get_help(SPEECHCORPUS_PLANNINGTYPE), default='0')
+    # [1]
+    resource = models.ForeignKey("Resource", blank=False, null=False, default=-1 , on_delete=models.CASCADE, related_name="planningtypes")
 
     def __str__(self):
         return choice_english(SPEECHCORPUS_PLANNINGTYPE, self.name)
@@ -1108,6 +1132,8 @@ class Interactivity(models.Model):
         verbose_name_plural = "Interactivities"
 
     name = models.CharField("Interactivity", choices=build_choice_list(SPEECHCORPUS_INTERACTIVITY), max_length=5, help_text=get_help(SPEECHCORPUS_INTERACTIVITY), default='0')
+    # [1]
+    resource = models.ForeignKey("Resource", blank=False, null=False, default=-1 , on_delete=models.CASCADE, related_name="interactivities")
 
     def __str__(self):
         return choice_english(SPEECHCORPUS_INTERACTIVITY, self.name)
@@ -1117,6 +1143,8 @@ class Involvement(models.Model):
     """Type of involvement"""
 
     name = models.CharField("Type of involvement", choices=build_choice_list(SPEECHCORPUS_INVOLVEMENT), max_length=5, help_text=get_help(SPEECHCORPUS_INVOLVEMENT), default='0')
+    # [1]
+    resource = models.ForeignKey("Resource", blank=False, null=False, default=-1 , on_delete=models.CASCADE, related_name="involvements")
 
     def __str__(self):
         return choice_english(SPEECHCORPUS_INVOLVEMENT, self.name)
@@ -1126,6 +1154,8 @@ class Audience(models.Model):
     """Audience"""
 
     name = models.CharField("Audience", choices=build_choice_list(SPEECHCORPUS_AUDIENCE), max_length=5, help_text=get_help(SPEECHCORPUS_AUDIENCE), default='0')
+    # [1]
+    resource = models.ForeignKey("Resource", blank=False, null=False, default=-1 , on_delete=models.CASCADE, related_name="audiences")
 
     def __str__(self):
         return choice_english(SPEECHCORPUS_AUDIENCE, self.name)
@@ -1235,25 +1265,25 @@ class Resource(models.Model):
     # recordingEnvironment (0-n;c)
     recordingEnvironment = models.ManyToManyField(RecordingEnvironment, blank=True, related_name="recenv_resources")
     # recordingConditions (0-n; f)
-    recordingConditions = models.ManyToManyField(RecordingCondition, blank=True)
+    recordingConditions = models.ManyToManyField(RecordingCondition, blank=True, related_name="reccond_resources")
     # channel (0-n;c)
-    channel = models.ManyToManyField(Channel, blank=True)
+    channel = models.ManyToManyField(Channel, blank=True, related_name="channel_resources")
     # socialContext (0-n; c)
-    socialContext = models.ManyToManyField(SocialContext, blank=True)
+    socialContext = models.ManyToManyField(SocialContext, blank=True, related_name="soccontext_resources")
     # planningType (0-n; c)
-    planningType = models.ManyToManyField(PlanningType, blank=True)
+    planningType = models.ManyToManyField(PlanningType, blank=True, related_name="plantype_resources")
     # interactivity (0-n; c)
-    interactivity = models.ManyToManyField(Interactivity, blank=True)
+    interactivity = models.ManyToManyField(Interactivity, blank=True, related_name="interactivity_resources")
     # involvement (0-n; c)
-    involvement = models.ManyToManyField(Involvement, blank=True)
+    involvement = models.ManyToManyField(Involvement, blank=True, related_name="involvement_resources")
     # audience (0-n; c)
-    audience = models.ManyToManyField(Audience, blank=True)
+    audience = models.ManyToManyField(Audience, blank=True, related_name="audience_resources")
     # ===============================================================================
 
     # (0-n)
-    annotation = models.ManyToManyField(Annotation, blank=True)
+    annotation = models.ManyToManyField(Annotation, blank=True, related_name="annotation_resources")
     # (0-n)
-    medias = models.ManyToManyField(Media, blank=True)
+    medias = models.ManyToManyField(Media, blank=True, related_name="media_resources")
     # == totalSize (0-n)
     totalSize = models.ManyToManyField(TotalSize, blank=True, related_name="resourcem2m_totalsize")
     # == writtenCorpus (0-1)
@@ -1364,4 +1394,6 @@ class Collection(models.Model):
     # get_title.admin_order_field = 'identifier'
 
     def __str__(self):
-        return m2m_combi(self.title)
+        # We are known by our identifier
+        return self.identifier
+        # return m2m_combi(self.title)
