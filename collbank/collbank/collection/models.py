@@ -988,7 +988,7 @@ class Validation(models.Model):
     def __str__(self):
         return "{}:{}".format(
             self.type,
-            m2m_combi(self.method))
+            m2m_combi(self.validationmethods))
 
 
 class ProjectFunder(models.Model):
