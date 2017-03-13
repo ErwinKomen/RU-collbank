@@ -121,7 +121,7 @@ var ru = (function ($, ru) {
       inlineresources_add_closed : function() {
         // Iterate over all [djn-dynamic-form-collection-resource] objects
         $(".djn-dynamic-form-collection-resource").each(
-          function (idx, obj) {
+          function (idxResource, obj) {
             var sHtmlId = "";
 
             // Get my ID
@@ -133,13 +133,13 @@ var ru = (function ($, ru) {
                   sTag = "";  // Tag we are visiting
 
               sTag = $(this).get(0).tagName.toLowerCase();
-              sId = "resource #" + (idx + 1);
+              sId = "resource #" + (idxResource + 1);
               // Check what kind of child this is
               switch (sTag) {
                 case "h3":
                   // Create a <span> with a button 
                   lHtml.push("<span class='btn btn-primary btn-xs'");
-                  lHtml.push("onclick='ru.collbank.toggle_resource(\"" + sHtmlId + "\", " + (idx+1) + ");'");
+                  lHtml.push("onclick='ru.collbank.toggle_resource(\"" + sHtmlId + "\", " + (idxResource + 1) + ");'");
                   lHtml.push(">");
                   lHtml.push("Show " + sId);
                   lHtml.push("</span>&nbsp;&nbsp;");
