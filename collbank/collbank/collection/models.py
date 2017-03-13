@@ -365,12 +365,14 @@ class Media(models.Model):
         verbose_name_plural = "Media's"
 
     # format (0-n; c)
-    format = models.ManyToManyField("MediaFormat", blank=True, related_name="mediam2m_mediaformat")
+    # format = models.ManyToManyField("MediaFormat", blank=True, related_name="mediam2m_mediaformat")
     # [1]
     resource = models.ForeignKey("Resource", blank=False, null=False, default=-1 , on_delete=models.CASCADE, related_name="media_items")
 
     def __str__(self):
-        return m2m_combi(self.format)
+        sFormats = m2m_combi(self.mediaformat12m_media)
+        # return m2m_combi(self.format)
+        return sFormats
 
 
 class MediaFormat(models.Model):
@@ -406,17 +408,6 @@ class Annotation(models.Model):
     resource = models.ForeignKey("Resource", blank=False, null=False, default=-1 , on_delete=models.CASCADE, related_name="annotations")
 
     def __str__(self):
-        #qs = self.resource_set
-        #if qs == None:
-        #    idt = ""
-        #else:
-        #    lst = qs.all()
-        #    if len(lst) == 0:
-        #        idt = "(empty)"
-        #    else:
-        #        # qs = lst[0].collection_set
-        #        qs = lst[0].collectionm2m_resource
-        #        idt = m2m_identifier(qs)
         if self.resource.collection_id > 0:
             idt = self.resource.collection.identifier
         else:
@@ -446,13 +437,6 @@ class TotalSize(models.Model):
     resource = models.ForeignKey("Resource", blank=False, null=False, default=1, related_name="totalsize12m_resource")
 
     def __str__(self):
-        #idt = m2m_identifier(self.collection_set)
-        #if idt == '':
-        #    lst = self.resource_set.all()
-        #    if len(lst) == 0:
-        #        idt = "(empty)"
-        #    else:
-        #        idt = m2m_identifier(lst[0].collection_set)
         if self.resource.collection_id >0:
             idt = self.resource.collection.identifier
         else:
@@ -581,6 +565,8 @@ class LingualityType(models.Model):
     """Type of linguality"""
 
     name = models.CharField("Type of linguality", choices=build_choice_list(LINGUALITY_TYPE), max_length=5, help_text=get_help(LINGUALITY_TYPE), default='0')
+    # [1]     Each Linguality instance can have [0-n] linguality types
+    linguality = models.ForeignKey("Linguality", blank=False, null=False, default=1, related_name="linguality_types")
 
     def __str__(self):
         return choice_english(LINGUALITY_TYPE, self.name)
@@ -593,6 +579,8 @@ class LingualityNativeness(models.Model):
         verbose_name_plural = "Linguality Nativeness Types"
 
     name = models.CharField("Nativeness type of linguality", choices=build_choice_list(LINGUALITY_NATIVENESS), max_length=5, help_text=get_help(LINGUALITY_NATIVENESS), default='0')
+    # [1]     Each Linguality instance can have [0-n] linguality nativenesses
+    linguality = models.ForeignKey("Linguality", blank=False, null=False, default=1, related_name="linguality_nativenesses")
 
     def __str__(self):
         return choice_english(LINGUALITY_NATIVENESS, self.name)
@@ -602,6 +590,8 @@ class LingualityAgeGroup(models.Model):
     """Age group of linguality"""
 
     name = models.CharField("Age group of linguality", choices=build_choice_list(LINGUALITY_AGEGROUP), max_length=5, help_text=get_help(LINGUALITY_AGEGROUP), default='0')
+    # [1]     Each Linguality instance can have [0-n] linguality age groups
+    linguality = models.ForeignKey("Linguality", blank=False, null=False, default=1, related_name="linguality_agegroups")
 
     def __str__(self):
         return choice_english(LINGUALITY_AGEGROUP, self.name)
@@ -614,6 +604,8 @@ class LingualityStatus(models.Model):
         verbose_name_plural = "Linguality statuses"
 
     name = models.CharField("Status of linguality", choices=build_choice_list(LINGUALITY_STATUS), max_length=5, help_text=get_help(LINGUALITY_STATUS), default='0')
+    # [1]     Each Linguality instance can have [0-n] linguality statuses
+    linguality = models.ForeignKey("Linguality", blank=False, null=False, default=1, related_name="linguality_statuses")
 
     def __str__(self):
         return choice_english(LINGUALITY_STATUS, self.name)
@@ -623,6 +615,8 @@ class LingualityVariant(models.Model):
     """Variant of linguality"""
 
     name = models.CharField("Variant of linguality", choices=build_choice_list(LINGUALITY_VARIANT), max_length=5, help_text=get_help(LINGUALITY_VARIANT), default='0')
+    # [1]     Each Linguality instance can have [0-n] linguality variants
+    linguality = models.ForeignKey("Linguality", blank=False, null=False, default=1, related_name="linguality_variants")
 
     def __str__(self):
         return choice_english(LINGUALITY_VARIANT, self.name)
@@ -632,6 +626,8 @@ class MultilingualityType(models.Model):
     """Type of multi-linguality"""
 
     name = models.CharField("Type of multi-linguality", choices=build_choice_list(LINGUALITY_MULTI), max_length=5, help_text=get_help(LINGUALITY_MULTI), default='0')
+    # [1]     Each Linguality instance can have [0-n] multilinguality types
+    linguality = models.ForeignKey("Linguality", blank=False, null=False, default=1, related_name="multilinguality_types")
 
     def __str__(self):
         return choice_english(LINGUALITY_MULTI, self.name)
@@ -643,30 +639,14 @@ class Linguality(models.Model):
     class Meta:
         verbose_name_plural = "Lingualities"
 
-    # name = models.TextField("Name of this linguality type", default='-')
-    # lingualityType (0-n,c)
-    lingualityType = models.ManyToManyField(LingualityType, blank=True)
-    # lingualityNativeness (0-n;c)
-    lingualityNativeness = models.ManyToManyField(LingualityNativeness, blank=True)
-    # lingualityAgeGroup (0-n;c)
-    lingualityAgeGroup = models.ManyToManyField(LingualityAgeGroup, blank=True)
-    # lingualityStatus (0-n;c)
-    lingualityStatus = models.ManyToManyField(LingualityStatus, blank=True)
-    # -	lingualityVariant  (0-n;c)
-    lingualityVariant = models.ManyToManyField(LingualityVariant, blank=True)
-    # -	multilingualityType (0-n;c)
-    multilingualityType = models.ManyToManyField(MultilingualityType, blank=True)
-    # [1]     Each collection can have [0-1] lingualities
-    # collection = models.ForeignKey("Collection", blank=False, null=False, default=1, related_name="collection12m_linguality")
-
     def __str__(self):
-        return "t:{}, n:{}, a:{}, s:{}, v:{}, m:{}".format(
-          m2m_combi(self.lingualityType), 
-          m2m_combi(self.lingualityNativeness),
-          m2m_combi(self.lingualityAgeGroup), 
-          m2m_combi(self.lingualityStatus),
-          m2m_combi(self.lingualityVariant), 
-          m2m_combi(self.multilingualityType))
+        fld_type = m2m_combi(self.linguality_types)
+        fld_nati = m2m_combi(self.linguality_nativenesses)
+        fld_ageg = m2m_combi(self.linguality_agegroups)
+        fld_stat = m2m_combi(self.linguality_statuses)
+        fld_vari = m2m_combi(self.linguality_variants)
+        fld_mult = m2m_combi(self.multilinguality_types)
+        return "t:{}, n:{}, a:{}, s:{}, v:{}, m:{}".format(fld_type, fld_nati, fld_ageg, fld_stat, fld_vari, fld_mult)
 
 
 class Language(models.Model):
@@ -681,6 +661,31 @@ class Language(models.Model):
             sBack = "[DOC] " + choice_english("language.name", self.name)
         else:
             sBack = "[{}] {}".format(idt,choice_english("language.name", self.name))
+        return sBack
+
+
+class DocumentationLanguage(Language):
+
+    # [1]     Each documentation object can have [0-n] languages associated with it
+    documentationParent = models.ForeignKey("Documentation", blank=False, null=False, default=1, related_name="doc_languages")
+    
+    def __str__(self):
+        arColl = self.documentationParent.collection_set.all()
+        # arColl = Collection.objects.filter(documentation=self.documentationParent)
+        idt = arColl[0].identifier
+        # idt = self.documentationParent.collection.identifier
+        sBack = "[{}] {}".format(idt,choice_english("language.name", self.name))
+        return sBack
+
+
+class CollectionLanguage(Language):
+
+    # [1]     Each collection can have [0-n] languages associated with it
+    collectionParent = models.ForeignKey("Collection", blank=False, null=False, default=1, related_name="coll_languages")
+
+    def __str__(self):
+        idt = self.collectionParent.identifier
+        sBack = "[{}] {}".format(idt,choice_english("language.name", self.name))
         return sBack
 
 
@@ -716,8 +721,8 @@ class Relation(models.Model):
 class Domain(models.Model):
     """Domain"""
 
-    # domain (0-n;f) 
-    name = models.ManyToManyField("DomainDescription", blank=True, related_name="domainm2m_domaindescription")
+    # Description of this domain (to be copied from [DomainDescription]
+    name = models.TextField("Domain", help_text=get_help(DOMAIN_NAME), default='0')
     # [1]     Each collection can have [0-n] domains
     collection = models.ForeignKey("Collection", blank=False, null=False, default=1, related_name="collection12m_domain")
 
@@ -727,20 +732,8 @@ class Domain(models.Model):
             return "Empty"
         else:
             idt = self.collection.identifier
-            sName = m2m_combi(self.name)
+            sName = self.name
             return "[{}] {}".format(idt,sName)
-
-
-class DomainDescription(models.Model):
-    """Domain Description"""
-
-    # description
-    name = models.TextField("Domain", help_text=get_help(DOMAIN_NAME), default='0')
-    # [1]     Each domain can have [1-n] domaindescriptions
-    domain = models.ForeignKey(Domain, blank=False, null=False, default=1, related_name="domaindescription12m_domain")
-
-    def __str__(self):
-        return self.name[:50]
 
 
 class AccessAvailability(models.Model):
@@ -750,6 +743,8 @@ class AccessAvailability(models.Model):
         verbose_name_plural = "Access availabilities"
 
     name = models.CharField("Access availability", choices=build_choice_list(ACCESS_AVAILABILITY), max_length=5, help_text=get_help(ACCESS_AVAILABILITY), default='0')
+    # [1]     Each access instance can have [0-n] availabilities
+    access = models.ForeignKey("Access", blank=False, null=False, default=-1, related_name="acc_availabilities")
 
     def __str__(self):
         return choice_english(ACCESS_AVAILABILITY, self.name)
@@ -759,6 +754,8 @@ class LicenseName(models.Model):
     """Name of the license"""
 
     name = models.TextField("Name of the license", help_text=get_help('access.licenseName'))
+    # [1]     Each access instance can have [0-n] licence Names
+    access = models.ForeignKey("Access", blank=False, null=False, default=-1, related_name="acc_licnames")
 
     def __str__(self):
         return self.name[:50]
@@ -768,6 +765,8 @@ class LicenseUrl(models.Model):
     """URL of the license"""
 
     name = models.URLField("URL of the license", help_text=get_help('access.licenseURL'))
+    # [1]     Each access instance can have [0-n] license URLs
+    access = models.ForeignKey("Access", blank=False, null=False, default=-1, related_name="acc_licurls")
 
     def __str__(self):
         return self.name
@@ -791,6 +790,8 @@ class AccessContact(models.Model):
     person = models.TextField("Access: person to contact", help_text=get_help('access.contact.person'))
     address = models.TextField("Access: address of contact", help_text=get_help('access.contact.address'))
     email = models.EmailField("Access: email of contact", help_text=get_help('access.contact.email'))
+    # [1]     Each access instance can have [0-n] contacts
+    access = models.ForeignKey("Access", blank=False, null=False, default=-1, related_name="acc_contacts")
 
     def __str__(self):
         return "{}: {}, ({})".format(
@@ -801,6 +802,8 @@ class AccessWebsite(models.Model):
     """Website to access the collection"""
 
     name = models.URLField("Website to access the collection", help_text=get_help('access.website'))
+    # [1]     Each access instance can have [0-n] websites
+    access = models.ForeignKey("Access", blank=False, null=False, default=-1, related_name="acc_websites")
 
     def __str__(self):
         return self.name
@@ -810,6 +813,8 @@ class AccessMedium(models.Model):
     """Medium used to access a resource of the collection"""
 
     format = models.CharField("Resource medium", choices=build_choice_list(ACCESS_MEDIUM ), max_length=5, help_text=get_help(ACCESS_MEDIUM ), default='0')
+    # [1]     Each access instance can have [0-n] mediums
+    access = models.ForeignKey("Access", blank=False, null=False, default=-1, related_name="acc_mediums")
 
     def __str__(self):
         return choice_english(ACCESS_MEDIUM, self.format)
@@ -823,23 +828,23 @@ class Access(models.Model):
 
     name = models.TextField("Name of this access type", default='-')
     # availability (0-n;c ) 
-    availability = models.ManyToManyField(AccessAvailability, blank=True)
+    # availability = models.ManyToManyField(AccessAvailability, blank=True, related_name = "access_m2m_avail")
     # licenseName (0-n; f)
-    licenseName = models.ManyToManyField(LicenseName, blank=True)
+    # licenseName = models.ManyToManyField(LicenseName, blank=True, related_name = "access_m2m_licname")
     # licenseURL (0-n;f)
-    licenseUrl = models.ManyToManyField(LicenseUrl, blank=True)
+    # licenseUrl = models.ManyToManyField(LicenseUrl, blank=True, related_name = "access_m2m_licurl")
     # nonCommercialUsageOnly (0-1;c yes; no)
     nonCommercialUsageOnly = models.ForeignKey(NonCommercialUsageOnly, blank=True, null=True)
     # contact (0-n;f)
-    contact = models.ManyToManyField(AccessContact, blank=True)
+    # contact = models.ManyToManyField(AccessContact, blank=True, related_name = "access_m2m_contact")
     # website (0-n)
-    website = models.ManyToManyField(AccessWebsite, blank=True)
+    # website = models.ManyToManyField(AccessWebsite, blank=True, related_name = "access_m2m_website")
     # ISBN (0-1;f)
     ISBN = models.TextField("ISBN of collection", help_text=get_help('access.ISBN'), blank=True)
     # ISLRN (0-1;f)
     ISLRN = models.TextField("ISLRN of collection", help_text=get_help('access.ISLRN'), blank=True)
     # medium (0-n; c)
-    medium = models.ManyToManyField(AccessMedium, blank=True)
+    # medium = models.ManyToManyField(AccessMedium, blank=True, related_name = "access_m2m_medium")
 
     def __str__(self):
         sName = self.name
@@ -908,6 +913,8 @@ class DocumentationType(models.Model):
     """Kind of documentation"""
 
     format = models.CharField("Kind of documentation", choices=build_choice_list(DOCUMENTATION_TYPE ), max_length=5, help_text=get_help(DOCUMENTATION_TYPE ), default='0')
+    # [1]
+    documentation = models.ForeignKey("Documentation", blank=False, null=False, default=1, related_name="doc_types")
 
     def __str__(self):
         return choice_english(DOCUMENTATION_TYPE, self.format)
@@ -917,6 +924,8 @@ class DocumentationFile(models.Model):
     """File name for documentation"""
 
     name = models.TextField("File name for documentation", help_text=get_help('documentation.file'))
+    # [1]
+    documentation = models.ForeignKey("Documentation", blank=False, null=False, default=1, related_name="doc_files")
 
     def __str__(self):
         return self.name[:50]
@@ -926,6 +935,8 @@ class DocumentationUrl(models.Model):
     """URL of documentation"""
 
     name = models.URLField("URL of documentation", help_text=get_help('documentation.url'))
+    # [1]
+    documentation = models.ForeignKey("Documentation", blank=False, null=False, default=1, related_name="doc_urls")
 
     def __str__(self):
         return self.name
@@ -934,19 +945,16 @@ class DocumentationUrl(models.Model):
 class Documentation(models.Model):
     """Creator of this resource"""
 
-    # documentationType (0-n; c)
-    documentationType = models.ManyToManyField(DocumentationType, blank=True)
-    # fileName (0-n; f)
-    fileName = models.ManyToManyField(DocumentationFile, blank=True)
-    # url (0-n; f)
-    url = models.ManyToManyField(DocumentationUrl, blank=True)
-    # language (1-n; c)
-    language = models.ManyToManyField(Language, blank=False)
+    # Many-to-one relations:
+    #   DocumentationType (0-n; c)
+    #   DocumentationFile (0-n; f)
+    #   DocumentationUrl (0-n; f)
+    #   DocumentationLanguage (1-n; c)
 
     def __str__(self):
-        return "t:{}|f:{}".format(
-            m2m_combi(self.documentationType),
-            m2m_combi(self.fileName))
+        fld_tp = m2m_combi(self.doc_types)
+        fld_fl = m2m_combi(self.doc_files)
+        return "t:{}|f:{}".format(fld_tp, fld_fl)
 
 
 class ValidationType(models.Model):
@@ -962,6 +970,8 @@ class ValidationMethod(models.Model):
     """Validation method"""
 
     name = models.CharField("Validation method", choices=build_choice_list(VALIDATION_METHOD), max_length=5, help_text=get_help(VALIDATION_METHOD), default='0')
+    # [1]
+    validation = models.ForeignKey("Validation", blank=False, null=False, default=1, related_name="validationmethods")
 
     def __str__(self):
         return choice_english(VALIDATION_METHOD, self.name)
@@ -972,8 +982,8 @@ class Validation(models.Model):
 
     # type (0-1; c)
     type = models.ForeignKey(ValidationType, blank=True, null=True)
-    # method (0-n; c)
-    method = models.ManyToManyField(ValidationMethod, blank=True)
+    # Many-to-one relations:
+    # ValidationMethod (0-n; c)
 
     def __str__(self):
         return "{}:{}".format(
@@ -985,6 +995,8 @@ class ProjectFunder(models.Model):
     """Funder of project"""
 
     name = models.TextField("Funder of project", help_text=get_help('project.funder'))
+    # [1]
+    project = models.ForeignKey("Project", blank=False, null=False, default=1, related_name="funders")
 
     def __str__(self):
         return self.name[:50]
@@ -1005,7 +1017,7 @@ class Project(models.Model):
     # title (0-1; f)
     title = models.TextField("Project title", help_text=get_help('project.title'))
     # funder (0-n; f)
-    funder = models.ManyToManyField(ProjectFunder, blank=True)
+    funder = models.ManyToManyField(ProjectFunder, blank=True, related_name="projectm2m_funder")
     # url (0-1; f)
     URL = models.ForeignKey(ProjectUrl, blank=True, null=True)
     # [1]     Each collection can have [0-n] projects
@@ -1023,6 +1035,8 @@ class CharacterEncoding(models.Model):
     """Type of character-encoding"""
 
     name = models.CharField("Character encoding", choices=build_choice_list(CHARACTERENCODING), max_length=5, help_text=get_help(CHARACTERENCODING), default='0')
+    # [1]     Each written corpus can have [0-n] character encodings
+    writtenCorpus = models.ForeignKey("WrittenCorpus", blank=False, null=False, default=1, related_name="charenc_writtencorpora")
 
     def __str__(self):
         return choice_english(CHARACTERENCODING, self.name)
@@ -1034,10 +1048,7 @@ class WrittenCorpus(models.Model):
     class Meta:
         verbose_name_plural = "Written corpora"
 
-    # characterEncoding   (0-n; c: ) 
-    characterEncoding = models.ManyToManyField(CharacterEncoding, blank=True)
     # numberOfAuthors:    (0-1;f)
-    # numberOfAuthors = models.IntegerField("Number of authors", blank=True, help_text=get_help(WRITTENCORPUS_AUTHORNUMBER), default=0)
     numberOfAuthors = models.CharField("Number of authors", blank=True, help_text=get_help(WRITTENCORPUS_AUTHORNUMBER), max_length=20, default="unknown")
     # authorDemographics: (0-1;f)
     authorDemographics = models.TextField("Author demographics", blank=True, help_text=get_help(WRITTENCORPUS_AUTHORDEMOGRAPHICS), default='-')
@@ -1045,15 +1056,16 @@ class WrittenCorpus(models.Model):
     def __str__(self):
         # idt = m2m_identifier(self.collection_set)
         idt = "TODO"
-        return "[{}]: {}".format(
-            idt,
-            m2m_combi(self.characterEncoding))
+        sEnc = m2m_combi(self.charenc_writtencorpora) # m2m_combi(self.characterEncoding)
+        return "[{}]: {}".format(idt, sEnc)
 
     def get_copy(self):
         # Make a clean copy
         new_copy = get_instance_copy(self)
         # Copy M2M relationship: conversationalType
-        copy_m2m(self, new_copy, 'characterEncoding')
+        # OLD: copy_m2m(self, new_copy, 'characterEncoding')
+        # TODO: check this...
+        copy_m2m(self, new_copy, 'charenc_writtencorpora')
         # Return the new copy
         return new_copy
 
@@ -1086,6 +1098,8 @@ class ConversationalType(models.Model):
     """Type of conversation"""
 
     name = models.CharField("Type of conversation", choices=build_choice_list(SPEECHCORPUS_CONVERSATIONALTYPE), max_length=5, help_text=get_help(SPEECHCORPUS_CONVERSATIONALTYPE), default='0')
+    # [1]     Each speech corpus can have [0-n] conversational types
+    speechCorpus = models.ForeignKey("SpeechCorpus", blank=False, null=False, default=1, related_name="conversationaltypes")
 
     def __str__(self):
         return choice_english(SPEECHCORPUS_CONVERSATIONALTYPE, self.name)
@@ -1165,7 +1179,6 @@ class AudioFormat(models.Model):
     """AudioFormat"""
 
     # speechCoding (0-1; f)
-    # speechCoding = models.CharField("Speech coding", choices=build_choice_list(AUDIOFORMAT_SPEECHCODING), max_length=5, help_text=get_help(AUDIOFORMAT_SPEECHCODING), default='0')
     speechCoding = models.CharField("Speech coding", blank=True, help_text=get_help(AUDIOFORMAT_SPEECHCODING), max_length=25, default='unknown')
     # samplingFrequency (0-1; f)
     samplingFrequency = models.CharField("Sampling frequency", blank=True, help_text=get_help('audioformat.samplingFrequency'), max_length=25, default='unknown')
@@ -1173,6 +1186,8 @@ class AudioFormat(models.Model):
     compression = models.CharField("Compression", blank=True, help_text=get_help('audioformat.compression'), max_length=25, default='unknown')
     # bitResolution  (0-1; f)
     bitResolution = models.CharField("Bit resolution", blank=True, help_text=get_help('audioformat.bitResolution'), max_length=25, default='unknown')
+    # [1]     Each speech corpus can have [0-n] AudioFormats
+    speechCorpus = models.ForeignKey("SpeechCorpus", blank=False, null=False, default=1, related_name="audioformats")
 
     def __str__(self):
         sc = self.speechCoding
@@ -1189,8 +1204,6 @@ class SpeechCorpus(models.Model):
     class Meta:
         verbose_name_plural = "Speech corpora"
 
-    # conversationalTYpe (0-n;c)
-    conversationalType = models.ManyToManyField(ConversationalType, blank=True)
     # durationOfEffectiveSpeech (0-1; f)
     durationOfEffectiveSpeech = models.TextField("Duration of effective speech",blank=True, help_text=get_help('speechcorpus.durationOfEffectiveSpeech'), default='0')
     # durationOfFullDatabase (0-1; f)
@@ -1201,34 +1214,11 @@ class SpeechCorpus(models.Model):
     # speakerDemographics (0-1; f)
     speakerDemographics = models.TextField("Speaker demographics",blank=True, help_text=get_help('speechcorpus.speakerDemographics'), default='-')
 
-    # =============== Verhuist naar [Resource] =================================
-    ## recordingEnvironment (0-n;c)
-    #recordingEnvironment = models.ManyToManyField(RecordingEnvironment, blank=True)
-    ## recordingConditions (0-n; f)
-    #recordingConditions = models.ManyToManyField(RecordingCondition, blank=True)
-    ## channel (0-n;c)
-    #channel = models.ManyToManyField(Channel, blank=True)
-    ## socialContext (0-n; c)
-    #socialContext = models.ManyToManyField(SocialContext, blank=True)
-    ## planningType (0-n; c)
-    #planningType = models.ManyToManyField(PlanningType, blank=True)
-    ## interactivity (0-n; c)
-    #interactivity = models.ManyToManyField(Interactivity, blank=True)
-    ## involvement (0-n; c)
-    #involvement = models.ManyToManyField(Involvement, blank=True)
-    ## audience (0-n; c)
-    #audience = models.ManyToManyField(Audience, blank=True)
-    # ===============================================================================
-
-    # audioFormat (0-n)
-    audioFormat = models.ManyToManyField(AudioFormat, blank=True)
-
     def __str__(self):
         # idt = m2m_identifier(self.collection_set)
         idt = "MOVED"
-        return "[{}] cnv:{}".format(
-          idt,
-          m2m_combi(self.conversationalType))
+        sCnvType = m2m_combi(self.conversationaltypes)
+        return "[{}] cnv:{}".format(idt, sCnvType)
 
     def get_copy(self):
         # Make a clean copy
@@ -1261,31 +1251,6 @@ class Resource(models.Model):
     # [1]     Each collection can have [1-n] resources
     collection = models.ForeignKey("Collection", blank=False, null=False, default=1, related_name="collection12m_resource")
 
-    # =============== Komt van [SpeechCorpus] =======================================
-    # recordingEnvironment (0-n;c)
-    recordingEnvironment = models.ManyToManyField(RecordingEnvironment, blank=True, related_name="recenv_resources")
-    # recordingConditions (0-n; f)
-    recordingConditions = models.ManyToManyField(RecordingCondition, blank=True, related_name="reccond_resources")
-    # channel (0-n;c)
-    channel = models.ManyToManyField(Channel, blank=True, related_name="channel_resources")
-    # socialContext (0-n; c)
-    socialContext = models.ManyToManyField(SocialContext, blank=True, related_name="soccontext_resources")
-    # planningType (0-n; c)
-    planningType = models.ManyToManyField(PlanningType, blank=True, related_name="plantype_resources")
-    # interactivity (0-n; c)
-    interactivity = models.ManyToManyField(Interactivity, blank=True, related_name="interactivity_resources")
-    # involvement (0-n; c)
-    involvement = models.ManyToManyField(Involvement, blank=True, related_name="involvement_resources")
-    # audience (0-n; c)
-    audience = models.ManyToManyField(Audience, blank=True, related_name="audience_resources")
-    # ===============================================================================
-
-    # (0-n)
-    annotation = models.ManyToManyField(Annotation, blank=True, related_name="annotation_resources")
-    # (0-n)
-    medias = models.ManyToManyField(Media, blank=True, related_name="media_resources")
-    # == totalSize (0-n)
-    totalSize = models.ManyToManyField(TotalSize, blank=True, related_name="resourcem2m_totalsize")
     # == writtenCorpus (0-1)
     writtenCorpus = models.ForeignKey(WrittenCorpus, blank=True, null=True)
     # speechCorpus (0-1)
@@ -1298,10 +1263,11 @@ class Resource(models.Model):
             iType = self.DCtype
         else:
             iType = self.subtype
-        return "[{}] {}: {}".format(
+        sAnn = m2m_combi(self.annotations)
+        return "[{}] {}: ann[{}]".format(
             idt,
             choice_english(RESOURCE_TYPE, iType),
-            m2m_combi(self.annotation))
+            sAnn)
 
     def get_copy(self):
         # Make a clean copy

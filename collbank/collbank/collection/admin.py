@@ -249,6 +249,10 @@ class ProvenanceInline(nested_admin.NestedTabularInline):
     extra = 0
 
 
+class CollectionLanguageInline(nested_admin.NestedTabularInline):
+    model = CollectionLanguage
+    extra = 0
+
 class LanguageInline(nested_admin.NestedTabularInline):
     model = Collection.language.through
     extra = 0
@@ -288,28 +292,24 @@ class RelationInline(nested_admin.NestedTabularInline):
     extra = 0
 
 
+class DomainForm(forms.ModelForm):
+    
+    class Meta:
+        model = Domain
+        fields = '__all__'
+        widgets = {
+            'name': forms.Textarea(attrs={'rows': 1, 'cols': 80})
+        }
+
+
 class CollectionDomainInline(nested_admin.NestedTabularInline):
     model = Domain  # Collection.domain.through
+    form = DomainForm
     verbose_name = "Collection - domain"
     verbose_name_plural = "Collection - domains"
     extra = 0
 
 
-#class TotalSizeInline(admin.TabularInline):
-#    model = Collection.totalSize.through
-#    extra = 0
-
-#    def get_formset(self, request, obj = None, **kwargs):
-#        # Get the currently selected Collection object's identifier
-#        self.instance = obj
-#        return super(TotalSizeInline, self).get_formset(request, obj, **kwargs)
-
-#    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-#        formfield = super(TotalSizeInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
-#        # Look for the field's name as it is used in the Collection model
-#        if db_field.name == "totalsize":
-#            formfield.queryset = get_formfield_qs(TotalSize, self.instance, "collection")
-#        return formfield
 class TotalCollectionSizeInline(nested_admin.NestedTabularInline):
     model = TotalCollectionSize
     verbose_name = "Collection - total size"
@@ -352,17 +352,6 @@ class ResourceOrganizationInline(nested_admin.NestedTabularInline):
     verbose_name_plural = "Resource creator: organizations"
     extra = 0
 
-    #def get_formset(self, request, obj = None, **kwargs):
-    #    # Get the currently selected ResourceCreator object's identifier
-    #    self.instance = obj
-    #    return super(ResourceOrganizationInline, self).get_formset(request, obj, **kwargs)
-
-    #def formfield_for_foreignkey(self, db_field, request, **kwargs):
-    #    formfield = super(ResourceOrganizationInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
-    #    # Look for the field's name as it is used in the ResourceCreator model
-    #    if db_field.name == "organization":
-    #        formfield.queryset = get_formfield_qs(Organization, self.instance, "resourcecreator")
-    #    return formfield
 class PersonForm(forms.ModelForm):
 
     class Meta:
@@ -379,18 +368,6 @@ class ResourcePersonInline(nested_admin.NestedTabularInline):
     verbose_name = "Resource creator: person"
     verbose_name_plural = "Resource creator: persons"
     extra = 0
-
-    #def get_formset(self, request, obj = None, **kwargs):
-    #    # Get the currently selected ResourceCreator object's identifier
-    #    self.instance = obj
-    #    return super(ResourcePersonInline, self).get_formset(request, obj, **kwargs)
-
-    #def formfield_for_foreignkey(self, db_field, request, **kwargs):
-    #    formfield = super(ResourcePersonInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
-    #    # Look for the field's name as it is used in the ResourceCreator model
-    #    if db_field.name == "person":
-    #        formfield.queryset = get_formfield_qs(Person, self.instance, "resourcecreator")
-    #    return formfield
 
 
 class ResourceCreatorForm(forms.ModelForm):
@@ -409,11 +386,29 @@ class ResourceCreatorInline(nested_admin.NestedTabularInline):
     extra = 0
 
 
+class ProjectFunderForm(forms.ModelForm):
+    
+    class Meta:
+        model = ProjectFunder
+        fields = '__all__'
+        widgets = {
+            'name': forms.Textarea(attrs={'rows': 1, 'cols': 100})
+        }
+
+
+class ProjectFunderInline(nested_admin.NestedTabularInline):
+    model = ProjectFunder
+    form = ProjectFunderForm
+    verbose_name = "Project: funder"
+    verbose_name_plural = "Project: funders"
+    extra = 0
+
+
 class ProjectAdminForm(forms.ModelForm):
     
     class Meta:
         model = Project
-        fields = '__all__'
+        fields = ['title', 'URL']   # '__all__'
         widgets = {
             'title': forms.Textarea(attrs={'rows': 1})
         }
@@ -422,6 +417,7 @@ class ProjectAdminForm(forms.ModelForm):
 class ProjectInline(nested_admin.NestedStackedInline):
     model = Project   # Collection.project.through
     form = ProjectAdminForm
+    inlines = [ProjectFunderInline]
     verbose_name = "Collection - project"
     verbose_name_plural = "Collection - projects"
     extra = 0
@@ -493,7 +489,7 @@ class ProvenanceAdmin(admin.ModelAdmin):
       return formfield
 
 
-class TemporalProvenanceAdmin(admin.ModelAdmin):
+class TemporalProvenanceAdmin(nested_admin.NestedModelAdmin):
     fieldsets = ( ('Searchable', {'fields': ()}),
                   ('Other',      {'fields': ('startYear', 'endYear',)}),
                 )
@@ -772,6 +768,11 @@ class ResourceSizeInline(nested_admin.NestedTabularInline):
     #    return formfield
 
 
+class MediaFormatInline(nested_admin.NestedTabularInline):
+    model = MediaFormat
+    extra = 0
+
+
 class MediaForm(forms.ModelForm):
 
     class Meta:
@@ -785,6 +786,7 @@ class MediaForm(forms.ModelForm):
 class MediaInline(nested_admin.NestedTabularInline):
     model = Media       # Resource.medias.through
     form = MediaForm
+    inlines = [MediaFormatInline]
     extra = 0
 
     #def get_formset(self, request, obj = None, **kwargs):
@@ -810,7 +812,7 @@ class ResourceForm(forms.ModelForm):
 
     class Meta:
         model = Resource
-        fields = ['type', 'DCtype', 'subtype', 'medias', 'description']
+        fields = ['type', 'DCtype', 'subtype', 'description']
         # fields = ['type', 'DCtype', 'subtype', 'modality', 'medias', 'description']
         # NOT NEEDED: widgets = { 'subtype': forms.Select }
 
@@ -1220,7 +1222,7 @@ class FormatInline(nested_admin.NestedTabularInline):
     #    return formfield
 
 
-class MediaFormatAdmin(admin.ModelAdmin):
+class MediaFormatAdmin(nested_admin.NestedModelAdmin):
     form = MediaFormatForm
 
 
@@ -1312,6 +1314,12 @@ class AudioFormatForm(forms.ModelForm):
     class Meta:
         model = AudioFormat
         fields = ['speechCoding', 'samplingFrequency', 'compression', 'bitResolution']
+        widgets = {
+            'speechCoding': forms. TextInput (attrs={'width': 30}),
+            'samplingFrequency': forms. TextInput (attrs={'width': 30}),
+            'compression': forms. TextInput (attrs={'width': 30}),
+            'bitResolution': forms. TextInput (attrs={'width': 30})
+        }
 
     def __init__(self, *args, **kwargs):
         super(AudioFormatForm, self).__init__(*args, **kwargs)
@@ -1322,154 +1330,55 @@ class AudioFormatAdmin(admin.ModelAdmin):
     form = AudioFormatForm
 
 
-class DomainDescriptionAdminForm(forms.ModelForm):
-    
-    class Meta:
-        model = DomainDescription
-        fields = '__all__'
-        widgets = {
-            'name': forms.Textarea(attrs={'rows': 1, 'cols': 80})
-        }
-
-
-class DomainDescriptionInline(nested_admin.NestedTabularInline):
-    model = DomainDescription  
-    form = DomainDescriptionAdminForm
-    extra = 0
-
-
 class DomainInline(nested_admin.NestedTabularInline):
     model = Domain   #  Domain.name.through
     extra = 0
 
-    #def get_formset(self, request, obj = None, **kwargs):
-    #    # Get the currently selected Domain object's identifier
-    #    self.instance = obj
-    #    return super(DomainInline, self).get_formset(request, obj, **kwargs)
-
-    #def formfield_for_foreignkey(self, db_field, request, **kwargs):
-    #    formfield = super(DomainInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
-    #    # Look for the field's name as it is used in the Collection model
-    #    if db_field.name == "domaindescription":
-    #        formfield.queryset = get_formfield_qs(DomainDescription, self.instance, "domain")
-    #    return formfield
-
 
 class DomainAdmin(admin.ModelAdmin):
     # filter_horizontal = ('name',)
-    inlines = [DomainDescriptionInline]
     fieldsets = ( ('Searchable', {'fields': ()}),
                   ('Other',      {'fields': ()}),
                 )
 
 
 class LingualityTypeInline(nested_admin.NestedTabularInline):
-    model = Linguality.lingualityType.through
+    model = LingualityType
     extra = 0
-
-    def get_formset(self, request, obj = None, **kwargs):
-        # Get the currently selected Linguality object's identifier
-        self.instance = obj
-        return super(LingualityTypeInline, self).get_formset(request, obj, **kwargs)
-
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        formfield = super(LingualityTypeInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
-        # Look for the field's name as it is used in the Linguality model
-        if db_field.name == "lingualitytype":
-            formfield.queryset = get_formfield_qs(LingualityType, self.instance, "linguality")
-        return formfield
 
 
 class LingualityNativenessInline(nested_admin.NestedTabularInline):
-    model = Linguality.lingualityNativeness.through
+    model = LingualityNativeness
     extra = 0
-
-    def get_formset(self, request, obj = None, **kwargs):
-        # Get the currently selected Linguality object's identifier
-        self.instance = obj
-        return super(LingualityNativenessInline, self).get_formset(request, obj, **kwargs)
-
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        formfield = super(LingualityNativenessInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
-        # Look for the field's name as it is used in the Linguality model
-        if db_field.name == "lingualitynativeness":
-            formfield.queryset = get_formfield_qs(LingualityNativeness, self.instance, "linguality")
-        return formfield
 
 
 class LingualityAgeGroupInline(nested_admin.NestedTabularInline):
-    model = Linguality.lingualityAgeGroup.through
+    model = LingualityAgeGroup
     extra = 0
-
-    def get_formset(self, request, obj = None, **kwargs):
-        # Get the currently selected Linguality object's identifier
-        self.instance = obj
-        return super(LingualityAgeGroupInline, self).get_formset(request, obj, **kwargs)
-
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        formfield = super(LingualityAgeGroupInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
-        # Look for the field's name as it is used in the Linguality model
-        if db_field.name == "lingualityagegroup":
-            formfield.queryset = get_formfield_qs(LingualityAgeGroup, self.instance, "linguality")
-        return formfield
 
 
 class LingualityStatusInline(nested_admin.NestedTabularInline):
-    model = Linguality.lingualityStatus.through
+    model = LingualityStatus
     extra = 0
-
-    def get_formset(self, request, obj = None, **kwargs):
-        # Get the currently selected Linguality object's identifier
-        self.instance = obj
-        return super(LingualityStatusInline, self).get_formset(request, obj, **kwargs)
-
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        formfield = super(LingualityStatusInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
-        # Look for the field's name as it is used in the Linguality model
-        if db_field.name == "lingualitystatus":
-            formfield.queryset = get_formfield_qs(LingualityStatus, self.instance, "linguality")
-        return formfield
 
 
 class LingualityVariantInline(nested_admin.NestedTabularInline):
-    model = Linguality.lingualityVariant.through
+    model = LingualityVariant
     extra = 0
-
-    def get_formset(self, request, obj = None, **kwargs):
-        # Get the currently selected Linguality object's identifier
-        self.instance = obj
-        return super(LingualityVariantInline, self).get_formset(request, obj, **kwargs)
-
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        formfield = super(LingualityVariantInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
-        # Look for the field's name as it is used in the Linguality model
-        if db_field.name == "lingualityvariant":
-            formfield.queryset = get_formfield_qs(LingualityVariant, self.instance, "linguality")
-        return formfield
 
 
 class MultiLingualityTypeInline(nested_admin.NestedTabularInline):
-    model = Linguality.multilingualityType.through
+    model = MultilingualityType
     extra = 0
 
-    def get_formset(self, request, obj = None, **kwargs):
-        # Get the currently selected Linguality object's identifier
-        self.instance = obj
-        return super(MultiLingualityTypeInline, self).get_formset(request, obj, **kwargs)
 
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        formfield = super(MultiLingualityTypeInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
-        # Look for the field's name as it is used in the Linguality model
-        if db_field.name == "multilingualitytype":
-            formfield.queryset = get_formfield_qs(MultilingualityType, self.instance, "linguality")
-        return formfield
-
-
-class LingualityAdmin(admin.ModelAdmin):
+class LingualityAdmin(nested_admin.NestedModelAdmin):
     # filter_horizontal = ('lingualityType', 'lingualityNativeness', 'lingualityAgeGroup', 'lingualityStatus', 'lingualityVariant', 'multilingualityType', )
     inlines = [LingualityTypeInline, LingualityNativenessInline, 
                LingualityAgeGroupInline, LingualityStatusInline,
                LingualityVariantInline, MultiLingualityTypeInline]
+    
+    # list_display = ['id', 'linguality_types']
     fieldsets = ( ('Searchable', {'fields': () }),
                   ('Other',      {'fields': () }),
                 )
@@ -1511,108 +1420,77 @@ class LingualityAdmin(admin.ModelAdmin):
     
 
 class AccessAvailabilityInline(nested_admin.NestedTabularInline):
-    model = Access.availability.through
+    model = AccessAvailability
+    form = AccessAvailabilityForm
     extra = 0
 
-    def get_formset(self, request, obj = None, **kwargs):
-        # Get the currently selected Access object's identifier
-        self.instance = obj
-        return super(AccessAvailabilityInline, self).get_formset(request, obj, **kwargs)
 
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        formfield = super(AccessAvailabilityInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
-        # Look for the field's name as it is used in the Access model
-        if db_field.name == "accessavailability":
-            formfield.queryset = get_formfield_qs(AccessAvailability, self.instance, "access")
-        return formfield
+class LicenseNameForm(forms.ModelForm):
+
+    class Meta:
+        model = LicenseName
+        fields = ['name']
+        widgets = {
+            'name': forms.Textarea(attrs={'rows': 1, 'cols': 100})
+        }
 
 
 class AccessLicenseNameInline(nested_admin.NestedTabularInline):
-    model = Access.licenseName.through
+    model = LicenseName
+    form = LicenseNameForm
     extra = 0
 
-    def get_formset(self, request, obj = None, **kwargs):
-        # Get the currently selected Access object's identifier
-        self.instance = obj
-        return super(AccessLicenseNameInline, self).get_formset(request, obj, **kwargs)
 
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        formfield = super(AccessLicenseNameInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
-        # Look for the field's name as it is used in the Access model
-        if db_field.name == "licensename":
-            formfield.queryset = get_formfield_qs(LicenseName, self.instance, "access")
-        return formfield
+class LicenseUrlForm(forms.ModelForm):
+
+    class Meta:
+        model = LicenseUrl
+        fields = ['name']
 
 
 class AccessLicenseUrlInline(nested_admin.NestedTabularInline):
-    model = Access.licenseUrl.through
+    model = LicenseUrl
+    form = LicenseUrlForm
     extra = 0
 
-    def get_formset(self, request, obj = None, **kwargs):
-        # Get the currently selected Access object's identifier
-        self.instance = obj
-        return super(AccessLicenseUrlInline, self).get_formset(request, obj, **kwargs)
 
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        formfield = super(AccessLicenseUrlInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
-        # Look for the field's name as it is used in the Access model
-        if db_field.name == "licenseurl":
-            formfield.queryset = get_formfield_qs(LicenseUrl, self.instance, "access")
-        return formfield
+class AccessContactForm(forms.ModelForm):
+
+    class Meta:
+        model = AccessContact
+        fields = ['person', 'address', 'email']
+        widgets = {
+            'person': forms.TextInput(attrs={'size': 25}),
+            'address': forms.TextInput(attrs={'size': 60})
+        }
 
 
 class AccessContactInline(nested_admin.NestedTabularInline):
-    model = Access.contact.through
+    model = AccessContact
+    form = AccessContactForm
     extra = 0
 
-    def get_formset(self, request, obj = None, **kwargs):
-        # Get the currently selected Access object's identifier
-        self.instance = obj
-        return super(AccessContactInline, self).get_formset(request, obj, **kwargs)
 
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        formfield = super(AccessContactInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
-        # Look for the field's name as it is used in the Access model
-        if db_field.name == "accesscontact":
-            formfield.queryset = get_formfield_qs(AccessContact, self.instance, "access")
-        return formfield
+class AccessWebsiteForm(forms.ModelForm):
+
+    class Meta:
+        model = AccessWebsite
+        fields = ['name']
 
 
 class AccessWebsiteInline(nested_admin.NestedTabularInline):
-    model = Access.website.through
+    model = AccessWebsite
+    form = AccessWebsiteForm
     extra = 0
-
-    def get_formset(self, request, obj = None, **kwargs):
-        # Get the currently selected Access object's identifier
-        self.instance = obj
-        return super(AccessWebsiteInline, self).get_formset(request, obj, **kwargs)
-
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        formfield = super(AccessWebsiteInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
-        # Look for the field's name as it is used in the Access model
-        if db_field.name == "accesswebsite":
-            formfield.queryset = get_formfield_qs(AccessWebsite, self.instance, "access")
-        return formfield
 
 
 class AccessMediumInline(nested_admin.NestedTabularInline):
-    model = Access.medium.through
+    model = AccessMedium
+    form = AccessMediumForm
     extra = 0
 
-    def get_formset(self, request, obj = None, **kwargs):
-        # Get the currently selected Access object's identifier
-        self.instance = obj
-        return super(AccessMediumInline, self).get_formset(request, obj, **kwargs)
 
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        formfield = super(AccessMediumInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
-        # Look for the field's name as it is used in the Access model
-        if db_field.name == "accessmedium":
-            formfield.queryset = get_formfield_qs(AccessMedium, self.instance, "access")
-        return formfield
-
-
-class AccessAdmin(admin.ModelAdmin):
+class AccessAdmin(nested_admin.NestedModelAdmin):
     # filter_horizontal = ('availability', 'licenseName', 'licenseUrl', 'contact', 'website', 'medium',)
     inlines = [AccessAvailabilityInline, AccessLicenseNameInline,
                AccessLicenseUrlInline, AccessContactInline,
@@ -1621,6 +1499,10 @@ class AccessAdmin(admin.ModelAdmin):
 #                 ('Other',      {'fields': ('name', 'availability', 'licenseName', 'licenseUrl', 'nonCommercialUsageOnly', 'contact', 'website', 'ISBN', 'ISLRN', 'medium',)}),
                   ('Other',      {'fields': ('name', 'nonCommercialUsageOnly', 'ISBN', 'ISLRN', )}),
                 )
+
+    list_display = ['id', 'name', 'nonCommercialUsageOnly', 'ISBN', 'ISLRN']
+    search_fields = ['name']
+
     formfield_overrides = {
         models.TextField: {'widget': Textarea(attrs={'rows': 1, 'cols':30})},
         }
@@ -1662,74 +1544,61 @@ class ResourceCreatorAdmin(admin.ModelAdmin):
 
 
 class DocumentationTypeInline(nested_admin.NestedTabularInline):
-    model = Documentation.documentationType.through
+    model = DocumentationType
+    form = DocumentationTypeForm
     extra = 0
 
-    def get_formset(self, request, obj = None, **kwargs):
-        # Get the currently selected Documentation object's identifier
-        self.instance = obj
-        return super(DocumentationTypeInline, self).get_formset(request, obj, **kwargs)
 
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        formfield = super(DocumentationTypeInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
-        # Look for the field's name as it is used in the Documentation model
-        if db_field.name == "documentationtype" :
-            formfield.queryset = get_formfield_qs(DocumentationType, self.instance, "documentation")
-        return formfield
+class DocumentationFileForm(forms.ModelForm):
+
+    class Meta:
+        model = DocumentationFile
+        fields = ['name']
+        widgets = {
+            'name': forms.Textarea(attrs={'rows': 1, 'cols': 100})
+        }
 
 
 class DocumentationFileInline(nested_admin.NestedTabularInline):
-    model = Documentation.fileName.through
+    model = DocumentationFile
+    form = DocumentationFileForm
     extra = 0
 
-    def get_formset(self, request, obj = None, **kwargs):
-        # Get the currently selected Documentation object's identifier
-        self.instance = obj
-        return super(DocumentationFileInline, self).get_formset(request, obj, **kwargs)
 
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        formfield = super(DocumentationFileInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
-        # Look for the field's name as it is used in the Documentation model
-        if db_field.name == "documentationfile" :
-            formfield.queryset = get_formfield_qs(DocumentationFile, self.instance, "documentation")
-        return formfield
+class DocumentationUrlForm(forms.ModelForm):
+
+    class Meta:
+        model = DocumentationUrl
+        fields = ['name']
+        #widgets = {
+        #    'name': forms.Textarea(attrs={'rows': 1})
+        #}
 
 
 class DocumentationUrlInline(nested_admin.NestedTabularInline):
-    model = Documentation.url.through
+    model = DocumentationUrl
+    form = DocumentationUrlForm
     extra = 0
-
-    def get_formset(self, request, obj = None, **kwargs):
-        # Get the currently selected Documentation object's identifier
-        self.instance = obj
-        return super(DocumentationUrlInline, self).get_formset(request, obj, **kwargs)
-
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        formfield = super(DocumentationUrlInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
-        # Look for the field's name as it is used in the Documentation model
-        if db_field.name == "documentationurl":
-            formfield.queryset = get_formfield_qs(DocumentationUrl, self.instance, "documentation")
-        return formfield
 
 
 class DocumentationLanguageInline(nested_admin.NestedTabularInline):
-    model = Documentation.language.through
+    model = DocumentationLanguage   # Documentation.language.through
     extra = 0
 
-    def get_formset(self, request, obj = None, **kwargs):
-        # Get the currently selected Documentation object's identifier
-        self.instance = obj
-        return super(DocumentationLanguageInline, self).get_formset(request, obj, **kwargs)
+    #def get_formset(self, request, obj = None, **kwargs):
+    #    # Get the currently selected Documentation object's identifier
+    #    self.instance = obj
+    #    return super(DocumentationLanguageInline, self).get_formset(request, obj, **kwargs)
 
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        formfield = super(DocumentationLanguageInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
-        # Look for the field's name as it is used in the Documentation model
-        if db_field.name== "language":
-            formfield.queryset = get_formfield_qs(Language, self.instance, "documentation")
-        return formfield
+    #def formfield_for_foreignkey(self, db_field, request, **kwargs):
+    #    formfield = super(DocumentationLanguageInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
+    #    # Look for the field's name as it is used in the Documentation model
+    #    if db_field.name== "language":
+    #        formfield.queryset = get_formfield_qs(Language, self.instance, "documentation")
+    #    return formfield
 
 
-class DocumentationAdmin(admin.ModelAdmin):
+class DocumentationAdmin(nested_admin.NestedModelAdmin):
     # filter_horizontal = ('documentationType', 'fileName', 'url', 'language',)
     inlines = [DocumentationTypeInline, DocumentationFileInline,
                DocumentationUrlInline, DocumentationLanguageInline]
@@ -1739,23 +1608,11 @@ class DocumentationAdmin(admin.ModelAdmin):
 
  
 class ValidationMethodInline(nested_admin.NestedTabularInline):
-    model = Validation.method.through
+    model = ValidationMethod
     extra = 0
 
-    def get_formset(self, request, obj = None, **kwargs):
-        # Get the currently selected Validation object's identifier
-        self.instance = obj
-        return super(ValidationMethodInline, self).get_formset(request, obj, **kwargs)
 
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        formfield = super(ValidationMethodInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
-        # Look for the field's name as it is used in the Validation model
-        if db_field.name == "validationmethod":
-            formfield.queryset = get_formfield_qs(ValidationMethod, self.instance, "validation")
-        return formfield
-
-
-class ValidationAdmin(admin.ModelAdmin):
+class ValidationAdmin(nested_admin.NestedModelAdmin):
     # filter_horizontal = ('method',)
     inlines = [ValidationMethodInline]
     fieldsets = ( ('Searchable', {'fields': ()}),
@@ -1777,23 +1634,6 @@ class ValidationAdmin(admin.ModelAdmin):
       if db_field.name == "type":                                                # ForeignKey
           formfield.queryset = get_formfield_qs(ValidationType, self.instance, "validation")
       return formfield
-
-
-class ProjectFunderInline(nested_admin.NestedTabularInline):
-    model = Project.funder.through
-    extra = 0
-
-    def get_formset(self, request, obj = None, **kwargs):
-        # Get the currently selected Project object's identifier
-        self.instance = obj
-        return super(ProjectFunderInline, self).get_formset(request, obj, **kwargs)
-
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        formfield = super(ProjectFunderInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
-        # Look for the field's name as it is used in the Project model
-        if db_field.name == "projectfunder":
-            formfield.queryset = get_formfield_qs(ProjectFunder, self.instance, "project")
-        return formfield
 
 
 class ProjectAdmin(admin.ModelAdmin):
@@ -1826,22 +1666,8 @@ class ProjectAdmin(admin.ModelAdmin):
 
 
 class SpeechCorpusConvTypeInline(nested_admin.NestedTabularInline):
-    model = SpeechCorpus.conversationalType.through
+    model = ConversationalType
     extra = 0
-
-    def get_formset(self, request, obj = None, **kwargs):
-        # Get the currently selected SpeechCorpus object's identifier
-        self.instance = obj
-        return super(SpeechCorpusConvTypeInline, self).get_formset(request, obj, **kwargs)
-
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        formfield = super(SpeechCorpusConvTypeInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
-        # Look for the field's name as it is used in the SpeechCorpus model
-        if db_field.name == "conversationaltype":
-            formfield.queryset = get_formfield_qs(ConversationalType, self.instance, "speechcorpus")
-        return formfield
-
-
 
 
 class ConversationalTypeForm(forms.ModelForm):
@@ -1860,31 +1686,14 @@ class ConversationalTypeAdmin(admin.ModelAdmin):
 
 
 class SpeechCorpusAudioFormatInline(nested_admin.NestedTabularInline):
-    model = SpeechCorpus.audioFormat.through
+    model = AudioFormat
+    form = AudioFormatForm
     extra = 0
 
-    def get_formset(self, request, obj = None, **kwargs):
-        # Get the currently selected SpeechCorpus object's identifier
-        self.instance = obj
-        return super(SpeechCorpusAudioFormatInline, self).get_formset(request, obj, **kwargs)
 
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        formfield = super(SpeechCorpusAudioFormatInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
-        # Look for the field's name as it is used in the SpeechCorpus model
-        if db_field.name == "audioformat":
-            formfield.queryset = get_formfield_qs(AudioFormat, self.instance, "speechcorpus")
-        return formfield
-
-
-class SpeechCorpusAdmin(admin.ModelAdmin):
+class SpeechCorpusAdmin(nested_admin.NestedModelAdmin):
     # filter_horizontal = ('recordingEnvironment', 'channel', 'conversationalType', 'recordingConditions', 
     #                      'socialContext', 'planningType', 'interactivity', 'involvement', 'audience', 'audioFormat')
-
-    # Can be removed when issue #29 is completed
-    #inlines = [SpeechCorpusRecEnvInline, SpeechCorpusChannelInline, SpeechCorpusConvTypeInline,
-    #           SpeechCorpusRecCondInline, SpeechCorpusSocContextInline, SpeechCorpusPlanTypeInline,
-    #           SpeechCorpusInteractivityInline, SpeechCorpusInvolvementInline,
-    #           SpeechCorpusAudienceInline, SpeechCorpusAudioFormatInline]
 
     inlines = [SpeechCorpusConvTypeInline, SpeechCorpusAudioFormatInline]
     fieldsets = ( ('Searchable', {'fields': ()}),
@@ -1897,23 +1706,12 @@ class SpeechCorpusAdmin(admin.ModelAdmin):
 
 
 class CharacterEncodingInline(nested_admin.NestedTabularInline):
-    model = WrittenCorpus.characterEncoding.through
+    model = CharacterEncoding       # WrittenCorpus.characterEncoding.through
+    form = CharacterEncodingForm
     extra = 0
 
-    def get_formset(self, request, obj = None, **kwargs):
-        # Get the currently selected WrittenCorpus object's identifier
-        self.instance = obj
-        return super(CharacterEncodingInline, self).get_formset(request, obj, **kwargs)
 
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        formfield = super(CharacterEncodingInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
-        # Look for the field's name as it is used in the WrittenCorpus model
-        if db_field.name == "characterEncoding":
-            formfield.queryset = get_formfield_qs(CharacterEncoding, self.instance, "writtencorpus")
-        return formfield
-
-
-class WrittenCorpusAdmin(admin.ModelAdmin):
+class WrittenCorpusAdmin(nested_admin.NestedModelAdmin):
     inlines = [CharacterEncodingInline]
     fieldsets = ( ('Searchable', {'fields': ()}),
                   ('Other',      {'fields': ('numberOfAuthors', 'authorDemographics')}),
@@ -1921,7 +1719,6 @@ class WrittenCorpusAdmin(admin.ModelAdmin):
     formfield_overrides = {
         models.TextField: {'widget': Textarea(attrs={'rows': 1, 'cols':30})},
         }
-
 
 
 class ValidationMethodForm(forms.ModelForm):
@@ -1963,7 +1760,7 @@ class CollectionAdmin(nested_admin.NestedModelAdmin):
     search_fields = ['identifier', 'title__name', 'description']
 
     inlines = [TitleInline, OwnerInline, ResourceInline, GenreInline, ProvenanceInline,
-               LanguageInline, LanguageDisorderInline, RelationInline, CollectionDomainInline,
+               CollectionLanguageInline, LanguageDisorderInline, RelationInline, CollectionDomainInline,
                TotalCollectionSizeInline, PidInline, ResourceCreatorInline, ProjectInline]
 
     actions = ['export_xml']
@@ -2125,7 +1922,6 @@ admin.site.register(LanguageDisorder)
 # -- relation
 admin.site.register(Relation)
 # -- domain
-admin.site.register(DomainDescription)
 admin.site.register(Domain, DomainAdmin)
 # -- access
 admin.site.register(AccessAvailability, AccessAvailabilityAdmin)

@@ -60,6 +60,11 @@ div.inline-group a.add-related {
     visibility: hidden;
 } */
 
+/* Override the default values on 'forms.css' */
+.inline-group .tabular td.original p {
+  height: 1.5em;
+}
+
 .submit-row a.deletelink {
   height: 35px;
 }
