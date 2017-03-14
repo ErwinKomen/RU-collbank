@@ -1334,12 +1334,6 @@ class Collection(models.Model):
     # == project (0-n)          [many-to-one]
     project = models.ManyToManyField(Project, blank=True, related_name="collectionm2m_project")
 
-    # ==== MOVED TO RESOURCE ====
-    ## == writtenCorpus (0-1)
-    #writtenCorpus = models.ForeignKey(WrittenCorpus, blank=True, null=True)
-    ## speechCorpus (0-1)
-    #speechCorpus = models.ForeignKey(SpeechCorpus, blank=True, null=True)
-
     class Meta:
         # This defines (amongst others) the default ordering in the admin listview of Collections
         ordering = ['identifier']
@@ -1362,4 +1356,3 @@ class Collection(models.Model):
     def __str__(self):
         # We are known by our identifier
         return self.identifier
-        # return m2m_combi(self.title)
