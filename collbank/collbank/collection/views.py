@@ -194,7 +194,7 @@ def add_collection_xml(col_this, crp):
             # Set the sub-element
             writ = ET.SubElement(res, "writtenCorpus")
             # Process the validation elements
-            add_element("0-n", writ_this, "characterEncoding", writ, foreign="name", fieldchoice=CHARACTERENCODING)
+            add_element("0-n", writ_this, "characterEncoding", writ, field_name="charenc_writtencorpora", foreign="name", fieldchoice=CHARACTERENCODING)
             # numberOfAuthors (0-1)
             add_element("0-1", writ_this, "numberOfAuthors", writ)
             # authorDemographics (0-1

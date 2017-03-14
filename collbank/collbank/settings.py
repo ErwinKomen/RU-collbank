@@ -6101,6 +6101,7 @@ LANGUAGE_CODE_LIST = [
         ("sgk", "00137547-001", "Sangkong"),
         ("sgl", "00137546-001", "Sanglechi-Ishkashimi"),
         ("sgm", "00138298-001", "Singa"),
+        ("sgn", "ISO 639-2 code", "Sign Languages"),
         ("sgo", "00137548-001", "Songa"),
         ("sgp", "00137550-001", "Singpho"),
         ("sgr", "00137572-001", "Sangisari"),
