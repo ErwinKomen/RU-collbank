@@ -47,7 +47,12 @@ var ru = (function ($, ru) {
 
     // Public methods
     return {
-      type_change : function(el) {
+      type_change: function (el) {
+        // Figure out how we are called
+        if (el.type === "change" || el.type === "keyup") {
+          // Need to get the element proper
+          el = this;
+        }
         // Get the value of the selected [DCtype]
         // var dctype_type = $('#id_DCtype').val();
         var dctype_type = $(el).val();

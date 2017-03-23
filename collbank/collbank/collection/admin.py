@@ -557,7 +557,7 @@ class AnnotationFormatForm(forms.ModelForm):
         init_choices(self, 'name', ANNOTATION_FORMAT)
 
 
-class AnnotationFormatAdmin(admin.ModelAdmin):
+class AnnotationFormatAdmin(nested_admin.NestedModelAdmin):
     form = AnnotationFormatForm
 
 
@@ -565,11 +565,11 @@ class AnnotationForm(forms.ModelForm):
 
     class Meta:
         model = Annotation
-        fields = ['type', 'mode', 'format']
+        fields = ['type', 'mode']
+        # inlines = [AnnotationFormatInline]
         widgets = {
             'type': forms.Select(attrs={'width': 30}),
-            'mode': forms.Select(attrs={'width': 30}),
-            'format': forms.Select(attrs={'width': 30})
+            'mode': forms.Select(attrs={'width': 30})
         }
 
     def __init__(self, *args, **kwargs):
@@ -578,7 +578,7 @@ class AnnotationForm(forms.ModelForm):
         init_choices(self, 'mode', ANNOTATION_MODE)
 
 
-class AnnotationAdmin(admin.ModelAdmin):
+class AnnotationAdmin(nested_admin.NestedModelAdmin):
     inlines = [AnnotationFormatInline]
     fieldsets = ( ('Searchable', {'fields': ('type',) }),
                   ('Other',      {'fields': ('mode', )}),
@@ -1585,17 +1585,15 @@ class DocumentationLanguageInline(nested_admin.NestedTabularInline):
     model = DocumentationLanguage   # Documentation.language.through
     extra = 0
 
-    #def get_formset(self, request, obj = None, **kwargs):
-    #    # Get the currently selected Documentation object's identifier
-    #    self.instance = obj
-    #    return super(DocumentationLanguageInline, self).get_formset(request, obj, **kwargs)
 
-    #def formfield_for_foreignkey(self, db_field, request, **kwargs):
-    #    formfield = super(DocumentationLanguageInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
-    #    # Look for the field's name as it is used in the Documentation model
-    #    if db_field.name== "language":
-    #        formfield.queryset = get_formfield_qs(Language, self.instance, "documentation")
-    #    return formfield
+#class SubtypeInline(nested_admin.NestedTabularInline):
+#    model = SubType
+#    extra = 0
+#    min_num = 0
+#    max_num = 1
+
+#class DcTypeAdmin(nested_admin.NestedModelAdmin):
+#    inlines = [SubtypeInline]
 
 
 class DocumentationAdmin(nested_admin.NestedModelAdmin):
@@ -1969,6 +1967,8 @@ admin.site.register(Involvement, InvolvementAdmin)
 admin.site.register(Audience, AudienceAdmin)
 admin.site.register(AudioFormat, AudioFormatAdmin)
 admin.site.register(SpeechCorpus, SpeechCorpusAdmin)
+
+# admin.site.register(DublinCoreType, DcTypeAdmin)
 
 # -- collection as a whole
 admin.site.register(Collection, CollectionAdmin)

@@ -177,12 +177,15 @@ def choice_english(field, num):
         return "(empty)"
 
 def m2m_combi(items):
-    if items == None:
-        sBack = ''
-    else:
-        qs = items.all()
-        sBack = '-'.join([str(thing) for thing in qs])
-    return sBack
+    try:
+        if items == None:
+            sBack = ''
+        else:
+            qs = items.all()
+            sBack = '-'.join([str(thing) for thing in qs])
+        return sBack
+    except:
+        return "(exception: {})".format(sys.exc_info()[0])
 
 def m2m_namelist(items):
     if items == None:
@@ -401,22 +404,25 @@ class Annotation(models.Model):
     type = models.CharField("Kind of annotation", choices=build_choice_list(ANNOTATION_TYPE), max_length=5, help_text=get_help(ANNOTATION_TYPE), default='0')
     mode = models.CharField("Annotation mode", choices=build_choice_list(ANNOTATION_MODE), max_length=5, help_text=get_help(ANNOTATION_MODE), default='0')
     # The [format] field was used initially, but is now overridden by the [formatAnn] field
-    format = models.CharField("Annotation format", choices=build_choice_list(ANNOTATION_FORMAT), max_length=5, help_text=get_help(ANNOTATION_FORMAT), default='0')
+    # format = models.CharField("Annotation format", choices=build_choice_list(ANNOTATION_FORMAT), max_length=5, help_text=get_help(ANNOTATION_FORMAT), default='0')
     # The [formatAnn] field is the m2m field that should now be used
-    formatAnn = models.ManyToManyField(AnnotationFormat)
+    formatAnn = models.ManyToManyField(AnnotationFormat, related_name="annotationm2m_formatann")
     # [1]
     resource = models.ForeignKey("Resource", blank=False, null=False, default=-1 , on_delete=models.CASCADE, related_name="annotations")
 
     def __str__(self):
-        if self.resource.collection_id > 0:
-            idt = self.resource.collection.identifier
-        else:
-            idt = "EMPTY"
-        return "[{}] {}: {}, {}".format(
-            idt,
-            choice_english(ANNOTATION_TYPE, self.type), 
-            choice_english(ANNOTATION_MODE,self.mode), 
-            m2m_combi(self.formatAnn))
+        try:
+            if self.resource.collection_id > 0:
+                idt = self.resource.collection.identifier
+            else:
+                idt = "EMPTY"
+            return "[{}] {}: {}, {}".format(
+                idt,
+                choice_english(ANNOTATION_TYPE, self.type), 
+                choice_english(ANNOTATION_MODE,self.mode), 
+                m2m_combi(self.formatAnn))
+        except:
+            return "(exception)"
 
     def get_copy(self):
         # Make a clean copy
@@ -897,7 +903,7 @@ class ResourceCreator(models.Model):
     # [1]
     organization = models.ManyToManyField(Organization, blank=False, related_name="resourcecreatorm2m_organization")
     # [1]
-    person = models.ManyToManyField(Person, blank=False, related_name="resourcecreatorm2m_person")
+    # person = models.ManyToManyField(Person, blank=False, related_name="resourcecreatorm2m_person")
     # [1]     Each collection can have [0-n] resource creators
     collection = models.ForeignKey("Collection", blank=False, null=False, default=1, related_name="collection12m_resourcecreator")
 
@@ -1230,6 +1236,26 @@ class SpeechCorpus(models.Model):
         # Return the new copy
         return new_copy
 
+
+#class SubType(models.Model):
+#    """Every DCtype can optionally have max 1 SubType"""
+
+#    name = models.CharField("Resource sub type", null=False, blank=False, 
+#                            max_length=MAX_IDENTIFIER_LEN, help_text=get_help(RESOURCE_SUBTYPE))
+#    DCtype = models.ForeignKey("DublinCoreType", null=False, blank=False)
+
+#    def __str__(self):
+#        return self.name
+
+
+#class DublinCoreType(models.Model):
+#    """Every must have exactly 1 DCtype"""
+
+#    name = models.CharField("Resource DCtype", max_length=MAX_IDENTIFIER_LEN, help_text=get_help(RESOURCE_DCTYPE))
+#    resource = models.ForeignKey("Resource", null=False, blank=False)
+
+#    def __str__(self):
+#        return self.name
 
 
 class Resource(models.Model):
