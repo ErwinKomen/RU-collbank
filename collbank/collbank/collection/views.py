@@ -215,10 +215,10 @@ def add_collection_xml(col_this, crp):
             add_element("1", ann_this, "type", ann, fieldchoice=ANNOTATION_TYPE)
             # mode (1)
             add_element("1", ann_this, "mode", ann, fieldchoice=ANNOTATION_MODE)
-            # format (1)
-            # add_element("1", ann_this, "format", ann, fieldchoice=ANNOTATION_FORMAT)
             # formatAnn (1-n)
-            add_element("1-n", ann_this, "formatAnn", ann, foreign="name", subname="format", fieldchoice=ANNOTATION_FORMAT)
+            # add_element("1-n", ann_this, "formatAnn", ann, foreign="name", subname="format", fieldchoice=ANNOTATION_FORMAT)
+            # annotation_formats (1-n)
+            add_element("1-n", ann_this, "format", ann, field_name="annotation_formats", foreign="name", fieldchoice=ANNOTATION_FORMAT)
         # media (0-n)
         for med_this in res_this.media_items.all():   # res_this.medias.all():
             # Add the media sub-element

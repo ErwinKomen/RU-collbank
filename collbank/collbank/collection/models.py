@@ -370,7 +370,7 @@ class Media(models.Model):
     # format (0-n; c)
     # format = models.ManyToManyField("MediaFormat", blank=True, related_name="mediam2m_mediaformat")
     # [1]
-    resource = models.ForeignKey("Resource", blank=False, null=False, default=-1 , on_delete=models.CASCADE, related_name="media_items")
+    resource = models.ForeignKey("Resource", blank=False, null=False, default=-1 , related_name="media_items")
 
     def __str__(self):
         sFormats = m2m_combi(self.mediaformat12m_media)
@@ -393,6 +393,8 @@ class AnnotationFormat(models.Model):
     """Format of an annotation"""
 
     name = models.CharField("Annotation format", choices=build_choice_list(ANNOTATION_FORMAT), max_length=5, help_text=get_help(ANNOTATION_FORMAT), default='0')
+    # [1] link to the parent Annotation (many-to-one relation)
+    annotation = models.ForeignKey("Annotation", blank=False, null=False, default=-1, related_name = "annotation_formats")
 
     def __str__(self):
         return choice_english(ANNOTATION_FORMAT, self.name)
@@ -408,7 +410,7 @@ class Annotation(models.Model):
     # The [formatAnn] field is the m2m field that should now be used
     formatAnn = models.ManyToManyField(AnnotationFormat, related_name="annotationm2m_formatann")
     # [1]
-    resource = models.ForeignKey("Resource", blank=False, null=False, default=-1 , on_delete=models.CASCADE, related_name="annotations")
+    resource = models.ForeignKey("Resource", blank=False, null=False, default=-1 , related_name="annotations")
 
     def __str__(self):
         try:
@@ -416,11 +418,13 @@ class Annotation(models.Model):
                 idt = self.resource.collection.identifier
             else:
                 idt = "EMPTY"
-            return "[{}] {}: {}, {}".format(
-                idt,
-                choice_english(ANNOTATION_TYPE, self.type), 
-                choice_english(ANNOTATION_MODE,self.mode), 
-                m2m_combi(self.formatAnn))
+            #return "[{}] {}: {}, {}".format(
+            #    idt,
+            #    choice_english(ANNOTATION_TYPE, self.type), 
+            #    choice_english(ANNOTATION_MODE,self.mode), 
+            #    m2m_combi(self.formatAnn))
+            return "[{}] {}: {}".format(
+                idt, choice_english(ANNOTATION_TYPE, self.type),  choice_english(ANNOTATION_MODE,self.mode))
         except:
             return "(exception)"
 
@@ -474,7 +478,7 @@ class Modality(models.Model):
     name = models.CharField("Resource modality", choices=build_choice_list(RESOURCE_MODALITY), max_length=5, 
                             help_text=get_help(RESOURCE_MODALITY), default='0')
     # [1] Link to the parent Resource instance
-    resource = models.ForeignKey("Resource", blank=False, null=False, default=-1, on_delete=models.CASCADE, related_name="modalities")
+    resource = models.ForeignKey("Resource", blank=False, null=False, default=-1, related_name="modalities")
 
     def __str__(self):
         if self.resource_id >0 and self.resource.collection_id >0:
@@ -1083,7 +1087,7 @@ class RecordingEnvironment(models.Model):
     # [1]
     name = models.CharField("Environment for the recording", choices=build_choice_list(SPEECHCORPUS_RECORDINGENVIRONMENT), max_length=5, help_text=get_help(SPEECHCORPUS_RECORDINGENVIRONMENT), default='0')
     # [1]
-    resource = models.ForeignKey("Resource", blank=False, null=False, default=-1 , on_delete=models.CASCADE, related_name="recordingenvironments")
+    resource = models.ForeignKey("Resource", blank=False, null=False, default=-1 , related_name="recordingenvironments")
 
     def __str__(self):
         return choice_english(SPEECHCORPUS_RECORDINGENVIRONMENT, self.name)
@@ -1094,7 +1098,7 @@ class Channel(models.Model):
 
     name = models.CharField("Channel for the speech corpus", choices=build_choice_list(SPEECHCORPUS_CHANNEL), max_length=5, help_text=get_help(SPEECHCORPUS_CHANNEL), default='0')
     # [1]
-    resource = models.ForeignKey("Resource", blank=False, null=False, default=-1 , on_delete=models.CASCADE, related_name="channels")
+    resource = models.ForeignKey("Resource", blank=False, null=False, default=-1 , related_name="channels")
 
     def __str__(self):
         return choice_english(SPEECHCORPUS_CHANNEL, self.name)
@@ -1116,7 +1120,7 @@ class RecordingCondition(models.Model):
 
     name = models.TextField("Recording condition", help_text=get_help('speechcorpus.recordingConditions'))
     # [1]
-    resource = models.ForeignKey("Resource", blank=False, null=False, default=-1 , on_delete=models.CASCADE, related_name="recordingconditions")
+    resource = models.ForeignKey("Resource", blank=False, null=False, default=-1 , related_name="recordingconditions")
 
     def __str__(self):
         # Max 80 characters
@@ -1128,7 +1132,7 @@ class SocialContext(models.Model):
 
     name = models.CharField("Social context", choices=build_choice_list(SPEECHCORPUS_SOCIALCONTEXT), max_length=5, help_text=get_help(SPEECHCORPUS_SOCIALCONTEXT), default='0')
     # [1]
-    resource = models.ForeignKey("Resource", blank=False, null=False, default=-1 , on_delete=models.CASCADE, related_name="socialcontexts")
+    resource = models.ForeignKey("Resource", blank=False, null=False, default=-1 , related_name="socialcontexts")
 
     def __str__(self):
         return choice_english(SPEECHCORPUS_SOCIALCONTEXT, self.name)
@@ -1139,7 +1143,7 @@ class PlanningType(models.Model):
 
     name = models.CharField("Type of planning", choices=build_choice_list(SPEECHCORPUS_PLANNINGTYPE), max_length=5, help_text=get_help(SPEECHCORPUS_PLANNINGTYPE), default='0')
     # [1]
-    resource = models.ForeignKey("Resource", blank=False, null=False, default=-1 , on_delete=models.CASCADE, related_name="planningtypes")
+    resource = models.ForeignKey("Resource", blank=False, null=False, default=-1 , related_name="planningtypes")
 
     def __str__(self):
         return choice_english(SPEECHCORPUS_PLANNINGTYPE, self.name)
@@ -1153,7 +1157,7 @@ class Interactivity(models.Model):
 
     name = models.CharField("Interactivity", choices=build_choice_list(SPEECHCORPUS_INTERACTIVITY), max_length=5, help_text=get_help(SPEECHCORPUS_INTERACTIVITY), default='0')
     # [1]
-    resource = models.ForeignKey("Resource", blank=False, null=False, default=-1 , on_delete=models.CASCADE, related_name="interactivities")
+    resource = models.ForeignKey("Resource", blank=False, null=False, default=-1 , related_name="interactivities")
 
     def __str__(self):
         return choice_english(SPEECHCORPUS_INTERACTIVITY, self.name)
@@ -1164,7 +1168,7 @@ class Involvement(models.Model):
 
     name = models.CharField("Type of involvement", choices=build_choice_list(SPEECHCORPUS_INVOLVEMENT), max_length=5, help_text=get_help(SPEECHCORPUS_INVOLVEMENT), default='0')
     # [1]
-    resource = models.ForeignKey("Resource", blank=False, null=False, default=-1 , on_delete=models.CASCADE, related_name="involvements")
+    resource = models.ForeignKey("Resource", blank=False, null=False, default=-1 , related_name="involvements")
 
     def __str__(self):
         return choice_english(SPEECHCORPUS_INVOLVEMENT, self.name)
@@ -1175,7 +1179,7 @@ class Audience(models.Model):
 
     name = models.CharField("Audience", choices=build_choice_list(SPEECHCORPUS_AUDIENCE), max_length=5, help_text=get_help(SPEECHCORPUS_AUDIENCE), default='0')
     # [1]
-    resource = models.ForeignKey("Resource", blank=False, null=False, default=-1 , on_delete=models.CASCADE, related_name="audiences")
+    resource = models.ForeignKey("Resource", blank=False, null=False, default=-1 , related_name="audiences")
 
     def __str__(self):
         return choice_english(SPEECHCORPUS_AUDIENCE, self.name)
@@ -1378,6 +1382,15 @@ class Collection(models.Model):
     get_title.short_description = 'Titles (not sortable)'
     # This works, but sorting on a non-f
     # get_title.admin_order_field = 'identifier'
+
+    def save(self, **kwargs):
+        try:
+            result = super(Collection,self).save(**kwargs)
+            return result
+        except:
+            print("Unexpected error:", sys.exc_info()[0])
+            return None
+
 
     def __str__(self):
         # We are known by our identifier

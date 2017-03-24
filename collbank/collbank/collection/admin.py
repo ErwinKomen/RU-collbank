@@ -531,36 +531,6 @@ class GeographicProvenanceAdmin(admin.ModelAdmin):
     form = GeographicProvenanceForm
 
 
-class AnnotationFormatInline(nested_admin.NestedTabularInline):
-    model = Annotation.formatAnn.through
-    extra = 0
-
-    def get_formset(self, request, obj = None, **kwargs):
-        # Get the currently selected Annotation object's identifier
-        self.instance = obj
-        return super(AnnotationFormatInline, self).get_formset(request, obj, **kwargs)
-
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        formfield = super(AnnotationFormatInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
-        # Look for the field's name as it is used in the Collection model
-        if db_field.name == "annotationformat":
-            formfield.queryset = get_formfield_qs(AnnotationFormat, self.instance, "annotation")
-        return formfield
-
-
-class AnnotationFormatForm(forms.ModelForm):
-    model = AnnotationFormat
-    fields = ['name']
-
-    def __init__(self, *args, **kwargs):
-        super(AnnotationFormatForm, self).__init__(*args, **kwargs)
-        init_choices(self, 'name', ANNOTATION_FORMAT)
-
-
-class AnnotationFormatAdmin(nested_admin.NestedModelAdmin):
-    form = AnnotationFormatForm
-
-
 class AnnotationForm(forms.ModelForm):
 
     class Meta:
@@ -576,6 +546,62 @@ class AnnotationForm(forms.ModelForm):
         super(AnnotationForm, self).__init__(*args, **kwargs)
         init_choices(self, 'type', ANNOTATION_TYPE)
         init_choices(self, 'mode', ANNOTATION_MODE)
+
+
+class AnnotationFormatForm(forms.ModelForm):
+
+    class Meta:
+        model = AnnotationFormat
+        fields = ['name']
+        widgets = {
+            'name': forms.Select(attrs={'width': 30})
+        }
+
+    def __init__(self, *args, **kwargs):
+        super(AnnotationFormatForm, self).__init__(*args, **kwargs)
+        init_choices(self, 'name', ANNOTATION_FORMAT)
+
+
+class AnnotationFormatInline(nested_admin.NestedTabularInline):
+    model = AnnotationFormat  # Annotation.formatAnn.through
+    form = AnnotationFormatForm
+    extra = 0
+
+    #def get_formset(self, request, obj = None, **kwargs):
+    #    # Get the currently selected Annotation object's identifier
+    #    self.instance = obj
+    #    return super(AnnotationFormatInline, self).get_formset(request, obj, **kwargs)
+
+    #def formfield_for_foreignkey(self, db_field, request, **kwargs):
+    #    formfield = super(AnnotationFormatInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
+    #    # Look for the field's name as it is used in the Collection model
+    #    if db_field.name == "annotationformat":
+    #        formfield.queryset = get_formfield_qs(AnnotationFormat, self.instance, "annotation")
+    #    return formfield
+
+
+class AnnotationInline(nested_admin.NestedTabularInline):
+    model = Annotation      #  Resource.annotation.through
+    form = AnnotationForm
+    inlines = [AnnotationFormatInline]
+    extra = 0
+
+    #def get_formset(self, request, obj = None, **kwargs):
+    #    # Get the currently selected Collection object's identifier
+    #    self.instance = obj
+    #    return super(AnnotationInline, self).get_formset(request, obj, **kwargs)
+
+    #def formfield_for_foreignkey(self, db_field, request, **kwargs):
+    #    formfield = super(AnnotationInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
+    #    # Look for the field's name as it is used in the Collection model
+    #    if db_field.name == "annotation":
+    #        formfield.queryset = get_formfield_qs(Annotation, self.instance, "resource")
+    #    return formfield
+
+
+
+class AnnotationFormatAdmin(nested_admin.NestedModelAdmin):
+    form = AnnotationFormatForm
 
 
 class AnnotationAdmin(nested_admin.NestedModelAdmin):
@@ -613,25 +639,6 @@ class AnnotationAdmin(nested_admin.NestedModelAdmin):
           # Add it to this model
           itemThis.formatAnn.add(formatNew)
       return formfield
-
-
-class AnnotationInline(nested_admin.NestedTabularInline):
-    model = Annotation      #  Resource.annotation.through
-    form = AnnotationForm
-    extra = 0
-
-    #def get_formset(self, request, obj = None, **kwargs):
-    #    # Get the currently selected Collection object's identifier
-    #    self.instance = obj
-    #    return super(AnnotationInline, self).get_formset(request, obj, **kwargs)
-
-    #def formfield_for_foreignkey(self, db_field, request, **kwargs):
-    #    formfield = super(AnnotationInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
-    #    # Look for the field's name as it is used in the Collection model
-    #    if db_field.name == "annotation":
-    #        formfield.queryset = get_formfield_qs(Annotation, self.instance, "resource")
-    #    return formfield
-
 
 
 class CharacterEncodingForm(forms.ModelForm):
@@ -1867,7 +1874,7 @@ class FieldChoiceAdmin(admin.ModelAdmin):
 
         if obj.machine_value == None:
             # Check out the query-set and make sure that it exists
-            qs = FieldChoice.objectss.filter(field=obj.field)
+            qs = FieldChoice.objects.filter(field=obj.field)
             if len(qs) == 0:
                 # The field does not yet occur within FieldChoice
                 # Future: ask user if that is what he wants (don't know how...)
