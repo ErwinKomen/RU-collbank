@@ -57,6 +57,7 @@ var ru = (function ($, ru) {
         // var dctype_type = $('#id_DCtype').val();
         var dctype_type = $(el).val();
         var sIdSub = $(el).attr("id").replace("DCtype", "subtype");
+        var subtype_type = $("#" + sIdSub).val();
         // Create the URL that is needed
         var url_prefix = $(".container[url_home]").attr("url_home");
         if (url_prefix === undefined) {
@@ -75,7 +76,7 @@ var ru = (function ($, ru) {
               $('#' + sIdSub).append($('<option></option>').val(json[j][0]).html(json[j][1]));
             }
             // Set the selected value correctly
-            $("#" + sIdSub).val(parseInt(dctype_type, 10));
+            $("#" + sIdSub).val(parseInt(subtype_type, 10));
           }
         };
         // Execute the ajax request SYNCHRONOUSLY
