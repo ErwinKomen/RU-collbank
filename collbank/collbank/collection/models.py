@@ -14,6 +14,7 @@ import copy  # (1) use python copy
 import sys
 
 MAX_IDENTIFIER_LEN = 10
+MAX_STRING_LEN = 255
 
 RESOURCE_TYPE = "resource.type"
 RESOURCE_DCTYPE = "resource.DCtype"
@@ -1321,6 +1322,9 @@ class Resource(models.Model):
 class Collection(models.Model):
     """Characteristics of the collection as a whole"""
 
+    # INTERNAL FIELD: the persistent identifier name by which this descriptor is going to be recognized
+    pidname = models.CharField("Registry identifier", 
+                               max_length=MAX_STRING_LEN, default="empty")
     # INTERNAL FIELD: identifier (1)
     identifier = models.CharField("Unique short collection identifier (10 characters max)", max_length=MAX_IDENTIFIER_LEN, default='-')
     # title (1-n;f)             [many-to-one]
@@ -1376,6 +1380,12 @@ class Collection(models.Model):
         return str(self.identifier)
     do_identifier.short_description = "Identifier"
     do_identifier.admin_order_field = 'identifier'
+
+    def get_pidname(self):
+        if self.pidname == "" or self.pidname == "empty":
+            self.pidname = "cbmetadata_{0:05d}".format(self.id)
+            self.save()
+        return self.pidname
 
     def get_title(self):
         return m2m_namelist(self.title)

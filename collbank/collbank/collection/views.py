@@ -2,20 +2,29 @@
 Definition of views.
 """
 
+from django.contrib.admin.templatetags.admin_list import result_headers
+from django.contrib.auth import login, authenticate
+from django.contrib.auth.models import Group
+from django.core.urlresolvers import reverse
+from django.db.models.functions import Lower
+from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
+from django.shortcuts import get_object_or_404, render, redirect
+from django.template import RequestContext, loader
+from django.utils import timezone
 from django.views.generic.detail import DetailView
 from django.views.generic import ListView
-from django.shortcuts import get_object_or_404, render
-from django.http import HttpRequest, HttpResponse
-from django.template import RequestContext, loader
-from django.contrib.admin.templatetags.admin_list import result_headers
-from django.db.models.functions import Lower
-from django.utils import timezone
+from wsgiref import util
+from wsgiref.util import FileWrapper
 import json
 from datetime import datetime
 from xml.dom import minidom
 import xml.etree.ElementTree as ET
 from lxml import etree
 import os
+import tarfile
+import zipfile
+import tempfile
+import io
 from collbank.collection.models import *
 from collbank.settings import OUTPUT_XML, APP_PREFIX, WSGI_FILE, STATIC_ROOT, WRITABLE_DIR, COUNTRY_CODES, LANGUAGE_CODE_LIST
 from collbank.collection.admin import CollectionAdmin
@@ -80,7 +89,7 @@ def add_element(optionality, col_this, el_name, crp, **kwargs):
     # Return positively
     return True
     
-def make_collection_top():
+def make_collection_top(request):
     """Create the top-level elements for a collection"""
 
     # Define the top-level of the xml output
@@ -102,11 +111,23 @@ def make_collection_top():
     lproxy = ET.SubElement(rsc, "ResourceProxyList")
     # TODO: add resource proxy's under [lproxy]
 
+    # Produce a link to the resource
+    oProxy = ET.SubElement(lproxy, "ResourceProxy")
+    sProxyId = "oh_000000000001"
+    oProxy.set('id', sProxyId)
+    # Add resource type
+    oSubItem = ET.SubElement(oProxy, "ResourceType")
+    oSubItem.set("mimetype", "application/sru+xml")
+    oSubItem.text = "SearchService"
+    # Add resource ref
+    oSubItem = ET.SubElement(oProxy, "ResourceRef")
+    #  "http://applejack.science.ru.nl/collbank"
+    oSubItem.text = request.build_absolute_uri(reverse('home'))
+
     ET.SubElement(rsc, "JournalFileProxyList")
     ET.SubElement(rsc, "ResourceRelationList")
     # Return the resulting top-level element
-    return top
-        
+    return top     
             
 def add_collection_xml(col_this, crp):
     """Add the collection information from [col_this] to XML element [crp]"""
@@ -362,6 +383,37 @@ def add_collection_xml(col_this, crp):
         add_element("0-1", proj_this, "URL", proj, foreign="name", subname="url")
     # There's no return value -- all has been added to [crp]
 
+def create_collection_xml(collection_this, request):
+    """Convert the 'collection' object from the context to XML
+    
+    Note: this returns a TUPLE (boolean, string)
+    """
+
+    # Create a top-level element, including CMD, Header and Resources
+    top = make_collection_top(request)
+
+    # Start components and this collection component
+    cmp = ET.SubElement(top, "Components")
+
+    # Add a <OralHistoryInterview> root that contains a list of <collection> objects
+    collroot = ET.SubElement(cmp, "CorpusCollection")
+
+    # Add this collection to the xml
+    add_collection_xml(collection_this, collroot )
+
+    # Convert the XML to a string
+    xmlstr = minidom.parseString(ET.tostring(top,encoding='utf-8')).toprettyxml(indent="  ")
+
+    # Validate the XML against the XSD
+    (bValid, oError) = validateXml(xmlstr)
+    if not bValid:
+        # Get error messages for all the errors
+        return (False, xsd_error_list(oError, xmlstr))
+
+    # Return this string
+    return (True, xmlstr)
+
+
 def get_country(cntryCode):
     # Get the country string according to field-choice
     sCountry = choice_english(PROVENANCE_GEOGRAPHIC_COUNTRY, cntryCode).strip()
@@ -388,7 +440,6 @@ def get_language(lngCode):
             return (sLanguage, tplLang[0])
     # Empty
     return (None, None)
-
 
 def validateXml(xmlstr):
     """Validate an XML string against an XSD schema
@@ -448,7 +499,6 @@ def xsd_error_list(lError, sXmlStr):
     lHtml.append("</body></html>")
     return "\n".join(lHtml)
 
-
 def xsd_error_as_simple_string(error):
     """
     Returns a string based on an XSD error object with the format
@@ -502,14 +552,41 @@ def about(request):
         }
     )
 
+def signup(request):
+    """Provide basic sign up and validation of it """
+
+    if request.method == 'POST':
+        form = SignUpForm(request.POST)
+        if form.is_valid():
+            # Save the form
+            form.save()
+            # Create the user
+            username = form.cleaned_data.get('username')
+            raw_password = form.cleaned_data.get('password1')
+            # also make sure that the user gets into the STAFF,
+            #      otherwise he/she may not see the admin pages
+            user = authenticate(username=username, 
+                                password=raw_password,
+                                is_staff=True)
+            user.is_staff = True
+            user.save()
+            # Add user to the "RegistryUser" group
+            g = Group.objects.get(name="RegistryUser")
+            if g != None:
+                g.user_set.add(user)
+            # Log in as the user
+            login(request, user)
+            return redirect('home')
+    else:
+        form = SignUpForm()
+    return render(request, 'collection/signup.html', {'form': form})
+
 def output(request, collection_id):
     """Provide XML-output for the specified collection"""
 
     selected_collection = get_object_or_404(Collection,pk=collection_id)
     file_name = Collection.make_xml(selected_collection)
     return HttpResponse(open(file_name).read(), content_type='text/xml')
-
-
 
 def reload_collbank(request=None):
     """Clear the Apache cache by touching the WSGI file"""
@@ -569,8 +646,19 @@ class CollectionListView(ListView):
     def render_to_response(self, context, **response_kwargs):
         """Check if downloading is needed or not"""
         sType = self.request.GET.get('submit_type', '')
-        if sType == 'xml':
-            return self.download_to_xml(context)
+        if sType == 'tar':
+            return self.download_to_tar(context)
+        elif sType == 'zip':
+            return self.download_to_zip(context)
+        elif sType == 'publish':
+            # Perform the publishing
+            context['publish'] = self.publish_xml(context)
+            if context['publish']['status'] == 'error':
+                sHtml = context['publish']['html']
+                return HttpResponse(sHtml)
+            else:
+                # Return a positive result
+                return super(CollectionListView, self).render_to_response(context, **response_kwargs)
         else:
             return super(CollectionListView, self).render_to_response(context, **response_kwargs)
 
@@ -607,54 +695,108 @@ class CollectionListView(ListView):
         # Return the calculated context
         return context
 
-    def convert_to_xml(self, context):
-        """Convert all available collection objects to XML"""
+    def download_to_tar(self, context):
+        """Make the XML representation of ALL collections downloadable as a tar.gz"""
 
-        # Create a top-level element, including CMD, Header and Resources
-        top = make_collection_top()
+        # Get the overview list
+        qs = context['overview_list']
+        if qs != None and len(qs) > 0:
+            out = io.BytesIO()
+            # Combine the files
+            with tarfile.open(fileobj=out, mode="w:gz") as tar:
+                for coll_this in qs:
+                    # Get the XML text of this object
+                    (bValid, sXmlText) = create_collection_xml(coll_this, self.request)
+                    if bValid:
+                        sEnc = sXmlText.encode('utf-8')
+                        bData = io.BytesIO(sEnc)
 
-        # Start components and this collection component
-        cmp     = ET.SubElement(top, "Components")
-        # Add a <CorpusCollection> root that contains a list of <collection> objects
-        colroot = ET.SubElement(cmp, "CorpusCollection")
+                        info = tarfile.TarInfo(name=coll_this.identifier + ".xml")
+                        info.size = len(sEnc)
+                        tar.addfile(tarinfo=info, fileobj=bData)
+                    else:
+                        # Return the error response
+                        response = HttpResponse(sXmlText)
 
-        # Walk all the collections
-        for col_this in Collection.objects.all():
-
-            # Add a <collection> root for this collection
-            crp = ET.SubElement(colroot, "collection")
-            # Add the information in this collection to the xml
-            add_collection_xml(col_this, crp)
-
-        # Convert the XML to a string
-        xmlstr = minidom.parseString(ET.tostring(top,encoding='utf-8')).toprettyxml(indent="  ")
-
-        # Validate the XML against the XSD
-        (bValid, oError) = validateXml(xmlstr)
-        if not bValid:
-            # Provide an error message
-            return (False, xsd_error_list(oError, xmlstr))
-
-        # Return this string
-        return (True, xmlstr)
-    
-    def download_to_xml(self, context):
-        """Make the XML representation of ALL collections downloadable"""
-
-        # Construct a file name based on the identifier
-        # NOT NEEDED HERE? sFileName = 'collection-{}'.format(getattr(context['collection'], 'identifier'))
-        # Get the XML of this collection
-        (bValid, sXmlStr) = self.convert_to_xml(context)
-        if bValid:
-            # Create the HttpResponse object with the appropriate CSV header.
-            response = HttpResponse(sXmlStr, content_type='text/xml')
-            response['Content-Disposition'] = 'attachment; filename="collbank_all.xml"'
+            # Create the HttpResponse object with the appropriate header.
+            response = HttpResponse(out.getvalue(), content_type='application/x-gzip')
+            response['Content-Disposition'] = 'attachment; filename="collbank_all.tar.gz"'
         else:
             # Return the error response
-            response = HttpResponse(sXmlStr)
+            response = HttpResponse("<div>The overview list is empty</div><div><a href=\"/"+APP_PREFIX+"\">Back</a></div>")
 
         # Return the result
         return response
+
+    def download_to_zip(self, context):
+        """Make the XML representation of ALL collections downloadable as a .zip"""
+
+        # Get the overview list
+        qs = context['overview_list']
+        if qs != None and len(qs) > 0:
+            temp = tempfile.TemporaryFile()
+            # Combine the files
+            with zipfile.ZipFile(temp, 'w', compression=zipfile.ZIP_DEFLATED) as archive:
+                for coll_this in qs:
+                    # Get the XML text of this object
+                    (bValid, sXmlText) = create_collection_xml(coll_this, self.request)
+                    if bValid:
+                        archive.writestr(coll_this.identifier + ".xml", sXmlText)
+                    else:
+                        # Return the error response
+                        response = HttpResponse(sXmlText)
+                # Do some checking
+                x = 1
+            # Get file information
+            iLength = temp.tell()
+            temp.seek(0)
+            # Use a wrapper to chunk-send it
+            wrapper = FileWrapper(temp)
+            # Create the HttpResponse object with the appropriate header.
+            response = HttpResponse(wrapper, content_type='application/zip')
+            response['Content-Disposition'] = 'attachment; filename="collbank_all.zip"'
+            response['Content-Length'] = iLength
+        else:
+            # Return the error response
+            response = HttpResponse("<div>The overview list is empty</div><div><a href=\"/"+APP_PREFIX+"\">Back</a></div>")
+
+        # Return the result
+        return response
+
+    def publish_xml(self, context):
+        """Create XML of all collections, give them a PID and save them in the /database/xml directory"""
+
+        # Get the overview list
+        qs = context['overview_list']
+        oBack = {'status': 'unknown', 'written': 0}
+        iWritten = 0
+        if qs != None and len(qs) > 0:
+            # Assuming all goes well
+            oBack['status'] = 'published'
+            # Walk all the descriptors in the queryset
+            for coll_this in qs:
+                # Get the XML text of this object
+                (bValid, sXmlText) = create_collection_xml(coll_this, self.request)
+                if bValid:
+                    # Get the correct pidname
+                    sPidName = coll_this.get_pidname() + ".xml"
+                    # THink of a filename
+                    fPublish = os.path.abspath(os.path.join(WRITABLE_DIR, "xml", sPidName))
+                    # Write it to a file in the XML directory
+                    with open(fPublish, encoding="utf-8", mode="w") as f:  
+                        f.write(sXmlText)
+                    iWritten += 1
+                else:
+                    oBack['status'] = 'error'
+                    oBack['html'] = sXmlText
+                    break
+            # Adapt the status
+            oBack['written'] = iWritten
+        else:
+            oBack['status'] = 'empty'
+
+        # Return good status
+        return oBack
 
 
 class CollectionDetailView(DetailView):
@@ -664,12 +806,50 @@ class CollectionDetailView(DetailView):
     export_xml = True
     context_object_name = 'collection'
     template_name = 'collection/coll_detail.html'
+    slug_field = 'pidname'
     
-    #def get_form(self):
-    #    # Instantiate a form
-    #    form = self.form_class(instance=self.object)
-    #    # Possibly modify form-fields
-    #    return form
+    def get(self, request, *args, **kwargs):
+        # Get the object in the standard way
+        self.object = self.get_object()
+        # For further processing we need to have the context
+        context = self.get_context_data(object=self.object)
+        # Check what kind of output we need to give
+        if 'type' in kwargs:
+            # Check if this is a /handle request, which needs to be turned into a /registry one
+            if kwargs['type'] == 'handle':
+                # Get the correct PID name
+                sPid = self.instance.get_pidname()
+                return HttpResponseRedirect(reverse('registry', kwargs={'type': 'registry', 'slug': sPid}))
+            # We can come here directly or through /handle
+            if kwargs['type'] == 'registry':
+                bValid = True
+                try:
+                    # Get the XML file and show it
+                    sPidName = self.object.instance.get_pidname() + ".xml"
+                    # THink of a filename
+                    fPublish = os.path.abspath(os.path.join(WRITABLE_DIR, "xml", sPidName))
+                    # Write it to a file in the XML directory
+                    with open(fPublish, encoding="utf-8", mode="r") as f:  
+                        sXmlText = f.read()
+                except:
+                    bValid = False
+                    sXmlText = "Could not fetch the resource with identifier {}".format(
+                        self.object.instance.identifier)
+                if bValid:
+                    # Create the HttpResponse object with the appropriate CSV header.
+                    response = HttpResponse(sXmlText, content_type='text/xml')
+                    # response['Content-Disposition'] = 'attachment; filename="'+sFileName+'.xml"'
+                else:
+                    # Return the error response
+                    response = HttpResponse(sXmlText)
+
+                # Return the result
+                return response
+            elif kwargs['type'] == 'output':
+                return self.download_to_xml(context)
+
+        # Final resort: render just like thatlike that
+        return self.render_to_response(context)
 
     def get_object(self):
         obj = super(CollectionDetailView,self).get_object()
@@ -683,56 +863,14 @@ class CollectionDetailView(DetailView):
         context['collection'] = self.instance
         return context
 
-    def render_to_response(self, context, **response_kwargs):
-        """Check if downloading is needed or not"""
-        sType = self.request.GET.get('submit_type', '')
-        if sType == 'xml':
-            return self.download_to_xml(context)
-        elif self.export_xml and sType != '':
-            return self.render_to_xml(context)
-        else:
-            return super(CollectionDetailView, self).render_to_response(context, **response_kwargs)
-        
-    def convert_to_xml(self, context):
-        """Convert the 'collection' object from the context to XML"""
-
-        # Create a top-level element, including CMD, Header and Resources
-        top = make_collection_top()
-
-        # Start components and this collection component
-        cmp = ET.SubElement(top, "Components")
-        # Add a <CorpusCollection> root that contains a list of <collection> objects
-        colroot = ET.SubElement(cmp, "CorpusCollection")
-        # Add a <collection> root for this collection
-        crp = ET.SubElement(colroot, "collection")
-
-        # Access this particular collection
-        col_this = context['collection']
-
-        # Add this collection to the xml
-        add_collection_xml(col_this, crp)
-
-        # Convert the XML to a string
-        xmlstr = minidom.parseString(ET.tostring(top,encoding='utf-8')).toprettyxml(indent="  ")
-
-        # Validate the XML against the XSD
-        (bValid, oError) = validateXml(xmlstr)
-        if not bValid:
-            # Get error messages for all the errors
-
-            return (False, xsd_error_list(oError, xmlstr))
-
-        # Return this string
-        return (True, xmlstr)
-
     def download_to_xml(self, context):
         """Make the XML representation of this collection downloadable"""
 
         # Construct a file name based on the identifier
-        colThis = self.instance
-        sFileName = 'collection-{}'.format(getattr(colThis, 'identifier'))
+        itemThis = self.instance
+        sFileName = 'collection-{}'.format(getattr(itemThis, 'identifier'))
         # Get the XML of this collection
-        (bValid, sXmlStr) = self.convert_to_xml(context)
+        (bValid, sXmlStr) = create_collection_xml(itemThis, self.request)
         if bValid:
             # Create the HttpResponse object with the appropriate CSV header.
             response = HttpResponse(sXmlStr, content_type='text/xml')

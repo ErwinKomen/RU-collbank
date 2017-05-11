@@ -1,23 +1,20 @@
-﻿<!DOCTYPE html>
-<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
-<head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ title }}</title>
-    {% load staticfiles %}
-    <link rel="stylesheet" type="text/css" href="{% static 'collection/content/bootstrap.min.css' %}" />
-    <link rel="stylesheet" type="text/css" href="{% static 'collection/content/site.css' %}" />
-    <script src="{% static 'collection/scripts/modernizr-2.6.2.js' %}"></script>
-    <script src="{% static 'collection/scripts/jquery-1.10.2.js' %}"></script>
-    <script src="{% static 'collection/scripts/bootstrap.min.js' %}"></script>
-    <script src="{% static 'collection/scripts/respond.js' %}"></script>
-</head>
+﻿{% extends "collection/layout.html" %}
 
-<body>
-    {% include 'collection/topnav.html' %}
-    <div class="container body-content">
-    {% if overview_list %}
+{% block content %}
+      {% if publish %}
+        <div>{{publish.status}}: 
+          <span>{{publish.written}}</span>
+          <span>{% if publish.written > 1%}records {% else %}record{% endif %}</span>
+        </div>
+      {% endif %}
+
       <h3>Available collections</h3>
+      <div id="content-main">
+        <ul class="object-tools">
+          <li><a class="addlink" href="{% url 'add' %}">Add a collection record</a></li>
+        </ul>
+      </div>
+    {% if overview_list %}
       <table class="table table-hover">
         <thead>
           <tr>
@@ -42,7 +39,10 @@
             <td><a href="/{{app_prefix }}admin/collection/collection/{{coll.pk}}/change/">{{coll.identifier}}</a></td>
             <td>{{coll.description}}
               <span class="coll-xml"><a class="btn btn-success btn-xs" href="/{{app_prefix }}output/{{coll.pk}}?submit_type=xml">xml</a></span>
-              <span class="coll-xml"><a class="btn btn-error btn-xs" href="/{{app_prefix }}collection/{{coll.pk}}?submit_type=">edit</a></span>
+            <!--
+              <span class="coll-xml"><a class="btn btn-error btn-xs" href="/{{app_prefix }}collection/{{coll.pk}}?submit_type=edit">edit</a></span>
+              -->
+              <span class="coll-xml"><a class="btn btn-warning btn-xs" href="{% url 'handle' pk=coll.pk %}" target='_blank'>handle</a></span>
             </td>
           </tr>
         {% endfor %}
@@ -51,7 +51,4 @@
     {% else %}
       <p>No collections are available.</p>
     {% endif %}
-    </div>
-{% block scripts %}{% endblock %}
-</body>
-</html>
+{% endblock %}

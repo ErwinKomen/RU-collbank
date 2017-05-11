@@ -1757,9 +1757,11 @@ class ValidationTypeAdmin(admin.ModelAdmin):
 
 
 class CollectionAdmin(nested_admin.NestedModelAdmin):
-    fieldsets = ( ('Searchable', {'fields': ('identifier', 'linguality',  )}),
+    fieldsets = ( ('Searchable', {'fields': ('identifier', 'pidname', 'linguality',  )}),
                   ('Other',      {'fields': ('description', 'clarinCentre', 'access', 'version', 'documentation', 'validation', )}),
                 )
+    # There is at least one readonly field
+    readonly_fields = ('pidname',)
 
     list_display = ['id', 'do_identifier', 'get_title', 'description']
     search_fields = ['identifier', 'title__name', 'description']
@@ -1770,7 +1772,6 @@ class CollectionAdmin(nested_admin.NestedModelAdmin):
 
     actions = ['export_xml']
     formfield_overrides = {
-        # models.TextField: {'widget': Textarea(attrs={'rows': 1, 'cols':30})},
         models.TextField: {'widget': Textarea(attrs={'rows': 1, 'cols': 80})},
         }
 
