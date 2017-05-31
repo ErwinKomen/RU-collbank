@@ -42,6 +42,7 @@
             <!--
               <span class="coll-xml"><a class="btn btn-error btn-xs" href="/{{app_prefix }}collection/{{coll.pk}}?submit_type=edit">edit</a></span>
               -->
+              <span class="coll-xml"><a class="btn btn-eror btn-xs" href="{% url 'copyadmin' %}?id={{coll.pk}}&model=collection&current=">copy</a></span>
               <span class="coll-xml"><a class="btn btn-warning btn-xs" href="{% url 'handle' pk=coll.pk %}" target='_blank'>handle</a></span>
             </td>
           </tr>

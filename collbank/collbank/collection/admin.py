@@ -1,15 +1,16 @@
-from django.contrib import admin
-import nested_admin
-from django.db.models import Q
 from django import forms
+from django.contrib import admin
+from django.contrib.contenttypes.models import ContentType
 from django.core.urlresolvers import resolve
+from django.core import serializers
+from django.db.models import Q
 from django.forms import Textarea
 from django.shortcuts import redirect
+from django.core.urlresolvers import reverse
 from collbank.collection.models import *
 from collbank.settings import APP_PREFIX
 from functools import partial
-from django.core import serializers
-from django.contrib.contenttypes.models import ContentType
+import nested_admin
 import copy  # (1) use python copy
 import logging
 
@@ -78,6 +79,10 @@ def copy_item(request=None):
         original_owner.resource.add(copy_obj)
 
     elif sModel == "collection":
+        # Think of a good URL to go to 
+        if sCurrent == "":
+            sCurrent = reverse('overview')
+
         # Get the collection object
         original_obj = Collection.objects.get(id=original_pk)
 
