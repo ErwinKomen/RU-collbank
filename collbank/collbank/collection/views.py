@@ -89,7 +89,7 @@ def add_element(optionality, col_this, el_name, crp, **kwargs):
     # Return positively
     return True
     
-def make_collection_top(request):
+def make_collection_top(request, colThis):
     """Create the top-level elements for a collection"""
 
     # Define the top-level of the xml output
@@ -103,7 +103,13 @@ def make_collection_top(request):
 
     # Add a header
     hdr = ET.SubElement(top, "Header", {})
+    mdCreator = ET.SubElement(hdr, "MdCreator")
+    mdCreator.text = request.user.username
     mdSelf = ET.SubElement(hdr, "MdSelfLink")
+    # If published: add the self link
+    if colThis.pidname != None:
+        # The selflink is the persistent identifier, preceded by 'hdl:'
+        mdSelf.text = "hdl:{}".format(colThis.pidname)
     mdProf = ET.SubElement(hdr, "MdProfile")
     mdProf.text = XSD_ID
     # Add obligatory Resources
@@ -111,9 +117,22 @@ def make_collection_top(request):
     lproxy = ET.SubElement(rsc, "ResourceProxyList")
     # TODO: add resource proxy's under [lproxy]
 
-    # Produce a link to the resource
+    # Produce a link to the resource: landing page
     oProxy = ET.SubElement(lproxy, "ResourceProxy")
-    sProxyId = "oh_000000000001"
+    sProxyId = "lp_{}".format(colThis.pidname)
+    oProxy.set('id', sProxyId)
+    # Add resource type
+    oSubItem = ET.SubElement(oProxy, "ResourceType")
+    oSubItem.set("mimetype", "application/x-http")
+    oSubItem.text = "LandingPage"
+    # Add resource ref
+    oSubItem = ET.SubElement(oProxy, "ResourceRef")
+    #  "http://applejack.science.ru.nl/collbank"
+    oSubItem.text = request.build_absolute_uri(reverse('home')) + "registry/" + colThis.pidname
+
+    # Produce a link to the resource: search page
+    oProxy = ET.SubElement(lproxy, "ResourceProxy")
+    sProxyId = "sru_{}".format(colThis.pidname)
     oProxy.set('id', sProxyId)
     # Add resource type
     oSubItem = ET.SubElement(oProxy, "ResourceType")
@@ -390,7 +409,7 @@ def create_collection_xml(collection_this, request):
     """
 
     # Create a top-level element, including CMD, Header and Resources
-    top = make_collection_top(request)
+    top = make_collection_top(request, collection_this)
 
     # Start components and this collection component
     cmp = ET.SubElement(top, "Components")
