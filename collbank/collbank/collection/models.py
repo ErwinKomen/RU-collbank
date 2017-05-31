@@ -220,6 +220,13 @@ def copy_m2m(inst_src, inst_dst, field, lst_m2m = None):
                 copy_m2m(item, newItem, deeper)
         getattr(inst_dst, field).add(newItem)
 
+def copy_fk(inst_src, inst_dst, field):
+    # Copy foreign-key relationship
+    instSource = getattr(inst_src, field)
+    if instSource != None:
+        instCopy = get_instance_copy(instSource)
+        setattr(inst_dst, field, instCopy)
+
 def get_ident(qs):
     if qs == None:
         idt = ""
@@ -253,38 +260,6 @@ def get_tuple_index(lstTuples, sValue):
         else:
             iBack = lstFound[0][0]
     return iBack
-
-#def one_time_startup():
-#    """Execute things that only need to be done once on startup"""
-#    iChanges = 0
-
-#    try:
-#        # Make a list of all DCtype values
-#        arTypeChoices = Resource._meta.get_field('type').choices
-#        arDCtypeChoices = Resource._meta.get_field('DCtype').choices
-#        # Walk all existing 'Resource' objects
-#        for resThis in Resource.objects.all():
-#            # Check if the Type needs updating
-#            if resThis.DCtype == '' or resThis.DCtype == '0':
-#                # The type needs updating
-#                sType = get_tuple_value(arTypeChoices, resThis.type)
-#                # (1) Get the correct value
-#                arType = sType.partition(':')
-#                if len(arType) == 1:
-#                    resThis.DCtype = get_tuple_index(arTypeChoices, sType)
-#                    resThis.subtype = ''
-#                else:
-#                    resThis.DCtype = get_tuple_index(arDCtypeChoices, arType[0])
-#                    resThis.subtype = get_tuple_index(arTypeChoices, sType)
-#                iChanges += 1
-#                resThis.save()
-
-#        if iChanges > 0:
-#            # Note the changes
-#            print('OneTimeStartup Changes: ' + str(iChanges) + '\n',file=sys.stderr)
-#    except:
-#        print("OneTimeStartup Unexpected error:", sys.exc_info()[0],file=sys.stderr)
-
   
 
 class HelpChoice(models.Model):
@@ -559,7 +534,7 @@ class City(models.Model):
         verbose_name_plural = "Cities"
 
     name = models.CharField("Place (city)", max_length=80, help_text=get_help(PROVENANCE_GEOGRAPHIC_PLACE))
-    # [1]     Each Provenance can have [0-n] geographic provenances
+    # [1]     Each geographic provenance can have [0-n] cities
     geographicProvenance = models.ForeignKey("GeographicProvenance", blank=False, null=False, default=-1, related_name="cities")
 
     def __str__(self):
@@ -568,9 +543,6 @@ class City(models.Model):
     def get_copy(self):
         # Make a clean copy
         new_copy = get_instance_copy(self)
-        # Check and copy FK fields
-        if self.geographicProvenance != None:
-            new_copy.geographicProvenance = self.geographicProvenance.get_copy()
         # Return the new copy
         return new_copy
 
@@ -579,9 +551,8 @@ class GeographicProvenance(models.Model):
     """Geographic coverage of the collection"""
 
     # == country (0-1;c) (name+ISO-3166 code)
-    country = models.CharField("Country included in this geographic coverage", choices=build_choice_list(PROVENANCE_GEOGRAPHIC_COUNTRY), max_length=5, help_text=get_help(PROVENANCE_GEOGRAPHIC_COUNTRY), default='0')
-    # == place (0-n;f)
-    # place = models.ManyToManyField(City, blank=True, related_name="place_geoprovenances")
+    country = models.CharField("Country included in this geographic coverage", choices=build_choice_list(PROVENANCE_GEOGRAPHIC_COUNTRY), 
+                               max_length=5, help_text=get_help(PROVENANCE_GEOGRAPHIC_COUNTRY), default='0')
     # [1]     Each Provenance can have [0-n] geographic provenances
     provenance = models.ForeignKey("Provenance", blank=False, null=False, default=-1, related_name="g_provenances")
 
@@ -593,9 +564,8 @@ class GeographicProvenance(models.Model):
     def get_copy(self):
         # Make a clean copy
         new_copy = get_instance_copy(self)
-        # Check and copy FK fields
-        if self.provenance != None:
-            new_copy.provenance = self.provenance.get_copy()
+        # Copy 1-to-m fields
+        copy_m2m(self, new_copy, "cities")
         # Return the new copy
         return new_copy
 
@@ -606,7 +576,6 @@ class Provenance(models.Model):
     # temporalProvenance (0-1) 
     temporalProvenance = models.ForeignKey(TemporalProvenance, blank=True, null=True)
     # geographicProvenance (0-n) 
-    # geographicProvenance = models.ManyToManyField(GeographicProvenance, blank=True, related_name="geoprov_provenances")
     # [1]     Each collection can have [0-n] provenances
     collection = models.ForeignKey("Collection", blank=False, null=False, default=1, related_name="collection12m_provenance")
 
@@ -616,6 +585,16 @@ class Provenance(models.Model):
         tmp = self.temporalProvenance
         geo = m2m_combi(self.g_provenances)
         return "[{}] temp:{}, geo:{}".format(idt, tmp, geo)
+
+    def get_copy(self):
+        # Make a clean copy
+        new_copy = get_instance_copy(self)
+        # Copy FK field
+        copy_fk(self, new_copy, "temporalProvenance")
+        # copy 1-to-m- fields
+        copy_m2m(self, new_copy, "g_provenances")
+        # Return the new copy
+        return new_copy
 
 
 class Genre(models.Model):
@@ -761,6 +740,19 @@ class Linguality(models.Model):
         fld_mult = m2m_combi(self.multilinguality_types)
         return "t:{}, n:{}, a:{}, s:{}, v:{}, m:{}".format(fld_type, fld_nati, fld_ageg, fld_stat, fld_vari, fld_mult)
 
+    def get_copy(self):
+        # Make a clean copy
+        new_copy = get_instance_copy(self)
+        # copy 1-to-m- fields
+        copy_m2m(self, new_copy, "linguality_types")
+        copy_m2m(self, new_copy, "linguality_nativenesses")
+        copy_m2m(self, new_copy, "linguality_agegroups")
+        copy_m2m(self, new_copy, "linguality_statuses")
+        copy_m2m(self, new_copy, "linguality_variants")
+        copy_m2m(self, new_copy, "multilinguality_types")
+        # Return the new copy
+        return new_copy
+
 
 class Language(models.Model):
     """Language that is used in this collection"""
@@ -791,6 +783,12 @@ class DocumentationLanguage(Language):
         sBack = "[{}] {}".format(idt,choice_english("language.name", self.name))
         return sBack
 
+    def get_copy(self):
+        # Make a clean copy
+        new_copy = get_instance_copy(self)
+        # Return the new copy
+        return new_copy
+
 
 class CollectionLanguage(Language):
 
@@ -801,6 +799,12 @@ class CollectionLanguage(Language):
         idt = self.collectionParent.identifier
         sBack = "[{}] {}".format(idt,choice_english("language.name", self.name))
         return sBack
+
+    def get_copy(self):
+        # Make a clean copy
+        new_copy = get_instance_copy(self)
+        # Return the new copy
+        return new_copy
 
 
 class LanguageDisorder(models.Model):
@@ -817,6 +821,12 @@ class LanguageDisorder(models.Model):
         sName = self.name
         return "[{}] {}".format(idt, sName)
 
+    def get_copy(self):
+        # Make a clean copy
+        new_copy = get_instance_copy(self)
+        # Return the new copy
+        return new_copy
+
 
 class Relation(models.Model):
     """Language that is used in this collection"""
@@ -830,6 +840,12 @@ class Relation(models.Model):
         # idt = m2m_identifier(self.collection_set)
         idt = self.collection.identifier
         return "[{}] {}".format(idt,self.name)
+
+    def get_copy(self):
+        # Make a clean copy
+        new_copy = get_instance_copy(self)
+        # Return the new copy
+        return new_copy
 
 
 class Domain(models.Model):
@@ -849,6 +865,12 @@ class Domain(models.Model):
             sName = self.name
             return "[{}] {}".format(idt,sName)
 
+    def get_copy(self):
+        # Make a clean copy
+        new_copy = get_instance_copy(self)
+        # Return the new copy
+        return new_copy
+
 
 class AccessAvailability(models.Model):
     """Access availability"""
@@ -863,6 +885,12 @@ class AccessAvailability(models.Model):
     def __str__(self):
         return choice_english(ACCESS_AVAILABILITY, self.name)
 
+    def get_copy(self):
+        # Make a clean copy
+        new_copy = get_instance_copy(self)
+        # Return the new copy
+        return new_copy
+
 
 class LicenseName(models.Model):
     """Name of the license"""
@@ -873,6 +901,12 @@ class LicenseName(models.Model):
 
     def __str__(self):
         return self.name[:50]
+
+    def get_copy(self):
+        # Make a clean copy
+        new_copy = get_instance_copy(self)
+        # Return the new copy
+        return new_copy
 
 
 class LicenseUrl(models.Model):
@@ -885,6 +919,12 @@ class LicenseUrl(models.Model):
     def __str__(self):
         return self.name
 
+    def get_copy(self):
+        # Make a clean copy
+        new_copy = get_instance_copy(self)
+        # Return the new copy
+        return new_copy
+
 
 class NonCommercialUsageOnly(models.Model):
     """Whether access is restricted to non-commerical usage"""
@@ -892,10 +932,17 @@ class NonCommercialUsageOnly(models.Model):
     class Meta:
         verbose_name_plural = "Non-commercial usage only types"
 
-    name = models.CharField("Non-commercial usage only access", choices=build_choice_list(ACCESS_NONCOMMERCIAL ), max_length=5, help_text=get_help(ACCESS_NONCOMMERCIAL ), default='0')
+    name = models.CharField("Non-commercial usage only access", choices=build_choice_list(ACCESS_NONCOMMERCIAL ), 
+                            max_length=5, help_text=get_help(ACCESS_NONCOMMERCIAL ), default='0')
 
     def __str__(self):
         return choice_english(ACCESS_NONCOMMERCIAL, self.name)
+
+    def get_copy(self):
+        # Make a clean copy
+        new_copy = get_instance_copy(self)
+        # Return the new copy
+        return new_copy
 
 
 class AccessContact(models.Model):
@@ -911,6 +958,12 @@ class AccessContact(models.Model):
         return "{}: {}, ({})".format(
             self.person, self.address[:30], self.email)
 
+    def get_copy(self):
+        # Make a clean copy
+        new_copy = get_instance_copy(self)
+        # Return the new copy
+        return new_copy
+
 
 class AccessWebsite(models.Model):
     """Website to access the collection"""
@@ -921,6 +974,12 @@ class AccessWebsite(models.Model):
 
     def __str__(self):
         return self.name
+
+    def get_copy(self):
+        # Make a clean copy
+        new_copy = get_instance_copy(self)
+        # Return the new copy
+        return new_copy
 
 
 class AccessMedium(models.Model):
@@ -933,6 +992,12 @@ class AccessMedium(models.Model):
     def __str__(self):
         return choice_english(ACCESS_MEDIUM, self.format)
 
+    def get_copy(self):
+        # Make a clean copy
+        new_copy = get_instance_copy(self)
+        # Return the new copy
+        return new_copy
+
 
 class Access(models.Model):
     """Access to the resources"""
@@ -941,29 +1006,31 @@ class Access(models.Model):
         verbose_name_plural = "Accesses"
 
     name = models.TextField("Name of this access type", default='-')
-    # availability (0-n;c ) 
-    # availability = models.ManyToManyField(AccessAvailability, blank=True, related_name = "access_m2m_avail")
-    # licenseName (0-n; f)
-    # licenseName = models.ManyToManyField(LicenseName, blank=True, related_name = "access_m2m_licname")
-    # licenseURL (0-n;f)
-    # licenseUrl = models.ManyToManyField(LicenseUrl, blank=True, related_name = "access_m2m_licurl")
     # nonCommercialUsageOnly (0-1;c yes; no)
     nonCommercialUsageOnly = models.ForeignKey(NonCommercialUsageOnly, blank=True, null=True)
-    # contact (0-n;f)
-    # contact = models.ManyToManyField(AccessContact, blank=True, related_name = "access_m2m_contact")
-    # website (0-n)
-    # website = models.ManyToManyField(AccessWebsite, blank=True, related_name = "access_m2m_website")
     # ISBN (0-1;f)
     ISBN = models.TextField("ISBN of collection", help_text=get_help('access.ISBN'), blank=True)
     # ISLRN (0-1;f)
     ISLRN = models.TextField("ISLRN of collection", help_text=get_help('access.ISLRN'), blank=True)
-    # medium (0-n; c)
-    # medium = models.ManyToManyField(AccessMedium, blank=True, related_name = "access_m2m_medium")
 
     def __str__(self):
         sName = self.name
         return sName[:50]
 
+    def get_copy(self):
+        # Make a clean copy
+        new_copy = get_instance_copy(self)
+        # Copy the 1-to-m stuff
+        copy_m2m(self, new_copy, "acc_availabilities")
+        copy_m2m(self, new_copy, "acc_licnames")
+        copy_m2m(self, new_copy, "acc_licurls")
+        copy_m2m(self, new_copy, "acc_contacts")
+        copy_m2m(self, new_copy, "acc_websites")
+        copy_m2m(self, new_copy, "acc_mediums")
+        # Copy the FK stuff
+        copy_fk(self, new_copy, "nonCommercialUsageOnly")
+        # Return the new copy
+        return new_copy
 
 
 class PID(models.Model):
@@ -982,6 +1049,12 @@ class PID(models.Model):
         idt = self.collection.identifier
         return "[{}] {}".format(idt,self.code[:50])
 
+    def get_copy(self):
+        # Make a clean copy
+        new_copy = get_instance_copy(self)
+        # Return the new copy
+        return new_copy
+
 
 class Organization(models.Model):
     """Name of organization"""
@@ -992,6 +1065,12 @@ class Organization(models.Model):
 
     def __str__(self):
         return self.name[:50]
+
+    def get_copy(self):
+        # Make a clean copy
+        new_copy = get_instance_copy(self)
+        # Return the new copy
+        return new_copy
 
 
 class Person(models.Model):
@@ -1004,14 +1083,18 @@ class Person(models.Model):
     def __str__(self):
         return self.name[:50]
 
+    def get_copy(self):
+        # Make a clean copy
+        new_copy = get_instance_copy(self)
+        # Return the new copy
+        return new_copy
+
 
 class ResourceCreator(models.Model):
     """Creator of this resource"""
 
     # [1]
     organization = models.ManyToManyField(Organization, blank=False, related_name="resourcecreatorm2m_organization")
-    # [1]
-    # person = models.ManyToManyField(Person, blank=False, related_name="resourcecreatorm2m_person")
     # [1]     Each collection can have [0-n] resource creators
     collection = models.ForeignKey("Collection", blank=False, null=False, default=1, related_name="collection12m_resourcecreator")
 
@@ -1021,6 +1104,15 @@ class ResourceCreator(models.Model):
         orgs = m2m_combi(self.organizations)
         pers = m2m_combi(self.persons)
         return "[{}] o:{}|p:{}".format(idt,orgs,pers)
+
+    def get_copy(self):
+        # Make a clean copy
+        new_copy = get_instance_copy(self)
+        # Copy the 1-to-m stuff
+        copy_m2m(self, new_copy, "organizations")
+        copy_m2m(self, new_copy, "persons")
+        # Return the new copy
+        return new_copy
 
 
 class DocumentationType(models.Model):
@@ -1033,6 +1125,12 @@ class DocumentationType(models.Model):
     def __str__(self):
         return choice_english(DOCUMENTATION_TYPE, self.format)
 
+    def get_copy(self):
+        # Make a clean copy
+        new_copy = get_instance_copy(self)
+        # Return the new copy
+        return new_copy
+
 
 class DocumentationFile(models.Model):
     """File name for documentation"""
@@ -1044,6 +1142,12 @@ class DocumentationFile(models.Model):
     def __str__(self):
         return self.name[:50]
 
+    def get_copy(self):
+        # Make a clean copy
+        new_copy = get_instance_copy(self)
+        # Return the new copy
+        return new_copy
+
 
 class DocumentationUrl(models.Model):
     """URL of documentation"""
@@ -1054,6 +1158,12 @@ class DocumentationUrl(models.Model):
 
     def __str__(self):
         return self.name
+
+    def get_copy(self):
+        # Make a clean copy
+        new_copy = get_instance_copy(self)
+        # Return the new copy
+        return new_copy
 
 
 class Documentation(models.Model):
@@ -1070,6 +1180,17 @@ class Documentation(models.Model):
         fld_fl = m2m_combi(self.doc_files)
         return "t:{}|f:{}".format(fld_tp, fld_fl)
 
+    def get_copy(self):
+        # Make a clean copy
+        new_copy = get_instance_copy(self)
+        # Copy the 1-to-m stuff
+        copy_m2m(self, new_copy, "doc_languages")
+        copy_m2m(self, new_copy, "doc_types")
+        copy_m2m(self, new_copy, "doc_files")
+        copy_m2m(self, new_copy, "doc_urls")
+        # Return the new copy
+        return new_copy
+
 
 class ValidationType(models.Model):
     """Validation type"""
@@ -1078,6 +1199,12 @@ class ValidationType(models.Model):
 
     def __str__(self):
         return choice_english(VALIDATION_TYPE, self.name)
+
+    def get_copy(self):
+        # Make a clean copy
+        new_copy = get_instance_copy(self)
+        # Return the new copy
+        return new_copy
 
 
 class ValidationMethod(models.Model):
@@ -1089,6 +1216,12 @@ class ValidationMethod(models.Model):
 
     def __str__(self):
         return choice_english(VALIDATION_METHOD, self.name)
+
+    def get_copy(self):
+        # Make a clean copy
+        new_copy = get_instance_copy(self)
+        # Return the new copy
+        return new_copy
 
 
 class Validation(models.Model):
@@ -1104,6 +1237,16 @@ class Validation(models.Model):
             self.type,
             m2m_combi(self.validationmethods))
 
+    def get_copy(self):
+        # Make a clean copy
+        new_copy = get_instance_copy(self)
+        # Copy the 1-to-m stuff
+        copy_m2m(self, new_copy, "validationmethods")
+        # Copy the FK stuff
+        copy_fk(self, new_copy, "type")
+        # Return the new copy
+        return new_copy
+
 
 class ProjectFunder(models.Model):
     """Funder of project"""
@@ -1115,6 +1258,12 @@ class ProjectFunder(models.Model):
     def __str__(self):
         return self.name[:50]
 
+    def get_copy(self):
+        # Make a clean copy
+        new_copy = get_instance_copy(self)
+        # Return the new copy
+        return new_copy
+
 
 class ProjectUrl(models.Model):
     """URL of project"""
@@ -1123,6 +1272,12 @@ class ProjectUrl(models.Model):
 
     def __str__(self):
         return self.name
+
+    def get_copy(self):
+        # Make a clean copy
+        new_copy = get_instance_copy(self)
+        # Return the new copy
+        return new_copy
 
 
 class Project(models.Model):
@@ -1144,6 +1299,16 @@ class Project(models.Model):
         if sName == "": sName = self.URL
         return "[{}] {}".format(idt,sName[:50])
 
+    def get_copy(self):
+        # Make a clean copy
+        new_copy = get_instance_copy(self)
+        # Copy the 1-to-m stuff
+        copy_m2m(self, new_copy, "funders")
+        # Copy the FK stuff
+        copy_fk(self, new_copy, "URL")
+        # Return the new copy
+        return new_copy
+
 
 class CharacterEncoding(models.Model):
     """Type of character-encoding"""
@@ -1154,6 +1319,12 @@ class CharacterEncoding(models.Model):
 
     def __str__(self):
         return choice_english(CHARACTERENCODING, self.name)
+
+    def get_copy(self):
+        # Make a clean copy
+        new_copy = get_instance_copy(self)
+        # Return the new copy
+        return new_copy
 
 
 class WrittenCorpus(models.Model):
@@ -1176,13 +1347,10 @@ class WrittenCorpus(models.Model):
     def get_copy(self):
         # Make a clean copy
         new_copy = get_instance_copy(self)
-        # Copy M2M relationship: conversationalType
-        # OLD: copy_m2m(self, new_copy, 'characterEncoding')
-        # TODO: check this...
+        # Copy the 1-to-m stuff
         copy_m2m(self, new_copy, 'charenc_writtencorpora')
         # Return the new copy
         return new_copy
-
 
 
 class RecordingEnvironment(models.Model):
@@ -1196,6 +1364,12 @@ class RecordingEnvironment(models.Model):
     def __str__(self):
         return choice_english(SPEECHCORPUS_RECORDINGENVIRONMENT, self.name)
 
+    def get_copy(self):
+        # Make a clean copy
+        new_copy = get_instance_copy(self)
+        # Return the new copy
+        return new_copy
+
 
 class Channel(models.Model):
     """Channel for the speech corpus"""
@@ -1207,6 +1381,12 @@ class Channel(models.Model):
     def __str__(self):
         return choice_english(SPEECHCORPUS_CHANNEL, self.name)
 
+    def get_copy(self):
+        # Make a clean copy
+        new_copy = get_instance_copy(self)
+        # Return the new copy
+        return new_copy
+
 
 class ConversationalType(models.Model):
     """Type of conversation"""
@@ -1217,6 +1397,12 @@ class ConversationalType(models.Model):
 
     def __str__(self):
         return choice_english(SPEECHCORPUS_CONVERSATIONALTYPE, self.name)
+
+    def get_copy(self):
+        # Make a clean copy
+        new_copy = get_instance_copy(self)
+        # Return the new copy
+        return new_copy
 
 
 class RecordingCondition(models.Model):
@@ -1230,6 +1416,12 @@ class RecordingCondition(models.Model):
         # Max 80 characters
         return self.name[:80]
 
+    def get_copy(self):
+        # Make a clean copy
+        new_copy = get_instance_copy(self)
+        # Return the new copy
+        return new_copy
+
 
 class SocialContext(models.Model):
     """Social context"""
@@ -1241,6 +1433,12 @@ class SocialContext(models.Model):
     def __str__(self):
         return choice_english(SPEECHCORPUS_SOCIALCONTEXT, self.name)
 
+    def get_copy(self):
+        # Make a clean copy
+        new_copy = get_instance_copy(self)
+        # Return the new copy
+        return new_copy
+
 
 class PlanningType(models.Model):
     """Type of planning"""
@@ -1251,6 +1449,12 @@ class PlanningType(models.Model):
 
     def __str__(self):
         return choice_english(SPEECHCORPUS_PLANNINGTYPE, self.name)
+
+    def get_copy(self):
+        # Make a clean copy
+        new_copy = get_instance_copy(self)
+        # Return the new copy
+        return new_copy
 
 
 class Interactivity(models.Model):
@@ -1266,6 +1470,12 @@ class Interactivity(models.Model):
     def __str__(self):
         return choice_english(SPEECHCORPUS_INTERACTIVITY, self.name)
 
+    def get_copy(self):
+        # Make a clean copy
+        new_copy = get_instance_copy(self)
+        # Return the new copy
+        return new_copy
+
 
 class Involvement(models.Model):
     """Type of involvement"""
@@ -1277,6 +1487,12 @@ class Involvement(models.Model):
     def __str__(self):
         return choice_english(SPEECHCORPUS_INVOLVEMENT, self.name)
 
+    def get_copy(self):
+        # Make a clean copy
+        new_copy = get_instance_copy(self)
+        # Return the new copy
+        return new_copy
+
 
 class Audience(models.Model):
     """Audience"""
@@ -1287,6 +1503,12 @@ class Audience(models.Model):
 
     def __str__(self):
         return choice_english(SPEECHCORPUS_AUDIENCE, self.name)
+
+    def get_copy(self):
+        # Make a clean copy
+        new_copy = get_instance_copy(self)
+        # Return the new copy
+        return new_copy
 
 
 class AudioFormat(models.Model):
@@ -1310,6 +1532,12 @@ class AudioFormat(models.Model):
         br = self.bitResolution
         sMsg = "sc:{}, sf:{}, cmp:{}, br:{}".format(sc, sf, cmp, br)
         return sMsg
+
+    def get_copy(self):
+        # Make a clean copy
+        new_copy = get_instance_copy(self)
+        # Return the new copy
+        return new_copy
 
 
 class SpeechCorpus(models.Model):
@@ -1418,14 +1646,9 @@ class Resource(models.Model):
         copy_m2m(self, new_copy, "interactivities")
         copy_m2m(self, new_copy, "involvements")
         copy_m2m(self, new_copy, "audiences")
-
-        ## Copying Medias requires special attention...
-        #copy_m2m(self, new_copy, "medias", ["format"])
         # Check and copy FK fields
-        if self.writtenCorpus != None:
-            new_copy.writtenCorpus = self.writtenCorpus.get_copy()
-        if self.speechCorpus != None:
-            new_copy.speechCorpus = self.speechCorpus.get_copy()
+        copy_fk(self, new_copy, "writtenCorpus")
+        copy_fk(self, new_copy, "speechCorpus")
         # Return the new copy
         return new_copy
 
@@ -1531,14 +1754,18 @@ class Collection(models.Model):
         copy_m2m(self, new_copy, "collection12m_resourcecreator")   # ResourceCreator
         copy_m2m(self, new_copy, "collection12m_project")           # Project
         # Check and copy FK fields
-        if self.linguality != None:                                 # Linguality
-            new_copy.linguality = self.linguality.get_copy()
-        if self.access != None:                                     # Access
-            new_copy.access = self.access.get_copy()
-        if self.documentation != None:                              # Documentation
-            new_copy.documentation = self.documentation.get_copy()
-        if self.validation != None:                                 # Validation
-            new_copy.validation = self.validation.get_copy()
+        copy_fk(self, new_copy, "linguality")
+        copy_fk(self, new_copy, "access")
+        copy_fk(self, new_copy, "documentation")
+        copy_fk(self, new_copy, "validation")
+        #if self.linguality != None:                                 # Linguality
+        #    new_copy.linguality = self.linguality.get_copy()
+        #if self.access != None:                                     # Access
+        #    new_copy.access = self.access.get_copy()
+        #if self.documentation != None:                              # Documentation
+        #    new_copy.documentation = self.documentation.get_copy()
+        #if self.validation != None:                                 # Validation
+        #    new_copy.validation = self.validation.get_copy()
         # Return the new copy
         return new_copy
 
