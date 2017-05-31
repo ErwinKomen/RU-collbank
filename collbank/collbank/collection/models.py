@@ -361,6 +361,12 @@ class Owner(models.Model):
         idt = self.collection.identifier
         return "[{}] {}".format(idt,self.name[:50])
 
+    def get_copy(self):
+        # Make a clean copy
+        new_copy = get_instance_copy(self)
+        # Return the new copy
+        return new_copy
+
 
 class Media(models.Model):
     """Medium on which this resource exists"""
@@ -378,6 +384,14 @@ class Media(models.Model):
         # return m2m_combi(self.format)
         return sFormats
 
+    def get_copy(self):
+        # Make a clean copy
+        new_copy = get_instance_copy(self)
+        # Copy the 12m fields
+        copy_m2m(self, new_copy, "mediaformat12m_media")
+        # Return the new copy
+        return new_copy
+
 
 class MediaFormat(models.Model):
     """Format of a medium"""
@@ -389,6 +403,12 @@ class MediaFormat(models.Model):
     def __str__(self):
         return choice_english(MEDIA_FORMAT, self.name)
 
+    def get_copy(self):
+        # Make a clean copy
+        new_copy = get_instance_copy(self)
+        # Return the new copy
+        return new_copy
+
 
 class AnnotationFormat(models.Model):
     """Format of an annotation"""
@@ -399,6 +419,12 @@ class AnnotationFormat(models.Model):
 
     def __str__(self):
         return choice_english(ANNOTATION_FORMAT, self.name)
+
+    def get_copy(self):
+        # Make a clean copy
+        new_copy = get_instance_copy(self)
+        # Return the new copy
+        return new_copy
 
 
 class Annotation(models.Model):
@@ -432,8 +458,8 @@ class Annotation(models.Model):
     def get_copy(self):
         # Make a clean copy
         new_copy = get_instance_copy(self)
-        # Copy the m2m field
-        copy_m2m(self, new_copy, "formatAnn")
+        # Copy the 12m field
+        copy_m2m(self, new_copy, "annotation_formats")
         # Return the new copy
         return new_copy
 
@@ -454,6 +480,12 @@ class TotalSize(models.Model):
             idt = "EMPTY"
         return "[{}] {} {}".format(idt,self.size,self.sizeUnit)
 
+    def get_copy(self):
+        # Make a clean copy
+        new_copy = get_instance_copy(self)
+        # Return the new copy
+        return new_copy
+
 
 class TotalCollectionSize(models.Model):
     """Total size of the collection"""
@@ -468,6 +500,11 @@ class TotalCollectionSize(models.Model):
     def __str__(self):
         return "[{}] {} {}".format(self.collection.identifier,self.size,self.sizeUnit)
 
+    def get_copy(self):
+        # Make a clean copy
+        new_copy = get_instance_copy(self)
+        # Return the new copy
+        return new_copy
 
 
 class Modality(models.Model):
@@ -508,6 +545,12 @@ class TemporalProvenance(models.Model):
     def __str__(self):
         return "{}-{}".format(self.startYear, self.endYear)
 
+    def get_copy(self):
+        # Make a clean copy
+        new_copy = get_instance_copy(self)
+        # Return the new copy
+        return new_copy
+
 
 class City(models.Model):
     """Name of a city"""
@@ -522,6 +565,14 @@ class City(models.Model):
     def __str__(self):
         return self.name
 
+    def get_copy(self):
+        # Make a clean copy
+        new_copy = get_instance_copy(self)
+        # Check and copy FK fields
+        if self.geographicProvenance != None:
+            new_copy.geographicProvenance = self.geographicProvenance.get_copy()
+        # Return the new copy
+        return new_copy
 
 
 class GeographicProvenance(models.Model):
@@ -538,6 +589,15 @@ class GeographicProvenance(models.Model):
         cnt = choice_english(PROVENANCE_GEOGRAPHIC_COUNTRY, self.country)
         cts = m2m_combi(self.cities)
         return "{}: {}".format(cnt, cts)
+
+    def get_copy(self):
+        # Make a clean copy
+        new_copy = get_instance_copy(self)
+        # Check and copy FK fields
+        if self.provenance != None:
+            new_copy.provenance = self.provenance.get_copy()
+        # Return the new copy
+        return new_copy
 
 
 class Provenance(models.Model):
@@ -571,6 +631,12 @@ class Genre(models.Model):
         idt = self.collection.identifier
         return "[{}] {}".format(idt,choice_english(GENRE_NAME, self.name))
 
+    def get_copy(self):
+        # Make a clean copy
+        new_copy = get_instance_copy(self)
+        # Return the new copy
+        return new_copy
+
 
 class LingualityType(models.Model):
     """Type of linguality"""
@@ -581,6 +647,12 @@ class LingualityType(models.Model):
 
     def __str__(self):
         return choice_english(LINGUALITY_TYPE, self.name)
+
+    def get_copy(self):
+        # Make a clean copy
+        new_copy = get_instance_copy(self)
+        # Return the new copy
+        return new_copy
 
 
 class LingualityNativeness(models.Model):
@@ -596,6 +668,12 @@ class LingualityNativeness(models.Model):
     def __str__(self):
         return choice_english(LINGUALITY_NATIVENESS, self.name)
 
+    def get_copy(self):
+        # Make a clean copy
+        new_copy = get_instance_copy(self)
+        # Return the new copy
+        return new_copy
+
 
 class LingualityAgeGroup(models.Model):
     """Age group of linguality"""
@@ -606,6 +684,12 @@ class LingualityAgeGroup(models.Model):
 
     def __str__(self):
         return choice_english(LINGUALITY_AGEGROUP, self.name)
+
+    def get_copy(self):
+        # Make a clean copy
+        new_copy = get_instance_copy(self)
+        # Return the new copy
+        return new_copy
 
 
 class LingualityStatus(models.Model):
@@ -621,6 +705,12 @@ class LingualityStatus(models.Model):
     def __str__(self):
         return choice_english(LINGUALITY_STATUS, self.name)
 
+    def get_copy(self):
+        # Make a clean copy
+        new_copy = get_instance_copy(self)
+        # Return the new copy
+        return new_copy
+
 
 class LingualityVariant(models.Model):
     """Variant of linguality"""
@@ -632,6 +722,12 @@ class LingualityVariant(models.Model):
     def __str__(self):
         return choice_english(LINGUALITY_VARIANT, self.name)
 
+    def get_copy(self):
+        # Make a clean copy
+        new_copy = get_instance_copy(self)
+        # Return the new copy
+        return new_copy
+
 
 class MultilingualityType(models.Model):
     """Type of multi-linguality"""
@@ -642,6 +738,12 @@ class MultilingualityType(models.Model):
 
     def __str__(self):
         return choice_english(LINGUALITY_MULTI, self.name)
+
+    def get_copy(self):
+        # Make a clean copy
+        new_copy = get_instance_copy(self)
+        # Return the new copy
+        return new_copy
 
 
 class Linguality(models.Model):
@@ -663,7 +765,8 @@ class Linguality(models.Model):
 class Language(models.Model):
     """Language that is used in this collection"""
 
-    name = models.CharField("Language in collection", choices=build_choice_list("language.name"), max_length=5, help_text=get_help("language.name"), default='0')
+    name = models.CharField("Language in collection", choices=build_choice_list("language.name"),
+                            max_length=5, help_text=get_help("language.name"), default='0')
 
     def __str__(self):
         idt = m2m_identifier(self.collection_set)
@@ -1303,12 +1406,21 @@ class Resource(models.Model):
     def get_copy(self):
         # Make a clean copy
         new_copy = get_instance_copy(self)
-        # Copy the m2m fields
-        copy_m2m(self, new_copy, "modality")
-        copy_m2m(self, new_copy, "annotation")
-        copy_m2m(self, new_copy, "totalSize")
-        # Copying Medias requires special attention...
-        copy_m2m(self, new_copy, "medias", ["format"])
+        # Copy the 12m fields
+        copy_m2m(self, new_copy, "media_items")
+        copy_m2m(self, new_copy, "annotations")
+        copy_m2m(self, new_copy, "totalsize12m_resource")
+        copy_m2m(self, new_copy, "modalities")
+        copy_m2m(self, new_copy, "recordingenvironments")
+        copy_m2m(self, new_copy, "channels")
+        copy_m2m(self, new_copy, "socialcontexts")
+        copy_m2m(self, new_copy, "planningtypes")
+        copy_m2m(self, new_copy, "interactivities")
+        copy_m2m(self, new_copy, "involvements")
+        copy_m2m(self, new_copy, "audiences")
+
+        ## Copying Medias requires special attention...
+        #copy_m2m(self, new_copy, "medias", ["format"])
         # Check and copy FK fields
         if self.writtenCorpus != None:
             new_copy.writtenCorpus = self.writtenCorpus.get_copy()
@@ -1401,6 +1513,34 @@ class Collection(models.Model):
             print("Unexpected error:", sys.exc_info()[0])
             return None
 
+    def get_copy(self):
+        # Make a clean copy
+        new_copy = get_instance_copy(self)
+        # Copy the one-to-many fields
+        copy_m2m(self, new_copy, "collection12m_title")             # Title               +
+        copy_m2m(self, new_copy, "collection12m_owner")             # Owner               +
+        copy_m2m(self, new_copy, "collection12m_resource")          # Resource
+        copy_m2m(self, new_copy, "collection12m_genre")             # Genre
+        copy_m2m(self, new_copy, "collection12m_provenance")        # Provenance
+        copy_m2m(self, new_copy, "coll_languages")                  # CollectionLanguage
+        copy_m2m(self, new_copy, "collection12m_languagedisorder")  # LanguageDisorder
+        copy_m2m(self, new_copy, "collection12m_relation")          # Relation
+        copy_m2m(self, new_copy, "collection12m_domain")            # Domain
+        copy_m2m(self, new_copy, "collection12m_totalsize")         # TotalCollectionSize
+        copy_m2m(self, new_copy, "collection12m_pid")               # PID
+        copy_m2m(self, new_copy, "collection12m_resourcecreator")   # ResourceCreator
+        copy_m2m(self, new_copy, "collection12m_project")           # Project
+        # Check and copy FK fields
+        if self.linguality != None:                                 # Linguality
+            new_copy.linguality = self.linguality.get_copy()
+        if self.access != None:                                     # Access
+            new_copy.access = self.access.get_copy()
+        if self.documentation != None:                              # Documentation
+            new_copy.documentation = self.documentation.get_copy()
+        if self.validation != None:                                 # Validation
+            new_copy.validation = self.validation.get_copy()
+        # Return the new copy
+        return new_copy
 
     def __str__(self):
         # We are known by our identifier

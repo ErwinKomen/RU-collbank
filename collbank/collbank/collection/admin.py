@@ -77,6 +77,14 @@ def copy_item(request=None):
         # Add the new Resource to this new owner
         original_owner.resource.add(copy_obj)
 
+    elif sModel == "collection":
+        # Get the collection object
+        original_obj = Collection.objects.get(id=original_pk)
+
+        # Make a copy of this object and save it
+        copy_obj = original_obj.get_copy()
+        copy_obj.save()
+
     elif sModel == "title":
         # Get the object
         original_obj = Title.objects.get(id=original_pk)
