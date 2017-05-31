@@ -58,11 +58,14 @@ def get_formfield_qs(modelThis, instanceThis, parentName, bNoEmpty = False):
     return qs.select_related()
 
 def copy_item(request=None):
+    # Check for authentications
+    if not request.user.is_authenticated():
+        # Redirect to the home page?
+        return redirect(reverse('home'))
     # Get the parameters from the request object
     sCurrent = request.GET['current']
     sModel = request.GET['model']
     original_pk = request.GET['id']
-
     # Determine what the model must be
     model = None
     if sModel == "resource":
