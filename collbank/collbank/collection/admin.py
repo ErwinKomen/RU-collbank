@@ -1773,7 +1773,7 @@ class ValidationTypeAdmin(admin.ModelAdmin):
 
 
 class CollectionAdmin(nested_admin.NestedModelAdmin):
-    fieldsets = ( ('Searchable', {'fields': ('identifier', 'pidname', 'linguality',  )}),
+    fieldsets = ( ('Searchable', {'fields': ('identifier', 'pidname', 'landingPage', 'searchPage', 'linguality',  )}),
                   ('Other',      {'fields': ('description', 'clarinCentre', 'access', 'version', 'documentation', 'validation', )}),
                 )
     # There is at least one readonly field

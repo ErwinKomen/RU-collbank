@@ -16,6 +16,9 @@ import sys
 MAX_IDENTIFIER_LEN = 10
 MAX_STRING_LEN = 255
 
+INTERNAL_LANDINGPAGE = "internal.landingpage"
+INTERNAL_SEARCHPAGE = "internal.searchpage"
+
 RESOURCE_TYPE = "resource.type"
 RESOURCE_DCTYPE = "resource.DCtype"
 RESOURCE_SUBTYPE = "resource.subtype"
@@ -1657,11 +1660,19 @@ class Resource(models.Model):
 class Collection(models.Model):
     """Characteristics of the collection as a whole"""
 
-    # INTERNAL FIELD: the persistent identifier name by which this descriptor is going to be recognized
+    # ============ INTERNAL FIELDS ================================
+    # the persistent identifier name by which this descriptor is going to be recognized
     pidname = models.CharField("Registry identifier", 
                                max_length=MAX_STRING_LEN, default="empty")
-    # INTERNAL FIELD: identifier (1)
+    # identifier (1)
     identifier = models.CharField("Unique short collection identifier (10 characters max)", max_length=MAX_IDENTIFIER_LEN, default='-')
+    # Landing Page (1)
+    landingPage = models.URLField("URL of the landing page", help_text=get_help(INTERNAL_LANDINGPAGE), default='')
+    # Search Page (0-1)
+    searchPage = models.URLField("URL of the search page", help_text=get_help(INTERNAL_SEARCHPAGE), blank=True, null=True)
+
+
+    # ============ OTHER FIELDS ===================================
     # title (1-n;f)             [many-to-one]
     title = models.ManyToManyField(Title, blank=False, related_name="collectionm2m_title")
     # == description (0-1;f) 
