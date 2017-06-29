@@ -216,7 +216,8 @@ def get_instance_copy(item):
 def copy_m2m(inst_src, inst_dst, field, lst_m2m = None):
     # Copy M2M relationship: conversationalType    
     for item in getattr(inst_src, field).all():
-        newItem = get_instance_copy(item)
+        # newItem = get_instance_copy(item)
+        newItem = item.get_copy()
         # Possibly copy more m2m
         if lst_m2m != None:
             for deeper in lst_m2m:
@@ -227,7 +228,8 @@ def copy_fk(inst_src, inst_dst, field):
     # Copy foreign-key relationship
     instSource = getattr(inst_src, field)
     if instSource != None:
-        instCopy = get_instance_copy(instSource)
+        # instCopy = get_instance_copy(instSource)
+        instCopy = instSource.get_copy()
         setattr(inst_dst, field, instCopy)
 
 def get_ident(qs):
@@ -1569,9 +1571,9 @@ class SpeechCorpus(models.Model):
         # Make a clean copy
         new_copy = get_instance_copy(self)
         # Copy M2M relationship: conversationalType
-        copy_m2m(self, new_copy, 'conversationalType')
+        copy_m2m(self, new_copy, 'conversationaltypes')
         # Copy M2M relationship: audioFormat
-        copy_m2m(self, new_copy, 'audioFormat')
+        copy_m2m(self, new_copy, 'audioformats')
         # Return the new copy
         return new_copy
 
@@ -1734,7 +1736,7 @@ class Collection(models.Model):
         return self.pidname
 
     def get_title(self):
-        return m2m_namelist(self.title)
+        return m2m_namelist(self.collection12m_title)
     get_title.short_description = 'Titles (not sortable)'
     # This works, but sorting on a non-f
     # get_title.admin_order_field = 'identifier'
