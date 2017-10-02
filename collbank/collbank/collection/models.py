@@ -1752,6 +1752,10 @@ class Collection(models.Model):
     def get_copy(self):
         # Make a clean copy
         new_copy = get_instance_copy(self)
+        # Reset the PIDFIELD 
+        new_copy.pidname = "empty"
+        # Create a unique identifier
+        new_copy.identifier = "coll_{}".format(self.id)
         # Copy the one-to-many fields
         copy_m2m(self, new_copy, "collection12m_title")             # Title               +
         copy_m2m(self, new_copy, "collection12m_owner")             # Owner               +
