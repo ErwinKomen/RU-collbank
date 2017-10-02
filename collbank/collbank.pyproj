@@ -36,6 +36,9 @@
     </Compile>
     <Compile Include="collbank\collection\migrations\__init__.py" />
     <Compile Include="collbank\collection\models.py" />
+    <Compile Include="collbank\collection\services.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="collbank\collection\tests.py" />
     <Compile Include="collbank\collection\views.py" />
     <Compile Include="collbank\collection\__init__.py" />

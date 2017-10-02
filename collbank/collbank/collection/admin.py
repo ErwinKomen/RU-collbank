@@ -1657,6 +1657,12 @@ class ValidationAdmin(nested_admin.NestedModelAdmin):
       return formfield
 
 
+class PidServiceAdmin(admin.ModelAdmin):
+    class Meta:
+        model = PidService
+        fields = ['name', 'url', 'user', 'passwd']
+
+
 class ProjectAdmin(admin.ModelAdmin):
     # filter_horizontal = ('funder',)
     inlines = [ProjectFunderInline]
@@ -1996,3 +2002,6 @@ admin.site.register(SpeechCorpus, SpeechCorpusAdmin)
 
 # -- collection as a whole
 admin.site.register(Collection, CollectionAdmin)
+
+
+admin.site.register(PidService, PidServiceAdmin)

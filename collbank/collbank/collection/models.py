@@ -9,13 +9,18 @@ from django.db import models
 from django.contrib.auth.models import User
 from datetime import datetime
 # from collbank.settings import COUNTRY_CODES, LANGUAGE_CODE_LIST
+import requests
+from requests.auth import HTTPBasicAuth
 
 import copy  # (1) use python copy
+import json
 import sys
 
 MAX_IDENTIFIER_LEN = 10
+MAX_NAME_LEN = 50
 MAX_STRING_LEN = 255
 
+PIDSERVICE_NAME = "gwdg"
 INTERNAL_LANDINGPAGE = "internal.landingpage"
 INTERNAL_SEARCHPAGE = "internal.searchpage"
 
@@ -74,6 +79,96 @@ CLARIN_CENTRE = "clarincentre.name"
 #     'colCode': 0,
 #     'colText': 1 }
 #    ]
+
+
+class PidService(models.Model):
+    name = models.CharField("The name of this ePIC service", max_length=MAX_NAME_LEN)
+    url = models.CharField("The service URL with prefix", max_length=MAX_STRING_LEN)
+    user = models.CharField("The user name", max_length=MAX_NAME_LEN)
+    passwd = models.CharField("The password", max_length=MAX_STRING_LEN)
+
+    def authenticate(self):
+        """Authenticate with the ePIC API"""
+
+        # Default reply
+        oBack = {'status': 'error', 'msg': ''}
+        # Issue the request
+        r = requests.get(self.url, auth=(self.user,self.passwd))
+        # Check the reply we got
+        if r.status_code == 200:
+            # Authentication worked
+            oBack['status'] = 'ok'
+        else:
+            # Authentication did not work
+            oBack['msg'] = "The authentication request returned code {}".format(r.status_code)
+        return oBack
+
+    def getpid(self, collection):
+        """Get (and possibly create) a persistant identifier for id"""
+
+        # Get the name that should have been used
+        sName = collection.get_xmlfilename()
+        # Try to find a persistent identifier for this collection:
+        #   the real URL of this collection should end with / + sName
+        sUrl = "{}/?URL=*/{}".format(self.url, sName)
+        headers = {'Accept': 'application/json'}
+        # Issue the request
+        r = requests.get(sUrl, auth=(self.user, self.passwd), headers=headers)
+        if r.status_code == 200:
+            # Got it: process the response
+            if r.text == "":
+                # Response is empty, so not found
+                return "-"
+            lResponse = json.loads(r.text)
+            # Check how many responses we get
+            if len(lResponse) == 1:
+                # There is exactly one unique response
+                sPid = lResponse[0]
+                return sPid
+            elif len(lResponse) == 0:
+                # There is no response, so it does not exist
+                return "-"
+            else:
+                # This is a real problem: there are more responses, while it should have been unique
+                # TODO: remove multiple responses and leave only the FIRST entry
+                #       (or the last one?)
+                return ""
+        elif r.status_code == 404:
+            # It does not exist
+            return "-"
+        else:
+            # Not authorized
+            return ""
+
+    def createpid(self, collection):
+        """Create a PID for this collection's id"""
+
+        # First try to find it
+        sAttempt = self.getpid(collection)
+        if sAttempt == "":
+            # Could be 'not authorized' or multiple responses
+            return {'status': 'error', 'msg': 'not authorized?'}
+        elif sAttempt != "-":
+            return {'status': 'ok', 'pid': collection.pidname}
+        # Getting here means that no PID has yet been made
+
+        # Create the URL through which this collection bank entry can be reached
+        sSearch = "http://applejack.science.ru.nl/registry/{}".format(collection.get_xmlfilename())
+        oData = [{'type': 'URL', 'parsed_data': sSearch}]
+        headers = {'Content-type': 'application/json', 'Accept': 'application/json'}
+        sUrl = "{}?prefix=COLL".format(self.url)
+        r = requests.post(sUrl,auth=(self.user, self.passwd), json=oData, headers=headers)
+        if r.status_code >= 100 and r.status_code < 300:
+            # Positive reply -- get the pid
+            oResponse = json.loads(r.text)
+            sFullPid = oResponse['epic-pid']
+            #arPid = sFullPid.split("/")
+            #sPid = arPid[1]
+            return {'status': 'ok', 'pid': sFullPid}
+        else:
+            # There has been a problem -- return empty
+            return {'status': 'error', 'msg': 'code {}'.format(r.status_code)}
+
 
 
 class FieldChoice(models.Model):
@@ -1730,10 +1825,46 @@ class Collection(models.Model):
     do_identifier.admin_order_field = 'identifier'
 
     def get_pidname(self):
-        if self.pidname == "" or self.pidname == "empty":
-            self.pidname = "cbmetadata_{0:05d}".format(self.id)
-            self.save()
+        if self.pidname == "" or self.pidname.startswith("empty") or self.pidname.startswith("cbmetadata"):
+            # register the PID
+            self.register_pid()
+        # Return the PID name we have
+        # (should be 21.11114/COLL-0000-000x-yyyy-z)
         return self.pidname
+
+    def get_xmlfilename(self):
+        """Create the filename for the XML file for this item"""
+
+        sFileName = "cbmetadata_{0:05d}".format(self.id)
+        return sFileName
+
+    def register_pid(self):
+        """Make sure this record has a registered persistant identifier"""
+
+        # Get the correct service
+        pidservice = PidService.objects.filter(name=PIDSERVICE_NAME).first()
+        if pidservice == None:
+            # Make sure the caller understands something is wrong
+            return False
+        # Look for a record with this name in the PID service
+        sResponse = pidservice.getpid(self)
+        if sResponse == "":
+            # There was some kind of error
+            return False
+        elif sResponse == "-":
+            # There is no registration yet: create one
+            oResponse = pidservice.createpid(self)
+            if oResponse != None and 'status' in oResponse and oResponse['status'] == "ok":
+                sPidName = oResponse['pid']
+                self.pidname = sPidName
+                # Save it
+                self.save()
+                return True
+            else:
+                # Something somewhere went wrong
+                return False
+        # Return positively
+        return True
 
     def get_title(self):
         return m2m_namelist(self.collection12m_title)
@@ -1753,7 +1884,7 @@ class Collection(models.Model):
         # Make a clean copy
         new_copy = get_instance_copy(self)
         # Reset the PIDFIELD 
-        new_copy.pidname = "empty"
+        new_copy.pidname = "empty_{0:05d}".format(self.id)
         # Create a unique identifier
         new_copy.identifier = "coll_{}".format(self.id)
         # Copy the one-to-many fields
@@ -1789,3 +1920,4 @@ class Collection(models.Model):
     def __str__(self):
         # We are known by our identifier
         return self.identifier
+

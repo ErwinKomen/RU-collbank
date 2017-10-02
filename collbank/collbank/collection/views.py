@@ -785,7 +785,7 @@ class CollectionListView(ListView):
     def publish_xml(self, context):
         """Create XML of all collections, give them a PID and save them in the /database/xml directory"""
 
-        # Get the overview list
+        # Get the overview list -- which is what I am able to publish myself anyway
         qs = context['overview_list']
         oBack = {'status': 'unknown', 'written': 0}
         iWritten = 0
@@ -794,13 +794,15 @@ class CollectionListView(ListView):
             oBack['status'] = 'published'
             # Walk all the descriptors in the queryset
             for coll_this in qs:
+                # Make sure this record has a registered PID
+                coll_this.register_pid()
                 # Get the XML text of this object
                 (bValid, sXmlText) = create_collection_xml(coll_this, self.request)
                 if bValid:
                     # Get the correct pidname
-                    sPidName = coll_this.get_pidname() + ".xml"
+                    sFileName = coll_this.get_xmlfilename() + ".xml"
                     # THink of a filename
-                    fPublish = os.path.abspath(os.path.join(WRITABLE_DIR, "xml", sPidName))
+                    fPublish = os.path.abspath(os.path.join(WRITABLE_DIR, "xml", sFileName))
                     # Write it to a file in the XML directory
                     with open(fPublish, encoding="utf-8", mode="w") as f:  
                         f.write(sXmlText)
@@ -828,32 +830,42 @@ class CollectionDetailView(DetailView):
     slug_field = 'pidname'
     
     def get(self, request, *args, **kwargs):
-        # Get the object in the standard way
-        self.object = self.get_object()
-        # For further processing we need to have the context
-        context = self.get_context_data(object=self.object)
         # Check what kind of output we need to give
         if 'type' in kwargs:
             # Check if this is a /handle request, which needs to be turned into a /registry one
             if kwargs['type'] == 'handle':
-                # Get the correct PID name
-                sPid = self.instance.get_pidname()
-                return HttpResponseRedirect(reverse('registry', kwargs={'type': 'registry', 'slug': sPid}))
+                # Get the View object in the standard way
+                self.object = self.get_object()
+                # Make sure the PID is registered
+                self.instance.register_pid()
+                # Get the correct slug name
+                sSlug = self.instance.get_xmlfilename()
+                return HttpResponseRedirect(reverse('registry', kwargs={'type': 'registry', 'slug': sSlug}))
             # We can come here directly or through /handle
             if kwargs['type'] == 'registry':
                 bValid = True
                 try:
-                    # Get the XML file and show it
-                    sPidName = self.object.instance.get_pidname() + ".xml"
-                    # THink of a filename
-                    fPublish = os.path.abspath(os.path.join(WRITABLE_DIR, "xml", sPidName))
-                    # Write it to a file in the XML directory
-                    with open(fPublish, encoding="utf-8", mode="r") as f:  
-                        sXmlText = f.read()
+                    # Find out which instance this is
+                    sSlug = kwargs['slug']
+                    arSlug = sSlug.split("_")
+                    id = int(arSlug[1])
+                    self.instance = Collection.objects.filter(id=id).first()
+                    if self.instance == None:
+                        bValid = False
+                        sXmlText = "Could not find the resource with slug {}".format(
+                            sSlug)
+                    else:
+                        # Get the XML file and show it
+                        sFileName = self.instance.get_xmlfilename() + ".xml"
+                        # THink of a filename
+                        fPublish = os.path.abspath(os.path.join(WRITABLE_DIR, "xml", sFileName))
+                        # Write it to a file in the XML directory
+                        with open(fPublish, encoding="utf-8", mode="r") as f:  
+                            sXmlText = f.read()
                 except:
                     bValid = False
                     sXmlText = "Could not fetch the resource with identifier {}".format(
-                        self.object.instance.identifier)
+                        self.instance.identifier)
                 if bValid:
                     # Create the HttpResponse object with the appropriate CSV header.
                     response = HttpResponse(sXmlText, content_type='text/xml')
@@ -867,6 +879,12 @@ class CollectionDetailView(DetailView):
             elif kwargs['type'] == 'output':
                 return self.download_to_xml(context)
 
+        # This is where we get in all other cases (e.g. no 'type' in the kwargs)
+
+        # Get the object in the standard way
+        self.object = self.get_object()
+        # For further processing we need to have the context
+        context = self.get_context_data(object=self.object)
         # Final resort: render just like thatlike that
         return self.render_to_response(context)
 
