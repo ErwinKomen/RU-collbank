@@ -830,6 +830,10 @@ class CollectionDetailView(DetailView):
     slug_field = 'pidname'
     
     def get(self, request, *args, **kwargs):
+        # Get the object in the standard way
+        self.object = self.get_object()
+        # For further processing we need to have the context
+        context = self.get_context_data(object=self.object)
         # Check what kind of output we need to give
         if 'type' in kwargs:
             # Check if this is a /handle request, which needs to be turned into a /registry one
@@ -881,10 +885,6 @@ class CollectionDetailView(DetailView):
 
         # This is where we get in all other cases (e.g. no 'type' in the kwargs)
 
-        # Get the object in the standard way
-        self.object = self.get_object()
-        # For further processing we need to have the context
-        context = self.get_context_data(object=self.object)
         # Final resort: render just like thatlike that
         return self.render_to_response(context)
 
