@@ -305,7 +305,6 @@ def add_collection_xml(col_this, crp):
         add_element("0-n", linguality_this, "lingualityVariant", ling, field_name="linguality_variants", foreign="name", fieldchoice=LINGUALITY_VARIANT)
         add_element("0-n", linguality_this, "multilingualityType", ling, field_name="multilinguality_types", foreign="name", fieldchoice=LINGUALITY_MULTI)
     # language (1-n)
-    # add_element("1-n", col_this, "language", crp, foreign="name", fieldchoice="language.name")
     for lng_this in col_this.coll_languages.all():    #  col_this.language.all():
         (sLngName, sLngCode) = get_language(lng_this.name)
         # Validation
