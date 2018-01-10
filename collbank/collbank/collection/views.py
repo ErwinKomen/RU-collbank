@@ -109,7 +109,7 @@ def make_collection_top(request, colThis):
     # If published: add the self link
     if colThis.pidname != None:
         # The selflink is the persistent identifier, preceded by 'hdl:'
-        mdSelf.text = "hdl:{}".format(colThis.pidname)
+        mdSelf.text = "hdl:{}/{}".format(colThis.handledomain, colThis.pidname)
     mdProf = ET.SubElement(hdr, "MdProfile")
     mdProf.text = XSD_ID
     # Add obligatory Resources
@@ -119,7 +119,7 @@ def make_collection_top(request, colThis):
 
     # Produce a link to the resource: landing page
     oProxy = ET.SubElement(lproxy, "ResourceProxy")
-    sProxyId = "lp_{}".format(colThis.pidname)
+    sProxyId = "lp_{}".format(colThis.get_xmlfilename())
     oProxy.set('id', sProxyId)
     # Add resource type
     oSubItem = ET.SubElement(oProxy, "ResourceType")
@@ -132,7 +132,7 @@ def make_collection_top(request, colThis):
 
     # Produce a link to the resource: search page
     oProxy = ET.SubElement(lproxy, "ResourceProxy")
-    sProxyId = "sru_{}".format(colThis.pidname)
+    sProxyId = "sru_{}".format(colThis.get_xmlfilename())
     oProxy.set('id', sProxyId)
     # Add resource type
     oSubItem = ET.SubElement(oProxy, "ResourceType")
@@ -152,26 +152,23 @@ def add_collection_xml(col_this, crp):
     """Add the collection information from [col_this] to XML element [crp]"""
 
     # title (1-n)
-    add_element("1-n", col_this, "title", crp, foreign="name")
+    add_element("1-n", col_this, "title", crp, field_name="collection12m_title", foreign="name")
     # description (0-1)
     add_element("0-1", col_this, "description", crp)
     # owner (0-n)
-    add_element("0-n", col_this, "owner", crp, foreign="name")
+    add_element("0-n", col_this, "owner", crp, field_name="collection12m_owner", foreign="name")
     # genre (0-n)
-    add_element("0-n", col_this, "genre", crp, foreign="name", fieldchoice=GENRE_NAME)
+    add_element("0-n", col_this, "genre", crp, field_name="collection12m_genre", foreign="name", fieldchoice=GENRE_NAME)
     # languageDisorder(0-n)
-    add_element("0-n", col_this, "languageDisorder", crp, foreign="name")
+    add_element("0-n", col_this, "languageDisorder", crp, field_name="collection12m_languagedisorder", foreign="name")
     # domain (0-n)
     if col_this.collection12m_domain.count() > 0:
         # Add the domains here
         add_element("0-n", col_this, "name", crp, field_name="collection12m_domain", foreign="name", subname="domain")
-    #for domain_this in col_this.collection12m_domain.all():   # col_this.domain.all():
-    #    # Add the domains
-    #    add_element("0-n", domain_this, "name", crp, foreign="name", subname="domain")
     # clarinCentre (0-1)
     add_element("0-1", col_this, "clarinCentre", crp)
     # PID (0-n)
-    add_element("0-n", col_this, "pid", crp, foreign="code", subname="PID")
+    add_element("0-n", col_this, "pid", crp, field_name="collection12m_pid", foreign="code", subname="PID")
     # version (0-1)
     add_element("0-1", col_this, "version", crp)
     # resource (1-n)
@@ -903,8 +900,11 @@ class CollectionDetailView(DetailView):
     def download_to_xml(self, context):
         """Make the XML representation of this collection downloadable"""
 
-        # Construct a file name based on the identifier
+        # Get to this collection instance
         itemThis = self.instance
+        # Make sure the PID is registered
+        itemThis.register_pid()
+        # Construct a file name based on the identifier
         sFileName = 'collection-{}'.format(getattr(itemThis, 'identifier'))
         # Get the XML of this collection
         (bValid, sXmlStr) = create_collection_xml(itemThis, self.request)

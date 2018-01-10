@@ -8,7 +8,7 @@ Each resource in the collection is characterised by its own annotations.
 from django.db import models
 from django.contrib.auth.models import User
 from datetime import datetime
-# from collbank.settings import COUNTRY_CODES, LANGUAGE_CODE_LIST
+from collbank.settings import REGISTRY_URL
 import requests
 from requests.auth import HTTPBasicAuth
 
@@ -103,6 +103,16 @@ class PidService(models.Model):
             oBack['msg'] = "The authentication request returned code {}".format(r.status_code)
         return oBack
 
+    def getdomain(self):
+        """Get the domain of the url"""
+
+        arUrl = self.url.split("/")
+        if len(arUrl) > 0:
+            sDomain = arUrl[-1]
+        else:
+            sDomain = ""
+        return sDomain
+
     def getpid(self, collection):
         """Get (and possibly create) a persistant identifier for id"""
 
@@ -153,7 +163,7 @@ class PidService(models.Model):
         # Getting here means that no PID has yet been made
 
         # Create the URL through which this collection bank entry can be reached
-        sSearch = "http://applejack.science.ru.nl/registry/{}".format(collection.get_xmlfilename())
+        sSearch = "{}{}".format(REGISTRY_URL, collection.get_xmlfilename())
         oData = [{'type': 'URL', 'parsed_data': sSearch}]
         headers = {'Content-type': 'application/json', 'Accept': 'application/json'}
         sUrl = "{}?prefix=COLL".format(self.url)
@@ -1759,8 +1769,16 @@ class Collection(models.Model):
 
     # ============ INTERNAL FIELDS ================================
     # the persistent identifier name by which this descriptor is going to be recognized
-    pidname = models.CharField("Registry identifier", 
-                               max_length=MAX_STRING_LEN, default="empty")
+    #  The PID in CLARIN should be a handle. In our case it is the *last part* of the handle URL
+    #  So a user can get to this collection description by typing:
+    #  http://hdl.handle.net/21.11114/COLL-[this-pidname]
+    pidname = models.CharField("Registry identifier", max_length=MAX_STRING_LEN, default="empty")
+    # the 'URL' is the local (Radboud University) link where the XML and the HTML output of
+    #           this collection should be found
+    # Note: this field is *calculated* by the program and should *not* be entered by a user
+    #       it is calculated upon publication
+    url = models.URLField("URL of the metadata file", default='')
+    handledomain = models.CharField("Domain of the Handle system", max_length=MAX_NAME_LEN, default='')
     # identifier (1)
     identifier = models.CharField("Unique short collection identifier (10 characters max)", max_length=MAX_IDENTIFIER_LEN, default='-')
     # Landing Page (1)
@@ -1825,12 +1843,42 @@ class Collection(models.Model):
     do_identifier.admin_order_field = 'identifier'
 
     def get_pidname(self):
-        if self.pidname == "" or self.pidname.startswith("empty") or self.pidname.startswith("cbmetadata"):
-            # register the PID
-            self.register_pid()
-        # Return the PID name we have
-        # (should be 21.11114/COLL-0000-000x-yyyy-z)
-        return self.pidname
+        """Get the persistent identifier and create it if it is not there"""
+        bNeedSaving = False
+
+        try:
+            sPidName = self.pidname
+            if sPidName == "" or sPidName.startswith("empty") or sPidName.startswith("cbmetadata"):
+                # register the PID
+                self.register_pid()
+                sPidName = self.pidname
+            # Return the PID name we have
+            # (should be 21.11114/COLL-0000-000x-yyyy-z)
+
+            # Get the correct service
+            pidservice = PidService.objects.filter(name=PIDSERVICE_NAME).first()
+            # Check if the handle domain is there 
+            sHandleDomain = pidservice.getdomain()
+            if self.handledomain != sHandleDomain:
+                self.handledomain = sHandleDomain
+                bNeedSaving = True
+            # Check if the PID name is already there
+            if self.pidname != sPidName:
+                # Set the PID name
+                self.pidname = sPidName
+                bNeedSaving = True
+            # Possibly set the url
+            sUrl = self.get_targeturl()
+            if self.url != sUrl:
+                self.url = sUrl
+                bNeedSaving = True
+            # Need saving?
+            if bNeedSaving:
+                self.save()
+            return self.pidname
+        except:
+            print("get_pidname error:", sys.exc_info()[0])
+            return ""
 
     def get_xmlfilename(self):
         """Create the filename for the XML file for this item"""
@@ -1838,8 +1886,16 @@ class Collection(models.Model):
         sFileName = "cbmetadata_{0:05d}".format(self.id)
         return sFileName
 
+    def get_targeturl(self):
+        """Get the URL where the XML data should be made available"""
+        sUrl = "{}{}".format(REGISTRY_URL,self.get_xmlfilename())
+        return sUrl
+
     def register_pid(self):
-        """Make sure this record has a registered persistant identifier"""
+        """Make sure this record has a registered persistant identifier
+        
+        Additionally: set the .pidname field (if needed) and set the .url field (if needed)
+        """
 
         # Get the correct service
         pidservice = PidService.objects.filter(name=PIDSERVICE_NAME).first()
@@ -1856,13 +1912,31 @@ class Collection(models.Model):
             oResponse = pidservice.createpid(self)
             if oResponse != None and 'status' in oResponse and oResponse['status'] == "ok":
                 sPidName = oResponse['pid']
-                self.pidname = sPidName
-                # Save it
-                self.save()
-                return True
+                # Adapt the PID if it contains a /
+                if "/" in sPidName:
+                    # Make sure we only store the part *after* the slash
+                    sPidName = sPidName.split("/")[-1]
             else:
                 # Something somewhere went wrong
                 return False
+        else:
+            sPidName = sResponse
+        # Check if the handle domain is there 
+        sHandleDomain = pidservice.getdomain()
+        if self.handledomain != sHandleDomain:
+            self.handledomain = sHandleDomain
+            self.save()
+        # Check if the PID name is already there
+        if self.pidname != sPidName:
+            # Set the PID name
+            self.pidname = sPidName
+            # Save it
+            self.save()
+        # Possibly set the url
+        sUrl = self.get_targeturl()
+        if self.url != sUrl:
+            self.url = sUrl
+            self.save()
         # Return positively
         return True
 

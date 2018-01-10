@@ -6,6 +6,7 @@
     <RootNamespace>collbank</RootNamespace>
     <InterpreterId>{6c713d71-6be7-4b28-b6ee-cf405b42bea2}</InterpreterId>
     <InterpreterVersion>3.5</InterpreterVersion>
+    <WebBrowserPort>6505</WebBrowserPort>
   </PropertyGroup>
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>

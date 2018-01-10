@@ -33,6 +33,8 @@ elif "/scratch" in WRITABLE_DIR:
 # Not the location of the wsgi.py file for "reload_collbank"
 WSGI_FILE = os.path.abspath(os.path.join(BASE_DIR,"collbank/wsgi.py"))
 
+REGISTRY_URL = "http://cls.ru.nl/registry/"
+
 # publishing on a sub-url
 # NOTE: possibly remove this for the production environment...
 # FORCE_SCRIPT_NAME = "/ru"
