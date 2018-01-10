@@ -824,8 +824,16 @@ class CollectionDetailView(DetailView):
     context_object_name = 'collection'
     template_name = 'collection/coll_detail.html'
     slug_field = 'pidname'
+    slug_field = 'get_xmlfilename'
     
     def get(self, request, *args, **kwargs):
+        # If this is 'registry' then get the id
+        if 'type' in kwargs and kwargs['type'] == 'registry':
+            # Find out which instance this is
+            sSlug = kwargs['slug']
+            arSlug = sSlug.split("_")
+            self.pk = int(arSlug[1])
+            self.kwargs['pk'] = self.pk
         # Get the object in the standard way
         self.object = self.get_object()
         # For further processing we need to have the context
@@ -902,18 +910,22 @@ class CollectionDetailView(DetailView):
         # Get to this collection instance
         itemThis = self.instance
         # Make sure the PID is registered
-        itemThis.register_pid()
-        # Construct a file name based on the identifier
-        sFileName = 'collection-{}'.format(getattr(itemThis, 'identifier'))
-        # Get the XML of this collection
-        (bValid, sXmlStr) = create_collection_xml(itemThis, self.request)
-        if bValid:
-            # Create the HttpResponse object with the appropriate CSV header.
-            response = HttpResponse(sXmlStr, content_type='text/xml')
-            response['Content-Disposition'] = 'attachment; filename="'+sFileName+'.xml"'
+        if itemThis.register_pid():
+            # Construct a file name based on the identifier
+            sFileName = 'collection-{}'.format(getattr(itemThis, 'identifier'))
+            # Get the XML of this collection
+            (bValid, sXmlStr) = create_collection_xml(itemThis, self.request)
+            if bValid:
+                # Create the HttpResponse object with the appropriate CSV header.
+                response = HttpResponse(sXmlStr, content_type='text/xml')
+                response['Content-Disposition'] = 'attachment; filename="'+sFileName+'.xml"'
+            else:
+                # Return the error response
+                response = HttpResponse(sXmlStr)
         else:
-            # Return the error response
-            response = HttpResponse(sXmlStr)
+            # Provide an error response
+            sErrMsg = "Unable to register the PID"
+            response = HttpResponse(sErrMsg)
 
         # Return the result
         return response

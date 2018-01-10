@@ -108,13 +108,16 @@ class PidService(models.Model):
 
         arUrl = self.url.split("/")
         if len(arUrl) > 0:
-            sDomain = arUrl[-1]
+            if arUrl[-1] == "" and len(arUrl)> 1:
+                sDomain = arUrl[-2]
+            else:
+                sDomain = arUrl[-1]
         else:
             sDomain = ""
         return sDomain
 
     def getpid(self, collection):
-        """Get (and possibly create) a persistant identifier for id"""
+        """Get (and possibly create) a persistant identifier for this collection"""
 
         # Get the name that should have been used
         sName = collection.get_xmlfilename()
@@ -150,6 +153,27 @@ class PidService(models.Model):
             # Not authorized
             return ""
 
+    def geturl(self, collection):
+        """Given a stored PID, recover the URL it has"""
+
+        sBack = ""
+        # Try to use the PID stored in [collection]
+        sPid = collection.pidname
+        sUrl = "{}{}".format(self.url,sPid)
+        headers = {'Content-type': 'application/json'}
+        # sUrl = "{}?prefix=COLL".format(self.url)
+        r = requests.get(sUrl,auth=(self.user, self.passwd), headers={'Content-type': 'application/json'})
+        if r.status_code >= 100 and r.status_code < 300:
+            lResponse = json.loads(r.text)
+            # Find the element that has type URL
+            for item in lResponse:
+                if item['type'] == "URL":
+                    # Found it
+                    sBack = item['parsed_data']
+                    break
+        # we are fine here
+        return sBack
+
     def createpid(self, collection):
         """Create a PID for this collection's id"""
 
@@ -172,12 +196,39 @@ class PidService(models.Model):
             # Positive reply -- get the pid
             oResponse = json.loads(r.text)
             sFullPid = oResponse['epic-pid']
-            #arPid = sFullPid.split("/")
-            #sPid = arPid[1]
             return {'status': 'ok', 'pid': sFullPid}
         else:
             # There has been a problem -- return empty
             return {'status': 'error', 'msg': 'code {}'.format(r.status_code)}
+
+    def checkandupdatepid(self, collection):
+        """Check and possibly PID for this collection """
+
+        # Prepare our return
+        oBack = {'status':"ok", 'msg': "no problem"}
+        # Get the current URL
+        sCurrentUrl = self.geturl(collection)
+        # Compare with the stored url
+        if sCurrentUrl != collection.url:
+            # We need to update the stored url
+
+            # Create the URL through which this collection bank entry can be updated
+            oData = [{'type': 'URL', 'parsed_data': collection.url}]
+            headers = {'Content-type': 'application/json', 'Accept': 'application/json'}
+            sUrl = "{}{}".format(self.url, collection.pidname)
+
+            # For updating: use the PUT method
+            r = requests.put(sUrl,auth=(self.user, self.passwd), json=oData, headers=headers)
+            if r.status_code < 200 or r.status_code >= 300:
+                # There has been a problem -- return empty
+                oBack['status'] = "error"
+                oBack['msg'] = 'code {}'.format(r.status_code)
+            else:
+                # Just in case: return the URL and the PID combination (r has no contents)
+                oBack['url'] = collection.url
+                oBack['pid'] = collection.pidname
+        # Return the back object
+        return oBack
 
 
 
@@ -1842,7 +1893,7 @@ class Collection(models.Model):
     do_identifier.short_description = "Identifier"
     do_identifier.admin_order_field = 'identifier'
 
-    def get_pidname(self):
+    def get_pidname(self, pidservice = None):
         """Get the persistent identifier and create it if it is not there"""
         bNeedSaving = False
 
@@ -1855,30 +1906,52 @@ class Collection(models.Model):
             # Return the PID name we have
             # (should be 21.11114/COLL-0000-000x-yyyy-z)
 
-            # Get the correct service
-            pidservice = PidService.objects.filter(name=PIDSERVICE_NAME).first()
-            # Check if the handle domain is there 
-            sHandleDomain = pidservice.getdomain()
-            if self.handledomain != sHandleDomain:
-                self.handledomain = sHandleDomain
-                bNeedSaving = True
-            # Check if the PID name is already there
-            if self.pidname != sPidName:
-                # Set the PID name
-                self.pidname = sPidName
-                bNeedSaving = True
-            # Possibly set the url
-            sUrl = self.get_targeturl()
-            if self.url != sUrl:
-                self.url = sUrl
-                bNeedSaving = True
-            # Need saving?
-            if bNeedSaving:
-                self.save()
+            # Check stuff
+            if pidservice == None:
+                pidservice = PidService.objects.filter(name=PIDSERVICE_NAME).first()
+            if not self.check_pid(pidservice, sPidName):
+                # Some error
+                print("get_pidname doesn't get the pidservice:", sys.exc_info()[0])
+                return ""
+            # Return whatever the PID is now
             return self.pidname
         except:
             print("get_pidname error:", sys.exc_info()[0])
             return ""
+
+    def check_pid(self, pidservice, sPidName):
+        """Check the PID against [sPidName] and brush up .url and .handledomain too"""
+
+        # Validate
+        if pidservice == None or sPidName == "": 
+            return False
+        bNeedSaving = False
+        # Check if the handle domain is there 
+        sHandleDomain = pidservice.getdomain()
+        if self.handledomain != sHandleDomain:
+            self.handledomain = sHandleDomain
+            bNeedSaving = True
+        # Check if the PID name is already there
+        if self.pidname != sPidName:
+            # Set the PID name
+            self.pidname = sPidName
+            bNeedSaving = True
+        # Possibly set the url
+        sUrl = self.get_targeturl()
+        if self.url != sUrl:
+            self.url = sUrl
+            bNeedSaving = True
+        # Possibly adapt the URL
+        oResponse = pidservice.checkandupdatepid(self)
+        if oResponse == None or oResponse['status'] != 'ok':
+            print("checkandupdatepid returns: " + oResponse['msg'])
+            return False
+        # Need saving?
+        if bNeedSaving:
+            self.save()
+        # Return positively
+        return True
+
 
     def get_xmlfilename(self):
         """Create the filename for the XML file for this item"""
@@ -1921,22 +1994,13 @@ class Collection(models.Model):
                 return False
         else:
             sPidName = sResponse
-        # Check if the handle domain is there 
-        sHandleDomain = pidservice.getdomain()
-        if self.handledomain != sHandleDomain:
-            self.handledomain = sHandleDomain
-            self.save()
-        # Check if the PID name is already there
-        if self.pidname != sPidName:
-            # Set the PID name
-            self.pidname = sPidName
-            # Save it
-            self.save()
-        # Possibly set the url
-        sUrl = self.get_targeturl()
-        if self.url != sUrl:
-            self.url = sUrl
-            self.save()
+
+        # Check stuff
+        if not self.check_pid(pidservice, sPidName):
+            # Some error
+            print("register_pid doesn't get the pidservice:", sys.exc_info()[0])
+            return ""
+
         # Return positively
         return True
 
