@@ -1952,7 +1952,6 @@ class Collection(models.Model):
         # Return positively
         return True
 
-
     def get_xmlfilename(self):
         """Create the filename for the XML file for this item"""
 

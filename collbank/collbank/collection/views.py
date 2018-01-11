@@ -26,7 +26,7 @@ import zipfile
 import tempfile
 import io
 from collbank.collection.models import *
-from collbank.settings import OUTPUT_XML, APP_PREFIX, WSGI_FILE, STATIC_ROOT, WRITABLE_DIR, COUNTRY_CODES, LANGUAGE_CODE_LIST
+from collbank.settings import OUTPUT_XML, APP_PREFIX, WSGI_FILE, STATIC_ROOT, WRITABLE_DIR, COUNTRY_CODES, LANGUAGE_CODE_LIST, REGISTRY_DIR
 from collbank.collection.admin import CollectionAdmin
 from collbank.collection.forms import *
 
@@ -428,6 +428,30 @@ def create_collection_xml(collection_this, request):
     # Return this string
     return (True, xmlstr)
 
+def publish_collection(coll_this, request):
+    """Create the XML of this collection and put it in a publishing directory"""
+
+    # Create an object to return
+    oBack = {'status': 'ok', 'msg': ''}
+    # Make sure this record has a registered PID
+    coll_this.register_pid()
+    # Get the XML text of this object
+    (bValid, sXmlText) = create_collection_xml(coll_this, request)
+    if bValid:
+        # Get the correct pidname
+        sFileName = coll_this.get_xmlfilename()
+        # THink of a filename
+        fPublish = os.path.abspath(os.path.join(REGISTRY_DIR, sFileName))
+        # Write it to a file in the XML directory
+        with open(fPublish, encoding="utf-8", mode="w") as f:  
+            f.write(sXmlText)
+    else:
+        oBack['status'] = 'error'
+        oBack['msg'] = sXmlText
+    return oBack
+
+
+
 
 def get_country(cntryCode):
     # Get the country string according to field-choice
@@ -790,23 +814,10 @@ class CollectionListView(ListView):
             oBack['status'] = 'published'
             # Walk all the descriptors in the queryset
             for coll_this in qs:
-                # Make sure this record has a registered PID
-                coll_this.register_pid()
-                # Get the XML text of this object
-                (bValid, sXmlText) = create_collection_xml(coll_this, self.request)
-                if bValid:
-                    # Get the correct pidname
-                    sFileName = coll_this.get_xmlfilename() + ".xml"
-                    # THink of a filename
-                    fPublish = os.path.abspath(os.path.join(WRITABLE_DIR, "xml", sFileName))
-                    # Write it to a file in the XML directory
-                    with open(fPublish, encoding="utf-8", mode="w") as f:  
-                        f.write(sXmlText)
-                    iWritten += 1
-                else:
-                    oBack['status'] = 'error'
-                    oBack['html'] = sXmlText
+                oBack = publish_collection(coll_this,self.request)
+                if oBack['status'] != 'ok':
                     break
+                iWritten += 1
             # Adapt the status
             oBack['written'] = iWritten
         else:
@@ -851,6 +862,7 @@ class CollectionDetailView(DetailView):
                 return HttpResponseRedirect(reverse('registry', kwargs={'type': 'registry', 'slug': sSlug}))
             # We can come here directly or through /handle
             if kwargs['type'] == 'registry':
+                # TODO: change this to download the file that is actually in the REGISTRY
                 bValid = True
                 try:
                     # Find out which instance this is
@@ -885,6 +897,8 @@ class CollectionDetailView(DetailView):
                 # Return the result
                 return response
             elif kwargs['type'] == 'output':
+                # Publish it
+                self.publish()
                 return self.download_to_xml(context)
 
         # This is where we get in all other cases (e.g. no 'type' in the kwargs)
@@ -903,6 +917,16 @@ class CollectionDetailView(DetailView):
         context['now'] = timezone.now()
         context['collection'] = self.instance
         return context
+
+    def publish(self):
+        """Publish this collection"""
+
+        oBack = publish_collection(self.instance, self.request)
+        if oBack['status'] == 'error':
+            # Show the error
+            pass
+        # Return True if status is okay
+        return (oBack['status'] == 'ok')
 
     def download_to_xml(self, context):
         """Make the XML representation of this collection downloadable"""
