@@ -128,7 +128,7 @@ def make_collection_top(request, colThis):
     # Add resource ref
     oSubItem = ET.SubElement(oProxy, "ResourceRef")
     #  "http://applejack.science.ru.nl/collbank"
-    oSubItem.text = request.build_absolute_uri(reverse('home')) + "registry/" + colThis.pidname
+    oSubItem.text = request.build_absolute_uri(reverse('home')) + "registry/" + colThis.get_xmlfilename()
 
     # Produce a link to the resource: search page
     oProxy = ET.SubElement(lproxy, "ResourceProxy")
