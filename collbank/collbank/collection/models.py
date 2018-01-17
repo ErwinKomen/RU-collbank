@@ -2136,12 +2136,12 @@ class Collection(models.Model):
                 sStatusD = 's' if saved_at < updated_at else 'd'
         # Combine states
         if sStatusP == 'u':
-            sStatus = 'unpub'
+            sStatus = 'unpubl'
         else:
             if sStatusD == 'n':
-                sStatus = 'unkn'
+                sStatus = 'unknown'
             elif sStatusD == 'd':
-                sStatus = 'ok'
+                sStatus = 'publ'
             else:
                 sStatus = 'stale' 
         # Return the combined status
