@@ -42,14 +42,16 @@
             <td><a href="/{{app_prefix }}admin/collection/collection/{{coll.pk}}/change/">{{coll.identifier}}</a></td>
             <td>{{coll.description}}
               {% if user.is_authenticated %}
-              <span class="coll-xml"><a class="btn btn-success btn-xs" href="/{{app_prefix }}output/{{coll.pk}}?submit_type=xml">xml</a></span>
-            <!--
-              <span class="coll-xml"><a class="btn btn-error btn-xs" href="/{{app_prefix }}collection/{{coll.pk}}?submit_type=edit">edit</a></span>
-              -->
+              
+              <span class="coll-xml"><a class="btn btn-success btn-xs" href="{% url 'output' pk=coll.pk %}?submit_type=xml">xml</a></span>
               <span class="coll-xml"><a class="btn btn-eror btn-xs" href="{% url 'copyadmin' %}?id={{coll.pk}}&model=collection&current=">copy</a></span>
-              <span class="coll-xml"><a class="btn btn-warning btn-xs" href="{% url 'handle' pk=coll.pk %}" target='_blank'>handle</a></span>
+              <span class="coll-xml"><a class="btn btn-warning btn-xs" href="{% url 'publish' pk=coll.pk %}">publish</a></span>
+                {% if coll.get_status == 'ok' %}
+                <span class="coll-date">{{coll.publishdate}}</span>
+                {% endif %}
               {% endif %}
             </td>
+            <td>{{coll.get_status}}</td>
           </tr>
         {% endfor %}
         </tbody>

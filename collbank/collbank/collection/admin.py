@@ -4,6 +4,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.urlresolvers import resolve
 from django.core import serializers
 from django.db.models import Q
+from django.db.models.functions import Lower
 from django.forms import Textarea
 from django.shortcuts import redirect
 from django.core.urlresolvers import reverse
@@ -301,11 +302,33 @@ class LanguageDisorderInline(nested_admin.NestedTabularInline):
     extra = 0
 
 
+class CollectionRelationForm(forms.ModelForm):
+
+    class Meta:
+        model = Relation
+        fields = ['rtype', 'related']
+
+
 class RelationInline(nested_admin.NestedTabularInline):
     model = Relation    # Collection.relation.through
+    form = CollectionRelationForm
     verbose_name = "Collection - relation"
     verbose_name_plural = "Collection - relations"
     extra = 0
+    fk_name = "collection"
+
+    def get_formset(self, request, obj = None, **kwargs):
+        # Get the currently selected Collection object's identifier
+        self.instance = obj
+        return super(RelationInline, self).get_formset(request, obj, **kwargs)
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        formfield = super(RelationInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
+        # Look for the field's name as it is used in the Collection model
+        if db_field.name == "related":
+            formfield.queryset = Collection.objects.exclude(id=self.instance.id).order_by(Lower('identifier'))
+            x = Collection.objects.all()
+        return formfield
 
 
 class DomainForm(forms.ModelForm):

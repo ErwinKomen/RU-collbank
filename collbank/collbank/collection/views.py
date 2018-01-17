@@ -26,7 +26,7 @@ import zipfile
 import tempfile
 import io
 from collbank.collection.models import *
-from collbank.settings import OUTPUT_XML, APP_PREFIX, WSGI_FILE, STATIC_ROOT, WRITABLE_DIR, COUNTRY_CODES, LANGUAGE_CODE_LIST, REGISTRY_DIR
+from collbank.settings import OUTPUT_XML, APP_PREFIX, WSGI_FILE, STATIC_ROOT, WRITABLE_DIR, COUNTRY_CODES, LANGUAGE_CODE_LIST
 from collbank.collection.admin import CollectionAdmin
 from collbank.collection.forms import *
 
@@ -89,7 +89,7 @@ def add_element(optionality, col_this, el_name, crp, **kwargs):
     # Return positively
     return True
     
-def make_collection_top(request, colThis):
+def make_collection_top(colThis, sUserName, sHomeUrl):
     """Create the top-level elements for a collection"""
 
     # Define the top-level of the xml output
@@ -104,7 +104,8 @@ def make_collection_top(request, colThis):
     # Add a header
     hdr = ET.SubElement(top, "Header", {})
     mdCreator = ET.SubElement(hdr, "MdCreator")
-    mdCreator.text = request.user.username
+    # mdCreator.text = request.user.username
+    mdCreator.text = sUserName
     mdSelf = ET.SubElement(hdr, "MdSelfLink")
     # If published: add the self link
     if colThis.pidname != None:
@@ -128,7 +129,22 @@ def make_collection_top(request, colThis):
     # Add resource ref
     oSubItem = ET.SubElement(oProxy, "ResourceRef")
     #  "http://applejack.science.ru.nl/collbank"
-    oSubItem.text = request.build_absolute_uri(reverse('home')) + "registry/" + colThis.get_xmlfilename()
+    # oSubItem.text = request.build_absolute_uri(reverse('home')) + "registry/" + colThis.get_xmlfilename()
+    oSubItem.text = sHomeUrl  + "registry/" + colThis.get_xmlfilename()
+
+    # Produce links to RELATION txt files if needed
+    for rel_this in colThis.collection12m_relation.all():
+        oProxy = ET.SubElement(lproxy, "ResourceProxy")
+        sProxyId = "rel_{}_{}".format(rel_this.get_rtype_display(), rel_this.id)
+        oProxy.set('id', sProxyId)
+        # Add resource type
+        oSubItem = ET.SubElement(oProxy, "ResourceType")
+        oSubItem.set("mimetype", "text/plain")
+        oSubItem.text = "Resource"
+        # Add resource ref
+        oSubItem = ET.SubElement(oProxy, "ResourceRef")
+        oSubItem.text = rel_this.get_relation_url()
+
 
     # Produce a link to the resource: search page
     oProxy = ET.SubElement(lproxy, "ResourceProxy")
@@ -141,7 +157,8 @@ def make_collection_top(request, colThis):
     # Add resource ref
     oSubItem = ET.SubElement(oProxy, "ResourceRef")
     #  "http://applejack.science.ru.nl/collbank"
-    oSubItem.text = request.build_absolute_uri(reverse('home'))
+    # oSubItem.text = request.build_absolute_uri(reverse('home'))
+    oSubItem.text = sHomeUrl 
 
     ET.SubElement(rsc, "JournalFileProxyList")
     ET.SubElement(rsc, "ResourceRelationList")
@@ -398,14 +415,14 @@ def add_collection_xml(col_this, crp):
         add_element("0-1", proj_this, "URL", proj, foreign="name", subname="url")
     # There's no return value -- all has been added to [crp]
 
-def create_collection_xml(collection_this, request):
+def create_collection_xml(collection_this, sUserName, sHomeUrl):
     """Convert the 'collection' object from the context to XML
     
     Note: this returns a TUPLE (boolean, string)
     """
 
     # Create a top-level element, including CMD, Header and Resources
-    top = make_collection_top(request, collection_this)
+    top = make_collection_top(collection_this, sUserName, sHomeUrl)
 
     # Start components and this collection component
     cmp = ET.SubElement(top, "Components")
@@ -428,20 +445,20 @@ def create_collection_xml(collection_this, request):
     # Return this string
     return (True, xmlstr)
 
-def publish_collection(coll_this, request):
+def publish_collection(coll_this, sUserName, sHomeUrl):
     """Create the XML of this collection and put it in a publishing directory"""
 
     # Create an object to return
     oBack = {'status': 'ok', 'msg': ''}
     # Make sure this record has a registered PID
     coll_this.register_pid()
+    # Save the relation files
+    coll_this.save_relations()
     # Get the XML text of this object
-    (bValid, sXmlText) = create_collection_xml(coll_this, request)
+    (bValid, sXmlText) = create_collection_xml(coll_this, sUserName, sHomeUrl)
     if bValid:
-        # Get the correct pidname
-        sFileName = coll_this.get_xmlfilename()
-        # THink of a filename
-        fPublish = os.path.abspath(os.path.join(REGISTRY_DIR, sFileName))
+        # Get the full path to the registry file
+        fPublish = coll_this.get_publisfilename()
         # Write it to a file in the XML directory
         with open(fPublish, encoding="utf-8", mode="w") as f:  
             f.write(sXmlText)
@@ -680,7 +697,8 @@ class CollectionListView(ListView):
     order_cols = ['id', 'identifier']
     order_heads = [{'name': 'id', 'order': 'o=1', 'type': 'int'}, 
                    {'name': 'Identifier', 'order': 'o=2', 'type': 'str'}, 
-                   {'name': 'Description', 'order': '', 'type': 'str'}]
+                   {'name': 'Description', 'order': '', 'type': 'str'},
+                   {'name': 'Status', 'order': '', 'type': 'str'}]
 
     def render_to_response(self, context, **response_kwargs):
         """Check if downloading is needed or not"""
@@ -744,8 +762,10 @@ class CollectionListView(ListView):
             # Combine the files
             with tarfile.open(fileobj=out, mode="w:gz") as tar:
                 for coll_this in qs:
+                    sHomeUrl = request.build_absolute_uri(reverse('home'))
+                    sUserName = request.user.username
                     # Get the XML text of this object
-                    (bValid, sXmlText) = create_collection_xml(coll_this, self.request)
+                    (bValid, sXmlText) = create_collection_xml(coll_this, sUserName, sHomeUrl)
                     if bValid:
                         sEnc = sXmlText.encode('utf-8')
                         bData = io.BytesIO(sEnc)
@@ -777,8 +797,10 @@ class CollectionListView(ListView):
             # Combine the files
             with zipfile.ZipFile(temp, 'w', compression=zipfile.ZIP_DEFLATED) as archive:
                 for coll_this in qs:
+                    sHomeUrl = request.build_absolute_uri(reverse('home'))
+                    sUserName = request.user.username
                     # Get the XML text of this object
-                    (bValid, sXmlText) = create_collection_xml(coll_this, self.request)
+                    (bValid, sXmlText) = create_collection_xml(coll_this, sUserName, sHomeUrl)
                     if bValid:
                         archive.writestr(coll_this.identifier + ".xml", sXmlText)
                     else:
@@ -864,38 +886,58 @@ class CollectionDetailView(DetailView):
             if kwargs['type'] == 'registry':
                 # TODO: change this to download the file that is actually in the REGISTRY
                 bValid = True
+                bCsv = False
+                sCsvText = "(empty)"
                 try:
                     # Find out which instance this is
                     sSlug = kwargs['slug']
-                    arSlug = sSlug.split("_")
-                    id = int(arSlug[1])
-                    self.instance = Collection.objects.filter(id=id).first()
-                    if self.instance == None:
-                        bValid = False
-                        sXmlText = "Could not find the resource with slug {}".format(
-                            sSlug)
+                    # This might be a text file
+                    if sSlug.endswith(".txt"):
+                        # We are assuming this is a collection-relation csv file
+                        fCsvFile = os.path.abspath(os.path.join(REGISTRY_DIR, sSlug))
+                        if os.path.isfile(fCsvFile):
+                            with open(fCsvFile, encoding="utf-8", mode="r") as f:
+                                sCsvText = f.read()
+                        bCsv = True
                     else:
-                        # Get the XML file and show it
-                        sFileName = self.instance.get_xmlfilename() + ".xml"
-                        # THink of a filename
-                        fPublish = os.path.abspath(os.path.join(WRITABLE_DIR, "xml", sFileName))
-                        # Write it to a file in the XML directory
-                        with open(fPublish, encoding="utf-8", mode="r") as f:  
-                            sXmlText = f.read()
+                        arSlug = sSlug.split("_")
+                        id = int(arSlug[1])
+                        self.instance = Collection.objects.filter(id=id).first()
+                        if self.instance == None:
+                            bValid = False
+                            sXmlText = "Could not find the resource with slug {}".format(
+                                sSlug)
+                        else:
+                            # Get the XML file and show it
+                            sFileName = self.instance.get_xmlfilename() + ".xml"
+                            # THink of a filename
+                            fPublish = os.path.abspath(os.path.join(WRITABLE_DIR, "xml", sFileName))
+                            # Write it to a file in the XML directory
+                            with open(fPublish, encoding="utf-8", mode="r") as f:  
+                                sXmlText = f.read()
                 except:
                     bValid = False
                     sXmlText = "Could not fetch the resource with identifier {}".format(
                         self.instance.identifier)
                 if bValid:
-                    # Create the HttpResponse object with the appropriate CSV header.
-                    response = HttpResponse(sXmlText, content_type='text/xml')
-                    # response['Content-Disposition'] = 'attachment; filename="'+sFileName+'.xml"'
+                    # Is this csv?
+                    if bCsv:
+                        response = HttpResponse(sCsvText, content_type='text/plain')
+                    else:
+                        # Create the HttpResponse object with the appropriate CSV header.
+                        response = HttpResponse(sXmlText, content_type='text/xml')
+                        # response['Content-Disposition'] = 'attachment; filename="'+sFileName+'.xml"'
                 else:
                     # Return the error response
                     response = HttpResponse(sXmlText)
 
                 # Return the result
                 return response
+            elif kwargs['type'] == 'publish':
+                # Publish it
+                self.publish()
+                # Return to the overview
+                return redirect(reverse('overview'))
             elif kwargs['type'] == 'output':
                 # Publish it
                 self.publish()
@@ -921,9 +963,11 @@ class CollectionDetailView(DetailView):
     def publish(self):
         """Publish this collection"""
 
-        oBack = publish_collection(self.instance, self.request)
+        sHomeUrl = self.request.build_absolute_uri(reverse('home'))
+        sUserName = self.request.user.username
+        oBack = publish_collection(self.instance, sUserName, sHomeUrl)
         if oBack['status'] == 'error':
-            # Show the error
+            # TODO: Show the error??
             pass
         # Return True if status is okay
         return (oBack['status'] == 'ok')
@@ -937,8 +981,10 @@ class CollectionDetailView(DetailView):
         if itemThis.register_pid():
             # Construct a file name based on the identifier
             sFileName = 'collection-{}'.format(getattr(itemThis, 'identifier'))
+            sHomeUrl = self.request.build_absolute_uri(reverse('home'))
+            sUserName = self.request.user.username
             # Get the XML of this collection
-            (bValid, sXmlStr) = create_collection_xml(itemThis, self.request)
+            (bValid, sXmlStr) = create_collection_xml(itemThis, sUserName, sHomeUrl)
             if bValid:
                 # Create the HttpResponse object with the appropriate CSV header.
                 response = HttpResponse(sXmlStr, content_type='text/xml')

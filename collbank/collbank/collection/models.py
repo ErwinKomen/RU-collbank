@@ -8,13 +8,14 @@ Each resource in the collection is characterised by its own annotations.
 from django.db import models
 from django.contrib.auth.models import User
 from datetime import datetime
-from collbank.settings import REGISTRY_URL
+from collbank.settings import REGISTRY_URL, REGISTRY_DIR
 import requests
 from requests.auth import HTTPBasicAuth
 
 import copy  # (1) use python copy
 import json
 import sys
+import os, time
 
 MAX_IDENTIFIER_LEN = 10
 MAX_NAME_LEN = 50
@@ -35,6 +36,7 @@ PROVENANCE_GEOGRAPHICPROVENANCE = 'provenance.geographicprovenance'
 PROVENANCE_GEOGRAPHIC_COUNTRY = 'country.name'  # 'provenance.geographic.country'
 PROVENANCE_GEOGRAPHIC_PLACE = 'provenance.geographic.place'
 RELATION_NAME = 'relation.name'
+RELATION_TYPE = 'relation.type'
 DOMAIN_NAME = "domain.name"
 CHARACTERENCODING = "writtencorpus.characterencoding.name"
 SPEECHCORPUS_RECORDINGENVIRONMENT = "speechcorpus.recordingenvironment"
@@ -993,14 +995,54 @@ class Relation(models.Model):
     """Language that is used in this collection"""
 
     # [1]
-    name = models.CharField("Relation with something else", max_length=80, help_text=get_help(RELATION_NAME ), default='-')
+    name = models.CharField("Summary", max_length=80, help_text=get_help(RELATION_NAME ), default='-')
+    # [0-1] Type of relation
+    rtype = models.CharField(choices=build_choice_list(RELATION_TYPE), max_length=5, help_text=get_help(RELATION_TYPE), default='0', verbose_name="type of relation")
+    # [0-1] The collection with which the relation holds
+    related = models.ForeignKey("Collection", blank=True, null=True, related_name="relatedcollection", verbose_name="with collection")
     # [1]     Each collection can have [0-n] relations
     collection = models.ForeignKey("Collection", blank=False, null=False, default=1, related_name="collection12m_relation")
 
     def __str__(self):
         # idt = m2m_identifier(self.collection_set)
         idt = self.collection.identifier
-        return "[{}] {}".format(idt,self.name)
+        if self.rtype != '0':
+            type = choice_english(RELATION_TYPE, self.rtype)
+        else:
+            type = '(unspecified)'
+        if self.related == None:
+            withcoll = ""
+        else:
+            withcoll = self.related.identifier
+        return "[{}] {} [{}]".format(idt,type, withcoll)
+
+    def get_relation_fname(self):
+        sCsvFile = "cbrelation_{}_{}.txt".format(self.collection.id, self.id)
+        return sCsvFile
+
+    def get_relation_path(self):
+        """Get the full path to a registry file storing this relation"""
+
+        sCsvFile = self.get_relation_fname()
+        fPath = os.path.abspath(os.path.join(REGISTRY_DIR, sCsvFile))
+        return fPath
+
+    def get_relation_url(self):
+        """Get the URL to this relation"""
+        sCsvFile = self.get_relation_fname()
+        return "{}{}".format(REGISTRY_URL, sCsvFile)
+
+    def save_relation_file(self):
+        # Transform the details of this relation into CSV
+        lCsv = []
+        lCsv.append("{}\t{}\t{}\t{}".format("Collection", "Version", "Type of relation", "Collection"))
+        lCsv.append("{}\t{}\t{}\t{}".format(self.collection.identifier, self.collection.version, self.get_rtype_display(), self.related.identifier))
+        sCsv = "\n".join(lCsv)
+        # Save the CSV to a text file
+        fPath = self.get_relation_path()
+        with open(fPath, encoding="utf-8", mode="w") as f:  
+            f.write(sCsv)
+        return fPath
 
     def get_copy(self):
         # Make a clean copy
@@ -1836,6 +1878,8 @@ class Collection(models.Model):
     landingPage = models.URLField("URL of the landing page", help_text=get_help(INTERNAL_LANDINGPAGE), default='')
     # Search Page (0-1)
     searchPage = models.URLField("URL of the search page", help_text=get_help(INTERNAL_SEARCHPAGE), blank=True, null=True)
+    # Internal-only: last saved
+    updated_at = models.DateTimeField(auto_now=True, blank=True, null=True)
 
 
     # ============ OTHER FIELDS ===================================
@@ -1879,6 +1923,7 @@ class Collection(models.Model):
     validation = models.ForeignKey(Validation, blank=True, null=True)
     # == project (0-n)          [many-to-one]
     project = models.ManyToManyField(Project, blank=True, related_name="collectionm2m_project")
+
 
     class Meta:
         # This defines (amongst others) the default ordering in the admin listview of Collections
@@ -1958,10 +2003,28 @@ class Collection(models.Model):
         sFileName = "cbmetadata_{0:05d}".format(self.id)
         return sFileName
 
+    def get_publisfilename(self):
+        # Get the correct pidname
+        sFileName = self.get_xmlfilename()
+        # THink of a filename
+        sPublish = os.path.abspath(os.path.join(REGISTRY_DIR, sFileName))
+        return sPublish
+
     def get_targeturl(self):
         """Get the URL where the XML data should be made available"""
         sUrl = "{}{}".format(REGISTRY_URL,self.get_xmlfilename())
         return sUrl
+
+    def save_relations(self):
+        """Look for all of my collection relations and store them in separate txt files"""
+
+        iSaved = 0
+        for rel_this in self.collection12m_relation.all():
+            # Save this relation
+            rel_this.save_relation_file()
+            iSaved +=1
+        # Return the number of relations saved
+        return iSaved
 
     def register_pid(self):
         """Make sure this record has a registered persistant identifier
@@ -2053,6 +2116,47 @@ class Collection(models.Model):
         #    new_copy.validation = self.validation.get_copy()
         # Return the new copy
         return new_copy
+
+    def get_status(self):
+        """Get the status of this colletion: has it been published or not?"""
+
+        sPublishPath = self.get_publisfilename()
+        sStatusP = 'p' if os.path.isfile(sPublishPath) else 'u'
+        # If it is published, get its publication date and compare it to 
+        sStatusD = 'n'
+        # Has it been published?
+        if sStatusP == 'p':
+            if self.updated_at == None:
+                # If it is published, but no 'updated_at' yet, it is 'up to date'
+                sStatusD = 'd' 
+            else:
+                # It is published: get the file date
+                saved_at = os.path.getmtime(sPublishPath)
+                updated_at = datetime.timestamp( self.updated_at)
+                sStatusD = 's' if saved_at < updated_at else 'd'
+        # Combine states
+        if sStatusP == 'u':
+            sStatus = 'unpub'
+        else:
+            if sStatusD == 'n':
+                sStatus = 'unkn'
+            elif sStatusD == 'd':
+                sStatus = 'ok'
+            else:
+                sStatus = 'stale' 
+        # Return the combined status
+        return sStatus
+
+    def publishdate(self):
+
+        sPublishPath = self.get_publisfilename()
+        if os.path.isfile(sPublishPath):
+            fDate = os.path.getmtime(sPublishPath)
+            oDate = datetime.fromtimestamp( fDate)
+            sDate = oDate.strftime("%d/%b/%Y %H:%M:%S")
+        else:
+            sDate = 'unpublished'
+        return sDate
 
     def __str__(self):
         # We are known by our identifier
