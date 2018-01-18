@@ -17,7 +17,7 @@ import json
 import sys
 import os, time
 
-MAX_IDENTIFIER_LEN = 10
+MAX_IDENTIFIER_LEN = 30
 MAX_NAME_LEN = 50
 MAX_STRING_LEN = 255
 
@@ -1872,8 +1872,8 @@ class Collection(models.Model):
     #       it is calculated upon publication
     url = models.URLField("URL of the metadata file", default='')
     handledomain = models.CharField("Domain of the Handle system", max_length=MAX_NAME_LEN, default='')
-    # identifier (1)
-    identifier = models.CharField("Unique short collection identifier (10 characters max)", max_length=MAX_IDENTIFIER_LEN, default='-')
+    # identifier (1) MUST BE UNIQUE
+    identifier = models.CharField("Unique short collection identifier (10 characters max)", unique=True, max_length=MAX_IDENTIFIER_LEN, default='-')
     # Landing Page (1)
     landingPage = models.URLField("URL of the landing page", help_text=get_help(INTERNAL_LANDINGPAGE), default='')
     # Search Page (0-1)
