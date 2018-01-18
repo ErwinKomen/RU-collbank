@@ -1035,8 +1035,8 @@ class Relation(models.Model):
     def save_relation_file(self):
         # Transform the details of this relation into CSV
         lCsv = []
-        lCsv.append("{}\t{}\t{}\t{}".format("Collection", "Version", "Type of relation", "Collection"))
-        lCsv.append("{}\t{}\t{}\t{}".format(self.collection.identifier, self.collection.version, self.get_rtype_display(), self.related.identifier))
+        lCsv.append("{}\t{}\t{}\t{}".format("Collection", "Type of relation", "Collection"))
+        lCsv.append("{}\t{}\t{}\t{}".format(self.collection.identifier, self.get_rtype_display(), self.related.identifier))
         sCsv = "\n".join(lCsv)
         # Save the CSV to a text file
         fPath = self.get_relation_path()
