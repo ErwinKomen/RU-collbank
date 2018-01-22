@@ -46,12 +46,20 @@
               <span class="coll-xml"><a class="btn btn-success btn-xs" href="{% url 'output' pk=coll.pk %}?submit_type=xml">xml</a></span>
               <span class="coll-xml"><a class="btn btn-eror btn-xs" href="{% url 'copyadmin' %}?id={{coll.pk}}&model=collection&current=">copy</a></span>
               <span class="coll-xml"><a class="btn btn-warning btn-xs" href="{% url 'publish' pk=coll.pk %}">publish</a></span>
-                {% if coll.get_status == 'ok' %}
+                {% if coll.get_status == 'published' %}
                 <span class="coll-date">{{coll.publishdate}}</span>
                 {% endif %}
               {% endif %}
             </td>
-            <td>{{coll.get_status}}</td>
+            <td title="{{coll.get_status}}">
+              {% if coll.get_status == 'published' %}
+              <span class="glyphicon glyphicon-ok" aria-hidden="true" style="color:darkgreen"></span>
+              {% elif coll.get_status == 'not-published' %}
+              <span class="glyphicon glyphicon-remove" aria-hidden="true" style="color:lightgreen"></span>
+              {% else %}
+              <span class="glyphicon glyphicon-hourglass" aria-hidden="true" style="color:red"></span>
+              {% endif%}
+            </td>
           </tr>
         {% endfor %}
         </tbody>
