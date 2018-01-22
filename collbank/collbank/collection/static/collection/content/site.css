@@ -229,3 +229,23 @@ div.inline-group a.add-related {
 .object-tools a.addlink {
     background-image: url(../img/tooltag-add.svg);
 }
+
+div .information, span .information {
+  font-family: monospace;
+  font-size: small;
+  color: darkblue;
+}
+span.obl {
+  font-size: x-small;
+  color: darkblue;
+  font-family: monospace;
+  position: relative;
+  bottom: 0.3em;
+  margin-left: 0.5em;
+}
+
+div.alert {
+  margin-top: 2px;
+  margin-bottom: 2px;
+  padding: 2px;
+}

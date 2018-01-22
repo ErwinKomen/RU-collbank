@@ -1,22 +1,129 @@
 ﻿{% extends "collection/layout.html" %}
 
+{% load i18n %}
+
+{% block breadcrumbs %}
+  <div class="breadcrumbs">
+      <a href="{% url 'home' %}">Home</a>
+      &rsaquo; <a href="{% url 'overview' %}">Overview</a>
+      &rsaquo; {{object.identifier.value}}
+  </div>
+{% endblock %}
+
 {% block content %}
 
-  <form method="post" class="form-group">
-    {% csrf_token %}
-    <h2>First attempt</h2>
-    {% for field in object.fields %}
-      <div class="form-group">
-        {{field.errors}}
-        {{field.label_tag}}
-        {{field}}
+<div class="container body-content">
+
+  <h2>{{object.identifier.value}}</h2>
+  <div class="panel panel-default">
+    <!-- Description -->
+    <div class="row">
+      <div class="col-md-3">Description<span class="obl">0-1</span></div>
+      <div class="col-md-9">
+        <div class="panel panel-default">
+          <div class="panel-heading collapsed information" data-toggle="collapse" data-target="#coll_descr">{{collection.description|truncatechars:40}}</div>
+          <div id="coll_descr" class="collapse information" style="height: auto;">
+            {{collection.description}}
+          </div>
+        </div>
       </div>
-    {% endfor %}
-    <h2>Second attempt</h2>
-    <div>
-      <ul>{{object.as_ul}}</ul>
     </div>
 
-    <input type="submit" class="btn btn-default" value="Submit" />
-  </form>
+    <!-- Show the main fields in the collection -->
+    {% for main in coll_main %}
+      <div class="row">
+        <div class="col-md-3">{{main.name}}<span class="obl">{{main.obl}}</span></div>
+        <div class="col-md-9">
+          {% if main.type == 'numbered' %}
+            {% for item in main.value %}
+            <div>
+              <span>{{forloop.counter}}: </span>
+              <span>{{item.get_view}}</span>
+            </div>
+            {% endfor %}
+          {% elif main.type == 'list' %}
+            {% for item in main.value %}
+            <div>
+              <span><code>{{item.get_view}}</code></span>
+              {% if not forloop.last %}, {% endif %}
+            </div>
+            {% endfor %}
+          {% elif main.type == 'code' %}
+            {% if main.value == '' %}-{% else %}<code>{{main.value}}</code>{% endif %}
+          {% else %}
+            {% if main.value == '' %}-{% else %}{{main.value}}{% endif %}
+          {% endif %}
+        </div>
+      </div>
+    {% endfor %}
+
+    <!-- Resources -->
+    <div class="row">
+      <div class="col-md-3">Resource(s)<span class="obl">1-n</span></div>
+      <div class="col-md-9">
+        {% if collection.collection12m_resource.all %}
+          {% for resource in collection.collection12m_resource.all %}
+          <div class="panel panel-default">
+            <div class="panel-heading collapsed" data-toggle="collapse" data-target="#resource_{{forloop.counter}}">Resource {{forloop.counter}}</div>
+            <div id="resource_{{forloop.counter}}" class="row collapse" style="height: auto;">
+              <div class="col-md-12">
+
+                <!-- DCtype -->
+                <div class="row">
+                  <div class="col-md-3">Dublin-Core Type<span class="obl">1</span></div>
+                  <div class="col-md-9">
+                    {% if resource.DCtype %}
+                      {{resource.get_DCtype_display}}
+                    {% else %}
+                      <div class="alert alert-danger" role="alert">A <code>DCtype</code> must be specified</div>
+                    {% endif %}
+                  </div>
+                </div>
+
+                <!-- OPTIONAL subtype -->
+                {% if resource.subtype %}
+                <div class="row">
+                  <div class="col-md-3">subtype<span class="obl">0-1</span></div>
+                  <div class="col-md-9">{{resource.subtype_only}}</div>
+                </div>
+                {% endif %}
+
+                <!-- Description -->
+                <div class="row">
+                  <div class="col-md-3">Description<span class="obl">0-1</span></div>
+                  <div class="col-md-9 information">{{resource.description}}</div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <span>- <i>Resource must be added!</i></span>
+        {% endif %}
+      </div>
+    </div>
+
+
+
+    <div class="row">&nbsp;</div>
+  </div>
+
+  <!-- Continue to edit for those who have permission -->
+  <div class="row submit-row">
+    <div class="col-md-2">
+      <a href="{% url 'overview' %}" role="button"
+         class="btn btn-default"><< Overview</a>
+    </div>
+  {% if authenticated %}
+    <div class="col-md-2 pull-right">
+      <a href="{% url 'admin:collection_collection_change' collection.id %}"
+         role="button"       
+         class="btn btn-primary">Edit</a>
+    </div>
+  {% else %}
+    <div class="col-md-6 message">Editing is disabled, since you are not signed in</div>
+  {% endif %}
+  </div>
+</div>
 {% endblock %}

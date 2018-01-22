@@ -485,6 +485,9 @@ class Title(models.Model):
         # Return the new copy
         return new_copy
 
+    def get_view(self):
+        return self.name
+
 
 class Owner(models.Model):
     """The legal owner"""
@@ -504,6 +507,9 @@ class Owner(models.Model):
         new_copy = get_instance_copy(self)
         # Return the new copy
         return new_copy
+
+    def get_view(self):
+        return self.name
 
 
 class Media(models.Model):
@@ -779,6 +785,9 @@ class Genre(models.Model):
         # Return the new copy
         return new_copy
 
+    def get_view(self):
+        return self.get_name_display()
+
 
 class LingualityType(models.Model):
     """Type of linguality"""
@@ -990,6 +999,9 @@ class LanguageDisorder(models.Model):
         # Return the new copy
         return new_copy
 
+    def get_view(self):
+        return self.name
+
 
 class Relation(models.Model):
     """Language that is used in this collection"""
@@ -1073,6 +1085,10 @@ class Domain(models.Model):
         new_copy = get_instance_copy(self)
         # Return the new copy
         return new_copy
+
+    def get_view(self):
+        return self.name
+
 
 
 class AccessAvailability(models.Model):
@@ -1257,6 +1273,10 @@ class PID(models.Model):
         new_copy = get_instance_copy(self)
         # Return the new copy
         return new_copy
+
+    def get_view(self):
+        return self.code
+
 
 
 class Organization(models.Model):
@@ -1854,6 +1874,15 @@ class Resource(models.Model):
         copy_fk(self, new_copy, "speechCorpus")
         # Return the new copy
         return new_copy
+
+    def subtype_only(self):
+        """Display only the subtype text if it exists"""
+
+        if self.subtype == None:
+            return ""
+        sTypeFull = self.get_subtype_display()
+        arType = sTypeFull.split(":")
+        return arType[1]
 
 
 

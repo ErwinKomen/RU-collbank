@@ -7,6 +7,8 @@
     {% load staticfiles %}
     <link rel="stylesheet" type="text/css" href="{% static 'collection/content/bootstrap.min.css' %}" />
     <link rel="stylesheet" type="text/css" href="{% static 'collection/content/site.css' %}" />
+    <link rel="stylesheet" type="text/css" href="{% static 'collection/content/ru-base.css' %}" />
+    <link rel="stylesheet" type="text/css" href="{% static 'collection/content/ru-form.css' %}" />
     <script src="{% static 'collection/scripts/modernizr-2.6.2.js' %}"></script>
     <script src="{% static 'collection/scripts/jquery-1.10.2.js' %}"></script>
     <script src="{% static 'collection/scripts/bootstrap.js' %}"></script>
@@ -15,7 +17,9 @@
 </head>
 
 <body>
-    {% include 'collection/topnav.html' %}
+{% include 'collection/topnav.html' %}
+
+{% block breadcrumbs %}{% endblock %}
 
     <div class="container body-content">
 {% block content %}{% endblock %}

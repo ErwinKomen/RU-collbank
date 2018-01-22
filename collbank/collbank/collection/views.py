@@ -958,6 +958,20 @@ class CollectionDetailView(DetailView):
         context = super(CollectionDetailView, self).get_context_data(**kwargs)
         context['now'] = timezone.now()
         context['collection'] = self.instance
+        # Make sure we know whether it was authenticated
+        context['authenticated'] = self.request.user.is_authenticated()
+        # Provide the main-level information for the fields
+        coll_main = []
+        coll_main.append({"name": "Title(s)", "obl": "1-n", "type": "numbered", "value": self.instance.collection12m_title.all()})
+        coll_main.append({"name": "Owner(s)", "obl": "0-n", "type": "numbered", "value": self.instance.collection12m_owner.all()})
+        coll_main.append({"name": "Genre(s)", "obl": "0-n", "type": "list", "value": self.instance.collection12m_genre.all()})
+        coll_main.append({"name": "Language disorder(s)", "obl": "0-n", "type": "numbered", "value": self.instance.collection12m_owner.all()})
+        coll_main.append({"name": "Domain(s)", "obl": "0-n", "type": "list", "value": self.instance.collection12m_domain.all()})
+        coll_main.append({"name": "CLARIN centre", "obl": "0-1", "type": "single", "value": self.instance.clarinCentre})
+        coll_main.append({"name": "Persistent identifier(s)", "obl": "0-n", "type": "list", "value": self.instance.collection12m_pid.all()})
+        coll_main.append({"name": "Version", "obl": "0-1", "type": "code", "value": self.instance.version})
+        context['coll_main'] = coll_main
+        # Return the whole context
         return context
 
     def publish(self):

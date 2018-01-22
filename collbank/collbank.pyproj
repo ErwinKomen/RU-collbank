@@ -90,6 +90,8 @@
     <Content Include="collbank\collection\fixtures\initial_data.json" />
     <Content Include="collbank\collection\static\collection\content\bootstrap.css" />
     <Content Include="collbank\collection\static\collection\content\bootstrap.min.css" />
+    <Content Include="collbank\collection\static\collection\content\ru-base.css" />
+    <Content Include="collbank\collection\static\collection\content\ru-form.css" />
     <Content Include="collbank\collection\static\collection\content\site.css" />
     <Content Include="collbank\collection\static\collection\fonts\glyphicons-halflings-regular.eot" />
     <Content Include="collbank\collection\static\collection\fonts\glyphicons-halflings-regular.svg" />
