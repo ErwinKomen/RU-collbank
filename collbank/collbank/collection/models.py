@@ -1048,6 +1048,14 @@ class Relation(models.Model):
 
     def save_relation_file(self):
         # Transform the details of this relation into CSV
+        related = ""
+        if self.related != None and self.related.identifier != "":
+            related = self.related.identifier
+        elif self.extrel != None and self.extrel.identifier != "":
+            related = self.extrel.identifier
+        else:
+            related= "(No relation specified)"
+        # Start creating CSV lines
         lCsv = []
         lCsv.append("{}\t{}\t{}\t{}".format("Collection", "Type of relation", "Collection"))
         lCsv.append("{}\t{}\t{}\t{}".format(self.collection.identifier, self.get_rtype_display(), self.related.identifier))
