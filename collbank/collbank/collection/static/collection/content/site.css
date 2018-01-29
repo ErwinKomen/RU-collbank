@@ -249,3 +249,22 @@ div.alert {
   margin-bottom: 2px;
   padding: 2px;
 }
+
+body > div > footer {
+  height: 18px;
+  padding-top: 4px;
+  background: darkblue;
+  color: white;
+  font-size: x-small;
+  position: fixed;
+  bottom: 0px;
+  width: 100%;
+  text-align: center;
+}
+body > div > footer a {
+  color: lightblue;
+  position: relative;
+  z-index: 1000;
+}
+
+

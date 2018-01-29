@@ -1057,8 +1057,8 @@ class Relation(models.Model):
             related= "(No relation specified)"
         # Start creating CSV lines
         lCsv = []
-        lCsv.append("{}\t{}\t{}\t{}".format("Collection", "Type of relation", "Collection"))
-        lCsv.append("{}\t{}\t{}\t{}".format(self.collection.identifier, self.get_rtype_display(), self.related.identifier))
+        lCsv.append("{}\t{}\t{}".format("Collection", "Type of relation", "Collection"))
+        lCsv.append("{}\t{}\t{}".format(self.collection.identifier, self.get_rtype_display(), related))
         sCsv = "\n".join(lCsv)
         # Save the CSV to a text file
         fPath = self.get_relation_path()

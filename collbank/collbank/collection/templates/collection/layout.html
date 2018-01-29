@@ -24,11 +24,14 @@
     <div class="container body-content">
 {% block content %}{% endblock %}
         <hr/>
+    </div>
+    <div>
         <footer>
-            <p>&copy; {{ year }} - RU Collection Bank</p>
+            <span>Collection Bank v1.1 &copy; 2016-{% now "Y" %}</span>
+            &nbsp;&nbsp;&nbsp;&nbsp;
+            <span>Developed at: <a href="http://cls.ru.nl">Radboud University Nijmegen</a></span>
         </footer>
     </div>
-
 {% block scripts %}{% endblock %}
 
 </body>
