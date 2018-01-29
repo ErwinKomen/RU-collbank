@@ -306,7 +306,20 @@ class CollectionRelationForm(forms.ModelForm):
 
     class Meta:
         model = Relation
-        fields = ['rtype', 'related']
+        fields = ['rtype', 'related', 'extrel']
+
+    def clean(self):
+        cleaned_data = super(CollectionRelationForm, self).clean()
+
+        # Get the currently selected values
+        related = cleaned_data.get("related")
+        extrel = cleaned_data.get("extrel")
+
+        # Perform checks...
+        if related and extrel:
+            raise forms.ValidationError("Specify only one related collection (either from CollBank or an external one)", "Relation")
+        elif related == None and extrel == None:
+            raise forms.ValidationError("Specify a related (or externally related) collection", "Relation")
 
 
 class RelationInline(nested_admin.NestedTabularInline):
@@ -328,6 +341,9 @@ class RelationInline(nested_admin.NestedTabularInline):
         if db_field.name == "related":
             formfield.queryset = Collection.objects.exclude(id=self.instance.id).order_by(Lower('identifier'))
             x = Collection.objects.all()
+        if db_field.name == "extrel":
+            formfield.queryset = ExtColl.objects.exclude(id=self.instance.id).order_by(Lower('identifier'))
+            x = ExtColl.objects.all()
         return formfield
 
 
@@ -1801,6 +1817,15 @@ class ValidationTypeAdmin(admin.ModelAdmin):
     form = ValidationTypeForm
 
 
+class ExtCollAdmin(admin.ModelAdmin):
+    list_display = ['identifier', 'title', 'description']
+    search_fields = ['identifier', 'title', 'description']
+
+    formfield_overrides = {
+        models.TextField: {'widget': Textarea(attrs={'rows': 1, 'cols': 80})},
+        }
+
+
 class CollectionAdmin(nested_admin.NestedModelAdmin):
     fieldsets = ( ('Searchable', {'fields': ('identifier', 'pidname', 'landingPage', 'searchPage', 'linguality',  )}),
                   ('Other',      {'fields': ('description', 'clarinCentre', 'access', 'version', 'documentation', 'validation', )}),
@@ -2025,6 +2050,8 @@ admin.site.register(SpeechCorpus, SpeechCorpusAdmin)
 
 # -- collection as a whole
 admin.site.register(Collection, CollectionAdmin)
+
+admin.site.register(ExtColl, ExtCollAdmin)
 
 
 admin.site.register(PidService, PidServiceAdmin)

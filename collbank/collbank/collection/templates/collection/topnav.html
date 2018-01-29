@@ -18,9 +18,11 @@
                       <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" 
                          aria-haspopup="true" aria-expanded="false">Collections<span class="caret"></span></a>
                       <ul class="dropdown-menu">
-                          <li><a href="{% url 'collections' %}">Edit</a></li>
-                          <li><a href="{% url 'add' %}">Add</a></li>
-                          <li><a href="{% url 'overview' %}">View</a></li>
+                          <li><a href="{% url 'add' %}" title="Add a collection to CollBank">Add</a></li>
+                          <li><a href="{% url 'overview' %}" title="list the collections within CollBank">View</a></li>
+                          <li role="separator" class="divider"></li>
+                          <li><a href="{% url 'extcoll_list' %}" title="list external collections">External</a></li>
+                          <li><a href="{% url 'extcoll_add' %}" title="add an external collection">Add External</a></li>
                       </ul>
                     </li>
                 </ul>

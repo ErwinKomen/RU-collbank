@@ -1012,6 +1012,8 @@ class Relation(models.Model):
     rtype = models.CharField(choices=build_choice_list(RELATION_TYPE), max_length=5, help_text=get_help(RELATION_TYPE), default='0', verbose_name="type of relation")
     # [0-1] The collection with which the relation holds
     related = models.ForeignKey("Collection", blank=True, null=True, related_name="relatedcollection", verbose_name="with collection")
+    # [0-1] The externalcollection with which the relation holds
+    extrel = models.ForeignKey("ExtColl", blank=True, null=True, related_name="relatedextcoll", verbose_name="with external collection")
     # [1]     Each collection can have [0-n] relations
     collection = models.ForeignKey("Collection", blank=False, null=False, default=1, related_name="collection12m_relation")
 
@@ -1884,6 +1886,20 @@ class Resource(models.Model):
         arType = sTypeFull.split(":")
         return arType[1]
 
+
+class ExtColl(models.Model):
+    """External collection"""
+
+    # identifier (1) MUST BE UNIQUE
+    identifier = models.CharField("Unique short collection identifier (10 characters max)", unique=True, max_length=MAX_IDENTIFIER_LEN, default='-')
+    # Full title [1; f]
+    title = models.TextField("Full title for this collection", help_text=get_help('title'))
+    # == description (0-1;f) 
+    description = models.TextField("Description", blank=True, help_text=get_help('description'))
+
+    def __str__(self):
+        # We are known by our identifier
+        return self.identifier
 
 
 class Collection(models.Model):
