@@ -971,6 +971,80 @@ class CollectionDetailView(DetailView):
         coll_main.append({"name": "Persistent identifier(s)", "obl": "0-n", "type": "list", "value": self.instance.collection12m_pid.all()})
         coll_main.append({"name": "Version", "obl": "0-1", "type": "code", "value": self.instance.version})
         context['coll_main'] = coll_main
+        # Get through all resources
+        coll_resources = []
+        for resource in self.instance.collection12m_resource.all():
+            # Gather information
+            sDCtype = "A <code>DCtype</code> must be specified" if resource.DCtype == None else resource.get_DCtype_display()
+            sSubtype = "No DCtype available" if resource.DCtype == None else resource.subtype_only()
+            # Create an item for this resource
+            resource_items = []
+            resource_items.append({"name": "Dublin-Core Type", "obl": "1", "type": "single", "value": sDCtype})
+            resource_items.append({"name": "subtype", "obl": "0-1", "type": "single", "value": sSubtype})
+            resource_items.append({"name": "Modality", "obl": "1-n", "type": "numbered", "value": resource.modalities.all()})
+            resource_items.append({"name": "Recording environment", "obl": "0-n", "type": "numbered", "value": resource.recordingenvironments.all()})
+            resource_items.append({"name": "Recording condition", "obl": "0-n", "type": "numbered", "value": resource.recordingconditions.all()})
+            resource_items.append({"name": "Channel", "obl": "0-n", "type": "numbered", "value": resource.channels.all()})
+            resource_items.append({"name": "Social context", "obl": "0-n", "type": "numbered", "value": resource.socialcontexts.all()})
+            resource_items.append({"name": "Planning type", "obl": "0-n", "type": "numbered", "value": resource.planningtypes.all()})
+            resource_items.append({"name": "Interactivity", "obl": "0-n", "type": "numbered", "value": resource.interactivities.all()})
+            resource_items.append({"name": "Involvement", "obl": "0-n", "type": "numbered", "value": resource.involvements.all()})
+            resource_items.append({"name": "Audience", "obl": "0-n", "type": "numbered", "value": resource.audiences.all()})
+            # speech corpus stuff
+            if resource.speechCorpus:
+                resource_items.append({"name": "SC duration speech", "obl": "0-1", "type": "single", "value": resource.speechCorpus.durationOfEffectiveSpeech})
+                resource_items.append({"name": "SC duration full", "obl": "0-1", "type": "single", "value": resource.speechCorpus.durationOfFullDatabase})
+                resource_items.append({"name": "SC speakers", "obl": "0-1", "type": "single", "value": resource.speechCorpus.numberOfSpeakers})
+                resource_items.append({"name": "SC sp. demogr", "obl": "0-1", "type": "single", "value": resource.speechCorpus.speakerDemographics})
+            # Written corpus stuff
+            if resource.writtenCorpus:
+                resource_items.append({"name": "WC authors", "obl": "0-1", "type": "single", "value": resource.writtenCorpus.numberOfAuthors})
+                resource_items.append({"name": "WC auth. demogr", "obl": "0-1", "type": "single", "value": resource.writtenCorpus.authorDemographics})
+            # Look at the sizes
+            for item in resource.totalsize12m_resource.all():
+                sSize = "{} {}".format(item.size, item.sizeUnit)
+                resource_items.append({"name": "Size", "obl": "0-n", "type": "single", "value": sSize})
+            # Look at the annotations
+            for item in resource.annotations.all():
+                sFmts = ""
+                for fmt in item.annotation_formats.all():
+                    if sFmts != "": 
+                        sFmts += ", "
+                    sFmts += fmt.get_name_display()
+                sAnnot = "[{}] [{}] [{}]".format(item.get_type_display(), item.get_mode_display(), sFmts)
+                resource_items.append({"name": "Annotation", "obl": "0-n", "type": "single", "value": sAnnot})
+            # Look at the media
+            for item in resource.media_items.all():
+                sFmts = ""
+                for fmt in item.mediaformat12m_media.all():
+                    if sFmts != "": 
+                        sFmts += ", "
+                    sFmts += fmt.get_name_display()
+                resource_items.append({"name": "Media", "obl": "0-n", "type": "single", "value": sFmts})
+            # Combine
+            resource_obj = {'resource': resource, 'info_list': resource_items}
+            # Add to the list
+            coll_resources.append(resource_obj)
+        # Add the list of resources to the context
+        context['coll_resources'] = coll_resources
+
+        # Treat the provenances
+        coll_provenances = []
+        for provenance in self.instance.collection12m_provenance.all(): 
+            prov_this = []
+            prov_this.append({"name": "Temporal", "obl": "0-1", "type": "single", "value": provenance.temporalProvenance.get_view()})
+            for geo in provenance.g_provenances.all():
+                prov_this.append({"name": "Cities", "obl": "0-n", "type": "list", "value": geo.cities.all()})
+                cntry = geo.country
+                if cntry != None:
+                    # Look up the country in the list
+                    (sEnglish, sAlpha2) = get_country(cntry)
+                    sCountry = "{} {}".format(sEnglish, sAlpha2)
+                    prov_this.append({"name": "Country", "obl": "0-1", "type": "single", "value": sCountry})
+            coll_provenances.append(prov_this)
+        # Add the list of povenances to the context
+        context['coll_provenances'] = coll_provenances
+
         # Return the whole context
         return context
 

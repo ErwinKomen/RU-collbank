@@ -675,6 +675,9 @@ class Modality(models.Model):
         # Return the new copy
         return new_copy
 
+    def get_view(self):
+        return self.name
+
 
 class TemporalProvenance(models.Model):
     """Temporal coverage of the collection"""
@@ -695,6 +698,9 @@ class TemporalProvenance(models.Model):
         # Return the new copy
         return new_copy
 
+    def get_view(self):
+        return "{}-{}".format(self.startYear, self.endYear)
+
 
 class City(models.Model):
     """Name of a city"""
@@ -714,6 +720,9 @@ class City(models.Model):
         new_copy = get_instance_copy(self)
         # Return the new copy
         return new_copy
+
+    def get_view(self):
+        return self.name
 
 
 class GeographicProvenance(models.Model):
@@ -737,6 +746,9 @@ class GeographicProvenance(models.Model):
         copy_m2m(self, new_copy, "cities")
         # Return the new copy
         return new_copy
+
+    def get_view(self):
+        return self.__str__()
 
 
 class Provenance(models.Model):
@@ -1620,6 +1632,9 @@ class Channel(models.Model):
         # Return the new copy
         return new_copy
 
+    def get_view(self):
+        return self.__str__()
+
 
 class ConversationalType(models.Model):
     """Type of conversation"""
@@ -1672,6 +1687,9 @@ class SocialContext(models.Model):
         # Return the new copy
         return new_copy
 
+    def get_view(self):
+        return self.__str__()
+
 
 class PlanningType(models.Model):
     """Type of planning"""
@@ -1688,6 +1706,9 @@ class PlanningType(models.Model):
         new_copy = get_instance_copy(self)
         # Return the new copy
         return new_copy
+
+    def get_view(self):
+        return self.__str__()
 
 
 class Interactivity(models.Model):
@@ -1709,6 +1730,9 @@ class Interactivity(models.Model):
         # Return the new copy
         return new_copy
 
+    def get_view(self):
+        return self.__str__()
+
 
 class Involvement(models.Model):
     """Type of involvement"""
@@ -1726,6 +1750,9 @@ class Involvement(models.Model):
         # Return the new copy
         return new_copy
 
+    def get_view(self):
+        return self.__str__()
+
 
 class Audience(models.Model):
     """Audience"""
@@ -1742,6 +1769,9 @@ class Audience(models.Model):
         new_copy = get_instance_copy(self)
         # Return the new copy
         return new_copy
+
+    def get_view(self):
+        return self.__str__()
 
 
 class AudioFormat(models.Model):

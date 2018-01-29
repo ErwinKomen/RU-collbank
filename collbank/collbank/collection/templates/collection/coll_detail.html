@@ -42,12 +42,12 @@
             </div>
             {% endfor %}
           {% elif main.type == 'list' %}
-            {% for item in main.value %}
             <div>
+            {% for item in main.value %}
               <span><code>{{item.get_view}}</code></span>
               {% if not forloop.last %}, {% endif %}
-            </div>
             {% endfor %}
+            </div>
           {% elif main.type == 'code' %}
             {% if main.value == '' %}-{% else %}<code>{{main.value}}</code>{% endif %}
           {% else %}
@@ -62,37 +62,52 @@
       <div class="col-md-3">Resource(s)<span class="obl">1-n</span></div>
       <div class="col-md-9">
         {% if collection.collection12m_resource.all %}
-          {% for resource in collection.collection12m_resource.all %}
+          {% for res_item in coll_resources %}
           <div class="panel panel-default">
             <div class="panel-heading collapsed" data-toggle="collapse" data-target="#resource_{{forloop.counter}}">Resource {{forloop.counter}}</div>
             <div id="resource_{{forloop.counter}}" class="row collapse" style="height: auto;">
               <div class="col-md-12">
 
-                <!-- DCtype -->
-                <div class="row">
-                  <div class="col-md-3">Dublin-Core Type<span class="obl">1</span></div>
-                  <div class="col-md-9">
-                    {% if resource.DCtype %}
-                      {{resource.get_DCtype_display}}
-                    {% else %}
-                      <div class="alert alert-danger" role="alert">A <code>DCtype</code> must be specified</div>
-                    {% endif %}
+                  <!-- Description -->
+                  <div class="row">
+                    <div class="col-md-3">Description<span class="obl">0-1</span></div>
+                    <div class="col-md-9">
+                      <div class="panel panel-default">
+                        <div class="panel-heading collapsed information" data-toggle="collapse" 
+                             data-target="#resource_descr_{{res_item.resource.id}}">{{res_item.resource.description|truncatechars:40}}</div>
+                        <div id="resource_descr_{{res_item.resource.id}}" class="collapse information" style="height: auto;">
+                          {{res_item.resource.description}}
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </div>
 
-                <!-- OPTIONAL subtype -->
-                {% if resource.subtype %}
-                <div class="row">
-                  <div class="col-md-3">subtype<span class="obl">0-1</span></div>
-                  <div class="col-md-9">{{resource.subtype_only}}</div>
-                </div>
-                {% endif %}
-
-                <!-- Description -->
-                <div class="row">
-                  <div class="col-md-3">Description<span class="obl">0-1</span></div>
-                  <div class="col-md-9 information">{{resource.description}}</div>
-                </div>
+                  {% for res_info in res_item.info_list %}
+                    <div class="row">
+                      <div class="col-md-3">{{res_info.name}}<span class="obl">{{res_info.obl}}</span></div>
+                      <div class="col-md-9">
+                        {% if res_info.type == 'numbered' %}
+                          {% for item in res_info.value %}
+                          <div>
+                            <span>{{forloop.counter}}: </span>
+                            <span>{{item.get_view}}</span>
+                          </div>
+                          {% endfor %}
+                        {% elif res_info.type == 'list' %}
+                          <div>
+                          {% for item in res_info.value %}
+                            <span><code>{{item.get_view}}</code></span>
+                            {% if not forloop.last %}, {% endif %}
+                          {% endfor %}
+                          </div>
+                        {% elif res_info.type == 'code' %}
+                          {% if res_info.value == '' %}-{% else %}<code>{{res_info.value}}</code>{% endif %}
+                        {% else %}
+                          {% if res_info.value == '' %}-{% else %}{{res_info.value}}{% endif %}
+                        {% endif %}
+                      </div>
+                    </div>
+                  {% endfor %}
 
               </div>
             </div>
@@ -104,6 +119,49 @@
       </div>
     </div>
 
+    <!-- Provenance(s) -->
+    <div class="row">
+      <div class="col-md-3">Provenance(s)<span class="obl">0-n</span></div>
+      <div class="col-md-9">
+        {% for prov_this in coll_provenances %}
+          <div class="panel panel-default">
+            <div class="panel-heading collapsed" data-toggle="collapse" data-target="#provenance_{{forloop.counter}}">Provenance {{forloop.counter}}</div>
+            <div id="provenance_{{forloop.counter}}" class="row collapse" style="height: auto;">
+              <div class="col-md-12">
+
+                  {% for prov_info in prov_this %}
+                    <div class="row">
+                      <div class="col-md-3">{{prov_info.name}}<span class="obl">{{prov_info.obl}}</span></div>
+                      <div class="col-md-9">
+                        {% if prov_info.type == 'numbered' %}
+                          {% for item in prov_info.value %}
+                          <div>
+                            <span>{{forloop.counter}}: </span>
+                            <span>{{item.get_view}}</span>
+                          </div>
+                          {% endfor %}
+                        {% elif prov_info.type == 'list' %}
+                          <div>
+                          {% for item in prov_info.value %}
+                            <span><code>{{item.get_view}}</code></span>
+                            {% if not forloop.last %}, {% endif %}
+                          {% endfor %}
+                          </div>
+                        {% elif prov_info.type == 'code' %}
+                          {% if prov_info.value == '' %}-{% else %}<code>{{prov_info.value}}</code>{% endif %}
+                        {% else %}
+                          {% if prov_info.value == '' %}-{% else %}{{prov_info.value}}{% endif %}
+                        {% endif %}
+                      </div>
+                    </div>
+                  {% endfor %}
+
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
 
 
     <div class="row">&nbsp;</div>
