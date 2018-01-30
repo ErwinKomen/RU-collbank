@@ -860,6 +860,7 @@ class CollectionDetailView(DetailView):
     slug_field = 'get_xmlfilename'
     
     def get(self, request, *args, **kwargs):
+        context = {}
         # If this is 'registry' then get the id
         if 'type' in kwargs and kwargs['type'] == 'registry':
             # Find out which instance this is
@@ -869,8 +870,6 @@ class CollectionDetailView(DetailView):
             self.kwargs['pk'] = self.pk
         # Get the object in the standard way
         self.object = self.get_object()
-        # For further processing we need to have the context
-        context = self.get_context_data(object=self.object)
         # Check what kind of output we need to give
         if 'type' in kwargs:
             # Check if this is a /handle request, which needs to be turned into a /registry one
@@ -945,7 +944,10 @@ class CollectionDetailView(DetailView):
 
         # This is where we get in all other cases (e.g. no 'type' in the kwargs)
 
-        # Final resort: render just like thatlike that
+        # For further processing we need to have the context
+        context = self.get_context_data(object=self.object)
+
+        # Visualize using the context
         return self.render_to_response(context)
 
     def get_object(self):
@@ -1032,7 +1034,9 @@ class CollectionDetailView(DetailView):
         coll_provenances = []
         for provenance in self.instance.collection12m_provenance.all(): 
             prov_this = []
-            prov_this.append({"name": "Temporal", "obl": "0-1", "type": "single", "value": provenance.temporalProvenance.get_view()})
+            # Look for temporal
+            if provenance.temporalProvenance:
+                prov_this.append({"name": "Temporal", "obl": "0-1", "type": "single", "value": provenance.temporalProvenance.get_view()})
             for geo in provenance.g_provenances.all():
                 prov_this.append({"name": "Cities", "obl": "0-n", "type": "list", "value": geo.cities.all()})
                 cntry = geo.country
