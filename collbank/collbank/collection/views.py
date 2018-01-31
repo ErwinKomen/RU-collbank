@@ -573,14 +573,12 @@ def xsd_error_as_simple_string(error):
 def home(request):
     """Renders the home page."""
     assert isinstance(request, HttpRequest)
-    return render(
-        request,
-        'collection/index.html',
-        {
-            'title':'RU-CollBank',
-            'year':datetime.now().year,
-        }
-    )
+    # Make the response
+    response= render(request,'collection/index.html',
+        {'title':'RU-CollBank','year':datetime.now().year,})
+    # Return the response
+    return response
+    
 
 def contact(request):
     """Renders the contact page."""
