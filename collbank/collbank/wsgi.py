@@ -14,14 +14,9 @@ framework.
 
 """
 import os
-# import sys
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "collbank.settings")
-# os.environ['SCRIPT_NAME'] = 'ru'
 
-# Append the django project root directory to the python path
-# sys.path.append('/var/www/collbank/live/repo/collbank')
-# sys.path.append('/var/www/collbank/live/repo/collbank/collbank')
 
 # This application object is used by any WSGI server configured to use this
 # file. This includes Django's development server, if the WSGI_APPLICATION

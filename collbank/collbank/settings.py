@@ -25,12 +25,18 @@ OUTPUT_XML = os.path.abspath(os.path.join(WRITABLE_DIR, "../collbank-file.xml"))
 
 REGISTRY_DIR = os.path.abspath(os.path.join(WRITABLE_DIR, "../registry/"))
 
-APP_PREFIX = "ru/"
-if "d:" in WRITABLE_DIR or "D:" in WRITABLE_DIR:
-    APP_PREFIX = ""
-elif "/scratch" in WRITABLE_DIR:
-    APP_PREFIX = "collbank/"
-    admin.site.site_url = "/collbank"
+#APP_PREFIX = "ru/"
+#if "d:" in WRITABLE_DIR or "D:" in WRITABLE_DIR:
+#    APP_PREFIX = ""
+#elif "/scratch" in WRITABLE_DIR:
+#    APP_PREFIX = "collbank/"
+#    admin.site.site_url = "/collbank/"
+
+APP_PREFIX = "collbank/"
+if "/scratch" in WRITABLE_DIR:
+    admin.site.site_url = "/collbank/"
+
+FORCE_SCRIPT_NAME = admin.site.site_url
 
 # Not the location of the wsgi.py file for "reload_collbank"
 WSGI_FILE = os.path.abspath(os.path.join(BASE_DIR,"collbank/wsgi.py"))
@@ -53,6 +59,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['localhost', 'applejack.science.ru.nl']
 
+APPEND_SLASH = True
 
 # Application definition
 

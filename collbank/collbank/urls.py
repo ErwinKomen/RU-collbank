@@ -31,21 +31,21 @@ admin.site.site_title = 'Collection Bank Site Admin'
 # pfx = "ru/"
 # SET this one for the development environment
 # pfx = ""
-pfx = APP_PREFIX
+# pfx = APP_PREFIX
 
 urlpatterns = [
     # Examples:
     url(r'^$', collbank.collection.views.home, name='home'),
     url(r'^contact$', collbank.collection.views.contact, name='contact'),
     url(r'^about', collbank.collection.views.about, name='about'),
-    url(r'^definitions$', RedirectView.as_view(url='/'+pfx+'admin/'), name='definitions'),
-    url(r'^collection/add', RedirectView.as_view(url='/'+pfx+'admin/collection/collection/add'), name='add'),
+    url(r'^definitions$', RedirectView.as_view(url='/admin/'), name='definitions'),
+    url(r'^collection/add', RedirectView.as_view(url='/admin/collection/collection/add'), name='add'),
     url(r'^collection/(?P<pk>\d+)$', CollectionDetailView.as_view(), name='coll_detail'),
     url(r'^collection/export/(?P<pk>\d+)$', CollectionDetailView.as_view(),  {'type': 'output'}, name='output'),
     url(r'^collection/handle/(?P<pk>\d+)$', CollectionDetailView.as_view(),  {'type': 'handle'}, name='handle'),
     url(r'^collection/publish/(?P<pk>\d+)$', CollectionDetailView.as_view(),  {'type': 'publish'}, name='publish'),
-    url(r'^external/list', RedirectView.as_view(url='/'+pfx+'admin/collection/extcoll'), name='extcoll_list'),
-    url(r'^external/add', RedirectView.as_view(url='/'+pfx+'admin/collection/extcoll/add'), name='extcoll_add'),
+    url(r'^external/list', RedirectView.as_view(url='/admin/collection/extcoll'), name='extcoll_list'),
+    url(r'^external/add', RedirectView.as_view(url='/admin/collection/extcoll/add'), name='extcoll_add'),
     url(r'^registry/(?P<slug>[-_\.\w]+)$', CollectionDetailView.as_view(),  {'type': 'registry'}, name='registry'),
     url(r'^reload_collbank/$', collbank.collection.views.reload_collbank, name='reload'),
     url(r'^overview/$', CollectionListView.as_view(), name='overview'),
