@@ -32,7 +32,10 @@ from collbank.collection.forms import *
 
 # Local variables
 XSI_CMD = "http://www.clarin.eu/cmd/"
-XSD_ID = "clarin.eu:cr1:p_1459844210473"
+# Initial version in Radboud-TSG (now extinct)
+# XSD_ID = "clarin.eu:cr1:p_1459844210473"
+# Draft publication version:
+XSD_ID = "clarin.eu:cr1:p_1493735943947"
 XSI_XSD = "https://catalog.clarin.eu/ds/ComponentRegistry/rest/registry/1.1/profiles/" + XSD_ID + "/xsd/"
 
 # General help functions
