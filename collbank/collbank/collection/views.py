@@ -121,7 +121,7 @@ def make_collection_top(colThis, sUserName, sHomeUrl):
     lproxy = ET.SubElement(rsc, "ResourceProxyList")
     # TODO: add resource proxy's under [lproxy]
 
-    # Produce a link to the resource: landing page
+    # The Landing page is provided by the USER!!! take it over
     oProxy = ET.SubElement(lproxy, "ResourceProxy")
     sProxyId = "lp_{}".format(colThis.get_xmlfilename())
     oProxy.set('id', sProxyId)
@@ -133,7 +133,8 @@ def make_collection_top(colThis, sUserName, sHomeUrl):
     oSubItem = ET.SubElement(oProxy, "ResourceRef")
     #  "http://applejack.science.ru.nl/collbank"
     # OLD: oSubItem.text = sHomeUrl  + "registry/" + colThis.get_xmlfilename()
-    oSubItem.text = REGISTRY_URL + colThis.get_xmlfilename()
+    # oSubItem.text = REGISTRY_URL + colThis.get_xmlfilename()
+    oSubItem.text = colThis.landingPage
 
     # Produce links to RELATION txt files if needed
     for rel_this in colThis.collection12m_relation.all():
@@ -161,7 +162,8 @@ def make_collection_top(colThis, sUserName, sHomeUrl):
     oSubItem = ET.SubElement(oProxy, "ResourceRef")
     #  "http://applejack.science.ru.nl/collbank"
     # oSubItem.text = request.build_absolute_uri(reverse('home'))
-    oSubItem.text = sHomeUrl 
+    # oSubItem.text = sHomeUrl 
+    oSubItem.text = colThis.searchPage
 
     ET.SubElement(rsc, "JournalFileProxyList")
     ET.SubElement(rsc, "ResourceRelationList")
