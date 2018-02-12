@@ -132,8 +132,8 @@ def make_collection_top(colThis, sUserName, sHomeUrl):
     # Add resource ref
     oSubItem = ET.SubElement(oProxy, "ResourceRef")
     #  "http://applejack.science.ru.nl/collbank"
-    # oSubItem.text = request.build_absolute_uri(reverse('home')) + "registry/" + colThis.get_xmlfilename()
-    oSubItem.text = sHomeUrl  + "registry/" + colThis.get_xmlfilename()
+    # OLD: oSubItem.text = sHomeUrl  + "registry/" + colThis.get_xmlfilename()
+    oSubItem.text = REGISTRY_URL + colThis.get_xmlfilename()
 
     # Produce links to RELATION txt files if needed
     for rel_this in colThis.collection12m_relation.all():
