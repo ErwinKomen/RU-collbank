@@ -267,4 +267,9 @@ body > div > footer a {
   z-index: 1000;
 }
 
-
+.closed-list {
+  background-color: whitesmoke;
+  color: darkblue;
+  font-family: monospace;
+  font-size: small;
+}

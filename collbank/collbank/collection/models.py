@@ -553,6 +553,9 @@ class MediaFormat(models.Model):
         # Return the new copy
         return new_copy
 
+    def get_view(self):
+        return self.get_name_display()
+
 
 class AnnotationFormat(models.Model):
     """Format of an annotation"""
@@ -569,6 +572,9 @@ class AnnotationFormat(models.Model):
         new_copy = get_instance_copy(self)
         # Return the new copy
         return new_copy
+
+    def get_view(self):
+        return self.get_name_display()
 
 
 class Annotation(models.Model):
@@ -676,7 +682,7 @@ class Modality(models.Model):
         return new_copy
 
     def get_view(self):
-        return self.name
+        return self.get_name_display()
 
 
 class TemporalProvenance(models.Model):
@@ -837,6 +843,9 @@ class LingualityNativeness(models.Model):
         # Return the new copy
         return new_copy
 
+    def get_view(self):
+        return self.get_name_display()
+
 
 class LingualityAgeGroup(models.Model):
     """Age group of linguality"""
@@ -853,6 +862,9 @@ class LingualityAgeGroup(models.Model):
         new_copy = get_instance_copy(self)
         # Return the new copy
         return new_copy
+
+    def get_view(self):
+        return self.get_name_display()
 
 
 class LingualityStatus(models.Model):
@@ -874,6 +886,9 @@ class LingualityStatus(models.Model):
         # Return the new copy
         return new_copy
 
+    def get_view(self):
+        return self.get_name_display()
+
 
 class LingualityVariant(models.Model):
     """Variant of linguality"""
@@ -891,6 +906,9 @@ class LingualityVariant(models.Model):
         # Return the new copy
         return new_copy
 
+    def get_view(self):
+        return self.get_name_display()
+
 
 class MultilingualityType(models.Model):
     """Type of multi-linguality"""
@@ -907,6 +925,9 @@ class MultilingualityType(models.Model):
         new_copy = get_instance_copy(self)
         # Return the new copy
         return new_copy
+
+    def get_view(self):
+        return self.get_name_display()
 
 
 class Linguality(models.Model):
@@ -952,6 +973,9 @@ class Language(models.Model):
         else:
             sBack = "[{}] {}".format(idt,choice_english("language.name", self.name))
         return sBack
+
+    def get_view(self):
+        return self.get_name_display()
 
 
 class DocumentationLanguage(Language):
@@ -1111,8 +1135,7 @@ class Domain(models.Model):
 
     def get_view(self):
         return self.name
-
-
+    
 
 class AccessAvailability(models.Model):
     """Access availability"""
@@ -1133,7 +1156,10 @@ class AccessAvailability(models.Model):
         # Return the new copy
         return new_copy
 
+    def get_view(self):
+        return self.get_name_display()
 
+    
 class LicenseName(models.Model):
     """Name of the license"""
 
@@ -1616,6 +1642,9 @@ class RecordingEnvironment(models.Model):
         # Return the new copy
         return new_copy
 
+    def get_view(self):
+        return self.get_name_display()
+
 
 class Channel(models.Model):
     """Channel for the speech corpus"""
@@ -1634,7 +1663,7 @@ class Channel(models.Model):
         return new_copy
 
     def get_view(self):
-        return self.__str__()
+        return self.get_name_display()
 
 
 class ConversationalType(models.Model):
@@ -1652,6 +1681,9 @@ class ConversationalType(models.Model):
         new_copy = get_instance_copy(self)
         # Return the new copy
         return new_copy
+
+    def get_view(self):
+        return self.get_name_display()
 
 
 class RecordingCondition(models.Model):
@@ -1671,6 +1703,9 @@ class RecordingCondition(models.Model):
         # Return the new copy
         return new_copy
 
+    def get_view(self):
+        return self.name
+
 
 class SocialContext(models.Model):
     """Social context"""
@@ -1689,7 +1724,7 @@ class SocialContext(models.Model):
         return new_copy
 
     def get_view(self):
-        return self.__str__()
+        return self.get_name_display()
 
 
 class PlanningType(models.Model):
@@ -1709,7 +1744,7 @@ class PlanningType(models.Model):
         return new_copy
 
     def get_view(self):
-        return self.__str__()
+        return self.get_name_display()
 
 
 class Interactivity(models.Model):
@@ -1732,7 +1767,7 @@ class Interactivity(models.Model):
         return new_copy
 
     def get_view(self):
-        return self.__str__()
+        return self.get_name_display()
 
 
 class Involvement(models.Model):
@@ -1752,7 +1787,7 @@ class Involvement(models.Model):
         return new_copy
 
     def get_view(self):
-        return self.__str__()
+        return self.get_name_display()
 
 
 class Audience(models.Model):
@@ -1772,7 +1807,7 @@ class Audience(models.Model):
         return new_copy
 
     def get_view(self):
-        return self.__str__()
+        return self.get_name_display()
 
 
 class AudioFormat(models.Model):

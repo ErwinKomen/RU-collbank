@@ -985,23 +985,23 @@ class CollectionDetailView(DetailView):
             sSubtype = "No DCtype available" if resource.DCtype == None else resource.subtype_only()
             # Create an item for this resource
             resource_items = []
-            resource_items.append({"name": "Dublin-Core Type", "obl": "1", "type": "single", "value": sDCtype})
-            resource_items.append({"name": "subtype", "obl": "0-1", "type": "single", "value": sSubtype})
-            resource_items.append({"name": "Modality", "obl": "1-n", "type": "numbered", "value": resource.modalities.all()})
+            resource_items.append({"name": "Dublin-Core Type",  "obl": "1", "type": "single", "value": sDCtype})
+            resource_items.append({"name": "subtype",           "obl": "0-1", "type": "single", "value": sSubtype})
+            resource_items.append({"name": "Modality",          "obl": "1-n", "type": "numbered", "value": resource.modalities.all()})
             resource_items.append({"name": "Recording environment", "obl": "0-n", "type": "numbered", "value": resource.recordingenvironments.all()})
             resource_items.append({"name": "Recording condition", "obl": "0-n", "type": "numbered", "value": resource.recordingconditions.all()})
-            resource_items.append({"name": "Channel", "obl": "0-n", "type": "numbered", "value": resource.channels.all()})
-            resource_items.append({"name": "Social context", "obl": "0-n", "type": "numbered", "value": resource.socialcontexts.all()})
-            resource_items.append({"name": "Planning type", "obl": "0-n", "type": "numbered", "value": resource.planningtypes.all()})
-            resource_items.append({"name": "Interactivity", "obl": "0-n", "type": "numbered", "value": resource.interactivities.all()})
-            resource_items.append({"name": "Involvement", "obl": "0-n", "type": "numbered", "value": resource.involvements.all()})
-            resource_items.append({"name": "Audience", "obl": "0-n", "type": "numbered", "value": resource.audiences.all()})
+            resource_items.append({"name": "Channel",           "obl": "0-n", "type": "numbered", "value": resource.channels.all()})
+            resource_items.append({"name": "Social context",    "obl": "0-n", "type": "numbered", "value": resource.socialcontexts.all()})
+            resource_items.append({"name": "Planning type",     "obl": "0-n", "type": "numbered", "value": resource.planningtypes.all()})
+            resource_items.append({"name": "Interactivity",     "obl": "0-n", "type": "numbered", "value": resource.interactivities.all()})
+            resource_items.append({"name": "Involvement",       "obl": "0-n", "type": "numbered", "value": resource.involvements.all()})
+            resource_items.append({"name": "Audience",          "obl": "0-n", "type": "numbered", "value": resource.audiences.all()})
             # speech corpus stuff
             if resource.speechCorpus:
                 resource_items.append({"name": "SC duration speech", "obl": "0-1", "type": "single", "value": resource.speechCorpus.durationOfEffectiveSpeech})
-                resource_items.append({"name": "SC duration full", "obl": "0-1", "type": "single", "value": resource.speechCorpus.durationOfFullDatabase})
-                resource_items.append({"name": "SC speakers", "obl": "0-1", "type": "single", "value": resource.speechCorpus.numberOfSpeakers})
-                resource_items.append({"name": "SC sp. demogr", "obl": "0-1", "type": "single", "value": resource.speechCorpus.speakerDemographics})
+                resource_items.append({"name": "SC duration full",  "obl": "0-1", "type": "single", "value": resource.speechCorpus.durationOfFullDatabase})
+                resource_items.append({"name": "SC speakers",       "obl": "0-1", "type": "single", "value": resource.speechCorpus.numberOfSpeakers})
+                resource_items.append({"name": "SC sp. demogr",     "obl": "0-1", "type": "single", "value": resource.speechCorpus.speakerDemographics})
             # Written corpus stuff
             if resource.writtenCorpus:
                 resource_items.append({"name": "WC authors", "obl": "0-1", "type": "single", "value": resource.writtenCorpus.numberOfAuthors})

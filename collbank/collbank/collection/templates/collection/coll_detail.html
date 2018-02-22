@@ -37,15 +37,15 @@
           {% if main.type == 'numbered' %}
             {% for item in main.value %}
             <div>
-              <span>{{forloop.counter}}: </span>
+              {% if main.value|length > 1 %}<span style="font-size: x-small;">[{{forloop.counter}}]: </span>{% endif %}
               <span>{{item.get_view}}</span>
             </div>
             {% endfor %}
           {% elif main.type == 'list' %}
             <div>
             {% for item in main.value %}
-              <span><code>{{item.get_view}}</code></span>
-              {% if not forloop.last %}, {% endif %}
+              <span class="closed-list">{{item.get_view}}</span>
+              {% if not forloop.last %}<span>, </span>{% endif %}
             {% endfor %}
             </div>
           {% elif main.type == 'code' %}
@@ -87,12 +87,12 @@
                       <div class="col-md-3">{{res_info.name}}<span class="obl">{{res_info.obl}}</span></div>
                       <div class="col-md-9">
                         {% if res_info.type == 'numbered' %}
-                          {% for item in res_info.value %}
                           <div>
-                            <span>{{forloop.counter}}: </span>
-                            <span>{{item.get_view}}</span>
-                          </div>
+                          {% for item in res_info.value %}
+                            {% if res_info.value|length > 1 %}<span style="font-size: x-small;">[{{forloop.counter}}]: </span>{% endif %}
+                            <span>{{item.get_view}}</span>{% if not forloop.last %}, {% endif %}
                           {% endfor %}
+                          </div>
                         {% elif res_info.type == 'list' %}
                           <div>
                           {% for item in res_info.value %}
