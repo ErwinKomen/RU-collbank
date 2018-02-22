@@ -1043,7 +1043,8 @@ class Relation(models.Model):
         return "[{}] {} [{}]".format(idt,type, withcoll)
 
     def get_relation_fname(self):
-        sCsvFile = "cbrelation_{}_{}.txt".format(self.collection.id, self.id)
+        # Show that this is a tab-separated CSV
+        sCsvFile = "cbrelation_{}_{}.tsv".format(self.collection.id, self.id)
         return sCsvFile
 
     def get_relation_path(self):

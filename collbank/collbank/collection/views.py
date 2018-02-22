@@ -143,7 +143,8 @@ def make_collection_top(colThis, sUserName, sHomeUrl):
         oProxy.set('id', sProxyId)
         # Add resource type
         oSubItem = ET.SubElement(oProxy, "ResourceType")
-        oSubItem.set("mimetype", "text/plain")
+        # Dieter: use mimetype [text/tab-separated-values] for this
+        oSubItem.set("mimetype", "text/tab-separated-values")
         oSubItem.text = "Resource"
         # Add resource ref
         oSubItem = ET.SubElement(oProxy, "ResourceRef")
