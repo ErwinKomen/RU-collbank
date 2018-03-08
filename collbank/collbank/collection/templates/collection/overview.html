@@ -14,7 +14,9 @@
       <h3>Available collections</h3>
       <div id="content-main">
         <ul class="object-tools">
+          {% if user.is_authenticated %} 
           <li><a class="addlink" href="{% url 'add' %}">Add a collection record</a></li>
+          {% endif %}
         </ul>
       </div>
     {% if overview_list %}

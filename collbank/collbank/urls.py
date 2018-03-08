@@ -38,7 +38,7 @@ urlpatterns = [
     url(r'^$', collbank.collection.views.home, name='home'),
     url(r'^contact$', collbank.collection.views.contact, name='contact'),
     url(r'^about', collbank.collection.views.about, name='about'),
-    url(r'^definitions$', RedirectView.as_view(url='/admin/'), name='definitions'),
+    url(r'^definitions$', RedirectView.as_view(url='/'+APP_PREFIX+'admin/'), name='definitions'),
     url(r'^collection/add', RedirectView.as_view(url='/admin/collection/collection/add'), name='add'),
     url(r'^collection/(?P<pk>\d+)$', CollectionDetailView.as_view(), name='coll_detail'),
     url(r'^collection/export/(?P<pk>\d+)$', CollectionDetailView.as_view(),  {'type': 'output'}, name='output'),
