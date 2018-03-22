@@ -8,7 +8,7 @@ Each resource in the collection is characterised by its own annotations.
 from django.db import models
 from django.contrib.auth.models import User
 from datetime import datetime
-from collbank.settings import REGISTRY_URL, REGISTRY_DIR
+from collbank.settings import REGISTRY_URL, REGISTRY_DIR, PUBLISH_DIR
 import requests
 from requests.auth import HTTPBasicAuth
 
@@ -2122,11 +2122,14 @@ class Collection(models.Model):
         sFileName = "cbmetadata_{0:05d}".format(self.id)
         return sFileName
 
-    def get_publisfilename(self):
+    def get_publisfilename(self, sType=""):
         # Get the correct pidname
         sFileName = self.get_xmlfilename()
         # THink of a filename
-        sPublish = os.path.abspath(os.path.join(REGISTRY_DIR, sFileName))
+        if sType == "joai":
+            sPublish = os.path.abspath(os.path.join(PUBLISH_DIR, sFileName)) + ".cmdi.xml"
+        else:
+            sPublish = os.path.abspath(os.path.join(REGISTRY_DIR, sFileName))
         return sPublish
 
     def get_targeturl(self):

@@ -468,6 +468,12 @@ def publish_collection(coll_this, sUserName, sHomeUrl):
         # Write it to a file in the XML directory
         with open(fPublish, encoding="utf-8", mode="w") as f:  
             f.write(sXmlText)
+
+        # Publish the .cmdi.xml
+        fPublish = coll_this.get_publisfilename("joai")
+        # Write it to a file in the XML directory
+        with open(fPublish, encoding="utf-8", mode="w") as f:  
+            f.write(sXmlText)
     else:
         oBack['status'] = 'error'
         oBack['msg'] = sXmlText

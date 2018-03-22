@@ -26,6 +26,7 @@ elif "/applejack" in BASE_DIR:
 OUTPUT_XML = os.path.abspath(os.path.join(WRITABLE_DIR, "../collbank-file.xml"))
 
 REGISTRY_DIR = os.path.abspath(os.path.join(WRITABLE_DIR, "../registry/"))
+PUBLISH_DIR = os.path.abspath(os.path.join(WRITABLE_DIR, "../joai/"))
 
 #APP_PREFIX = "ru/"
 #if "d:" in WRITABLE_DIR or "D:" in WRITABLE_DIR:
