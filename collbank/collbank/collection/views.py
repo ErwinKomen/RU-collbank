@@ -158,19 +158,20 @@ def make_collection_top(colThis, sUserName, sHomeUrl):
 
 
     # Produce a link to the resource: search page
-    oProxy = ET.SubElement(lproxy, "ResourceProxy")
-    sProxyId = "sru_{}".format(colThis.get_xmlfilename())
-    oProxy.set('id', sProxyId)
-    # Add resource type
-    oSubItem = ET.SubElement(oProxy, "ResourceType")
-    oSubItem.set("mimetype", "application/x-http") # SearchService would have: "application/sru+xml"
-    oSubItem.text = "SearchPage"    # N.B: "SearchService" is reserved for the federated xml content search link
-    # Add resource ref
-    oSubItem = ET.SubElement(oProxy, "ResourceRef")
-    #  "http://applejack.science.ru.nl/collbank"
-    # oSubItem.text = request.build_absolute_uri(reverse('home'))
-    # oSubItem.text = sHomeUrl 
-    oSubItem.text = colThis.searchPage
+    if colThis.searchPage != None and colThis.searchPage != "":
+        oProxy = ET.SubElement(lproxy, "ResourceProxy")
+        sProxyId = "sru_{}".format(colThis.get_xmlfilename())
+        oProxy.set('id', sProxyId)
+        # Add resource type
+        oSubItem = ET.SubElement(oProxy, "ResourceType")
+        oSubItem.set("mimetype", "application/x-http") # SearchService would have: "application/sru+xml"
+        oSubItem.text = "SearchPage"    # N.B: "SearchService" is reserved for the federated xml content search link
+        # Add resource ref
+        oSubItem = ET.SubElement(oProxy, "ResourceRef")
+        #  "http://applejack.science.ru.nl/collbank"
+        # oSubItem.text = request.build_absolute_uri(reverse('home'))
+        # oSubItem.text = sHomeUrl 
+        oSubItem.text = colThis.searchPage
 
     ET.SubElement(rsc, "JournalFileProxyList")
     ET.SubElement(rsc, "ResourceRelationList")
@@ -556,7 +557,8 @@ def xsd_error_list(lError, sXmlStr):
     """Transform a list of XSD error objects into a list of strings"""
 
     lHtml = []
-    lHtml.append("<html><body><h3>Fouten in het XML bestand</h3><table>")
+    # lHtml.append("<html><body><h3>Fouten in het XML bestand</h3><table>")
+    lHtml.append("<h3>Fouten in het XML bestand</h3><table>")
     lHtml.append("<thead><th>line</th><th>column</th><th>level</th><th>domain</th><th>type</th><th>message</th></thead>")
     lHtml.append("<tbody>")
     for oError in lError:
@@ -571,7 +573,7 @@ def xsd_error_list(lError, sXmlStr):
     lHtml.append("<h3>Het XML bestand:</h3>")
     lHtml.append("<div class='rawxml'><pre class='brush: xml;'>" + sXmlStr.replace("<", "&lt;").replace(">", "&gt;") + "</pre></div>")
     # Finish the HTML feedback
-    lHtml.append("</body></html>")
+    # lHtml.append("</body></html>")
     return "\n".join(lHtml)
 
 def xsd_error_as_simple_string(error):
@@ -857,12 +859,12 @@ class CollectionListView(ListView):
             sUserName = self.request.user.username
             # Walk all the descriptors in the queryset
             for coll_this in qs:
-                oBack = publish_collection(coll_this, sUserName, sHomeUrl)
-                coll_list.append(oBack)
-                if oBack['status'] == 'ok':
-                    iWritten += 1
-                else:
+                oPublish = publish_collection(coll_this, sUserName, sHomeUrl)
+                if oPublish['status'] == 'error':
                     iErrors += 1
+                    coll_list.append(oPublish)
+                else:
+                    iWritten += 1
             # Adapt the status
             oBack['written'] = iWritten
             oBack['errors'] = iErrors

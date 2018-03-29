@@ -14,10 +14,12 @@
               <tbody>
                 {% for item in publish.coll_list %}
                 <tr>
-                  <td>{{item.coll.identifier}}</td>
-                  <td>
+                  <td valign="top">{{item.coll.identifier}}</td>
+                  <td style="width: 100%;">
                     <div class="panel-heading collapsed" data-toggle="collapse" data-target="#error_coll_{{forloop.counter}}">Report</div>
-                    <div id="error_coll_{{forloop.counter}}" class="row collapse" style="height: auto;">{{item.msg}}</div>
+                    <div id="error_coll_{{forloop.counter}}" class="row collapse" style="height: auto;">
+                      {{item.msg|safe}}
+                    </div>
                   </td>
                 </tr>
                 {% endfor %}
