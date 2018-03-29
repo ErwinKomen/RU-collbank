@@ -110,12 +110,18 @@ def make_collection_top(colThis, sUserName, sHomeUrl):
     # mdCreator.text = request.user.username
     mdCreator.text = sUserName
     mdSelf = ET.SubElement(hdr, "MdSelfLink")
+
     # If published: add the self link
     if colThis.pidname != None:
         # The selflink is the persistent identifier, preceded by 'hdl:'
         mdSelf.text = "hdl:{}/{}".format(colThis.handledomain, colThis.pidname)
     mdProf = ET.SubElement(hdr, "MdProfile")
     mdProf.text = XSD_ID
+
+    # Obligatory for Collbank: add a display-name
+    mdDisplayName = ET.SubElement(hdr, "MdCollectionDisplayName")
+    mdDisplayName.text = "CollBank"
+
     # Add obligatory Resources
     rsc = ET.SubElement(top, "Resources", {})
     lproxy = ET.SubElement(rsc, "ResourceProxyList")
@@ -157,8 +163,8 @@ def make_collection_top(colThis, sUserName, sHomeUrl):
     oProxy.set('id', sProxyId)
     # Add resource type
     oSubItem = ET.SubElement(oProxy, "ResourceType")
-    oSubItem.set("mimetype", "application/sru+xml")
-    oSubItem.text = "SearchService"
+    oSubItem.set("mimetype", "application/x-http") # SearchService would have: "application/sru+xml"
+    oSubItem.text = "SearchPage"    # N.B: "SearchService" is reserved for the federated xml content search link
     # Add resource ref
     oSubItem = ET.SubElement(oProxy, "ResourceRef")
     #  "http://applejack.science.ru.nl/collbank"
@@ -477,6 +483,7 @@ def publish_collection(coll_this, sUserName, sHomeUrl):
     else:
         oBack['status'] = 'error'
         oBack['msg'] = sXmlText
+        oBack['coll'] = coll_this
     return oBack
 
 
@@ -841,17 +848,25 @@ class CollectionListView(ListView):
         qs = context['overview_list']
         oBack = {'status': 'unknown', 'written': 0}
         iWritten = 0
+        iErrors = 0
         if qs != None and len(qs) > 0:
             # Assuming all goes well
             oBack['status'] = 'published'
+            coll_list = []
+            sHomeUrl = self.request.build_absolute_uri(reverse('home'))
+            sUserName = self.request.user.username
             # Walk all the descriptors in the queryset
             for coll_this in qs:
-                oBack = publish_collection(coll_this,self.request)
-                if oBack['status'] != 'ok':
-                    break
-                iWritten += 1
+                oBack = publish_collection(coll_this, sUserName, sHomeUrl)
+                coll_list.append(oBack)
+                if oBack['status'] == 'ok':
+                    iWritten += 1
+                else:
+                    iErrors += 1
             # Adapt the status
             oBack['written'] = iWritten
+            oBack['errors'] = iErrors
+            oBack['coll_list'] = coll_list
         else:
             oBack['status'] = 'empty'
 
