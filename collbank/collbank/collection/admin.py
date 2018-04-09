@@ -338,10 +338,10 @@ class RelationInline(nested_admin.NestedTabularInline):
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         formfield = super(RelationInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
         # Look for the field's name as it is used in the Collection model
-        if db_field.name == "related":
+        if db_field.name == "related" and self.instance != None:
             formfield.queryset = Collection.objects.exclude(id=self.instance.id).order_by(Lower('identifier'))
             x = Collection.objects.all()
-        if db_field.name == "extrel":
+        if db_field.name == "extrel" and self.instance != None:
             formfield.queryset = ExtColl.objects.exclude(id=self.instance.id).order_by(Lower('identifier'))
             x = ExtColl.objects.all()
         return formfield
