@@ -2204,11 +2204,14 @@ class Collection(models.Model):
 
     def get_copy(self):
         # Make a clean copy
-        new_copy = get_instance_copy(self)
+        # new_copy = get_instance_copy(self)
+        new_copy = Collection(url=self.url, handledomain=self.handledomain, landingPage = self.landingPage,
+                              searchPage = self.searchPage, description=self.description, clarinCentre=self.clarinCentre)
+        new_copy.save()
         # Reset the PIDFIELD 
         new_copy.pidname = "empty_{0:05d}".format(self.id)
         # Create a unique identifier
-        new_copy.identifier = "coll_{}".format(self.id)
+        new_copy.identifier = "{}_{}".format(self.identifier[:25],new_copy.id)
         # Copy the one-to-many fields
         copy_m2m(self, new_copy, "collection12m_title")             # Title               +
         copy_m2m(self, new_copy, "collection12m_owner")             # Owner               +
@@ -2228,14 +2231,6 @@ class Collection(models.Model):
         copy_fk(self, new_copy, "access")
         copy_fk(self, new_copy, "documentation")
         copy_fk(self, new_copy, "validation")
-        #if self.linguality != None:                                 # Linguality
-        #    new_copy.linguality = self.linguality.get_copy()
-        #if self.access != None:                                     # Access
-        #    new_copy.access = self.access.get_copy()
-        #if self.documentation != None:                              # Documentation
-        #    new_copy.documentation = self.documentation.get_copy()
-        #if self.validation != None:                                 # Validation
-        #    new_copy.validation = self.validation.get_copy()
         # Return the new copy
         return new_copy
 
