@@ -613,6 +613,12 @@ class Annotation(models.Model):
         # Return the new copy
         return new_copy
 
+    def get_view(self):
+        """Present the current annotation format"""
+        sFmts = m2m_combi(self.annotation_formats)
+        sBack = "[{}] [{}] [{}]".format(self.get_type_display(), self.get_mode_display(), sFmts)
+        return sBack
+
 
 class TotalSize(models.Model):
     """Total size of the resource"""
@@ -655,6 +661,9 @@ class TotalCollectionSize(models.Model):
         new_copy = get_instance_copy(self)
         # Return the new copy
         return new_copy
+
+    def get_view(self):
+        return "{} {}".format(self.size, self.sizeUnit)
 
 
 class Modality(models.Model):
@@ -1059,9 +1068,12 @@ class Relation(models.Model):
         if self.rtype != '0':
             type = choice_english(RELATION_TYPE, self.rtype)
         else:
-            type = '(unspecified)'
+            type = '(unspecified relation)'
         if self.related == None:
-            withcoll = ""
+            if self.extrel == None:
+                withcoll = "(unspecified collection)"
+            else:
+                withcoll = self.extrel.identifier
         else:
             withcoll = self.related.identifier
         return "[{}] {} [{}]".format(idt,type, withcoll)
@@ -1108,6 +1120,10 @@ class Relation(models.Model):
         new_copy = get_instance_copy(self)
         # Return the new copy
         return new_copy
+
+    def get_view(self):
+        """How this relation must be shown in the detail-view"""
+        return self.__str__()
 
 
 class Domain(models.Model):
@@ -1365,17 +1381,18 @@ class Person(models.Model):
 class ResourceCreator(models.Model):
     """Creator of this resource"""
 
-    # [1]
+    # [1] Organization that created the resource
     organization = models.ManyToManyField(Organization, blank=False, related_name="resourcecreatorm2m_organization")
     # [1]     Each collection can have [0-n] resource creators
     collection = models.ForeignKey("Collection", blank=False, null=False, default=1, related_name="collection12m_resourcecreator")
 
     def __str__(self):
-        # idt = m2m_identifier(self.collection_set)
-        idt = self.collection.identifier
-        orgs = m2m_combi(self.organizations)
-        pers = m2m_combi(self.persons)
-        return "[{}] o:{}|p:{}".format(idt,orgs,pers)
+        # OLD: idt = self.collection.identifier
+        orgs = m2m_combi(self.organizations)    # One or more organizations
+        pers = m2m_combi(self.persons)          # M-to-1 link from Person to ResourceCreator
+        sBack = "o:{} p:{}".format(orgs, pers)
+        # OLD sBack = "[{}] o:{}|p:{}".format(idt,orgs,pers)
+        return sBack
 
     def get_copy(self):
         # Make a clean copy
@@ -1385,6 +1402,14 @@ class ResourceCreator(models.Model):
         copy_m2m(self, new_copy, "persons")
         # Return the new copy
         return new_copy
+
+    def get_view(self):
+        """The view for detail-view"""
+
+        orgs = m2m_combi(self.organizations)    # One or more organizations
+        pers = m2m_combi(self.persons)          # M-to-1 link from Person to ResourceCreator
+        sBack = "{} ({})".format(pers, orgs)
+        return sBack
 
 
 class DocumentationType(models.Model):
@@ -1528,7 +1553,9 @@ class ProjectFunder(models.Model):
     project = models.ForeignKey("Project", blank=False, null=False, default=1, related_name="funders")
 
     def __str__(self):
-        return self.name[:50]
+        # OLD: sBack = self.name[:50]
+        sBack = self.name
+        return sBack
 
     def get_copy(self):
         # Make a clean copy
@@ -1565,7 +1592,6 @@ class Project(models.Model):
     collection = models.ForeignKey("Collection", blank=False, null=False, default=1, related_name="collection12m_project")
 
     def __str__(self):
-        # idt = m2m_identifier(self.collection_set)
         idt = self.collection.identifier
         sName = self.title
         if sName == "": sName = self.URL
@@ -1580,6 +1606,11 @@ class Project(models.Model):
         copy_fk(self, new_copy, "URL")
         # Return the new copy
         return new_copy
+
+    def get_view(self):
+        """The view for detail-view"""
+        sFunders = m2m_combi(self.funder)
+        return "{} <a href=\"{}\">site</a> (Funder: <span class=\"coll-funder\">{}</span>)".format(self.title, self.URL, sFunders)
 
 
 class CharacterEncoding(models.Model):

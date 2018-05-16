@@ -984,21 +984,37 @@ class CollectionDetailView(DetailView):
         return form
 
     def get_context_data(self, **kwargs):
+        # Get the basic context
         context = super(CollectionDetailView, self).get_context_data(**kwargs)
+
+        # Initialize
+        coll_main = []
+
+        # Preliminary own context information
         context['now'] = timezone.now()
         context['collection'] = self.instance
         # Make sure we know whether it was authenticated
         context['authenticated'] = self.request.user.is_authenticated()
+
+        # For ease of processing
+        def append_item(coll_this, sName, sObl, sType, qs):
+            if sType == "single" or sType == "code" or (qs != None and qs.count() > 0):
+                oItem = {"name": sName, "obl": sObl, "type": sType, "value": qs}
+                coll_this.append(oItem)
+
         # Provide the main-level information for the fields
-        coll_main = []
-        coll_main.append({"name": "Title(s)", "obl": "1-n", "type": "numbered", "value": self.instance.collection12m_title.all()})
-        coll_main.append({"name": "Owner(s)", "obl": "0-n", "type": "numbered", "value": self.instance.collection12m_owner.all()})
-        coll_main.append({"name": "Genre(s)", "obl": "0-n", "type": "list", "value": self.instance.collection12m_genre.all()})
-        coll_main.append({"name": "Language disorder(s)", "obl": "0-n", "type": "numbered", "value": self.instance.collection12m_owner.all()})
-        coll_main.append({"name": "Domain(s)", "obl": "0-n", "type": "list", "value": self.instance.collection12m_domain.all()})
-        coll_main.append({"name": "CLARIN centre", "obl": "0-1", "type": "single", "value": self.instance.clarinCentre})
-        coll_main.append({"name": "Persistent identifier(s)", "obl": "0-n", "type": "list", "value": self.instance.collection12m_pid.all()})
-        coll_main.append({"name": "Version", "obl": "0-1", "type": "code", "value": self.instance.version})
+        append_item(coll_main, "Title(s)",                 "1-n", "numbered", self.instance.collection12m_title.all())
+        append_item(coll_main, "Owner(s)",                 "0-n", "numbered", self.instance.collection12m_owner.all())
+        append_item(coll_main, "Genre(s)",                 "0-n", "list", self.instance.collection12m_genre.all())
+        append_item(coll_main, "Language disorder(s)",     "0-n", "numbered", self.instance.collection12m_languagedisorder.all())
+        append_item(coll_main, "Domain(s)",                "0-n", "list", self.instance.collection12m_domain.all())
+        append_item(coll_main, "CLARIN centre",            "0-1", "single", self.instance.clarinCentre)
+        append_item(coll_main, "Persistent identifier(s)", "0-n", "list", self.instance.collection12m_pid.all())
+        append_item(coll_main, "Version",                  "0-1", "code", self.instance.version)
+        append_item(coll_main, "Size(s)",                  "0-n", "list", self.instance.collection12m_totalsize.all())
+        append_item(coll_main, "Relation(s)",              "0-n", "numbered", self.instance.collection12m_relation.all())
+        append_item(coll_main, "Creator(s)",               "0-n", "numbered", self.instance.collection12m_resourcecreator.all())
+        append_item(coll_main, "Project(s)",               "0-n", "numbered", self.instance.collection12m_project.all())
         context['coll_main'] = coll_main
         # Get through all resources
         coll_resources = []
@@ -1008,40 +1024,35 @@ class CollectionDetailView(DetailView):
             sSubtype = "No DCtype available" if resource.DCtype == None else resource.subtype_only()
             # Create an item for this resource
             resource_items = []
-            resource_items.append({"name": "Dublin-Core Type",  "obl": "1", "type": "single", "value": sDCtype})
-            resource_items.append({"name": "subtype",           "obl": "0-1", "type": "single", "value": sSubtype})
-            resource_items.append({"name": "Modality",          "obl": "1-n", "type": "numbered", "value": resource.modalities.all()})
-            resource_items.append({"name": "Recording environment", "obl": "0-n", "type": "numbered", "value": resource.recordingenvironments.all()})
-            resource_items.append({"name": "Recording condition", "obl": "0-n", "type": "numbered", "value": resource.recordingconditions.all()})
-            resource_items.append({"name": "Channel",           "obl": "0-n", "type": "numbered", "value": resource.channels.all()})
-            resource_items.append({"name": "Social context",    "obl": "0-n", "type": "numbered", "value": resource.socialcontexts.all()})
-            resource_items.append({"name": "Planning type",     "obl": "0-n", "type": "numbered", "value": resource.planningtypes.all()})
-            resource_items.append({"name": "Interactivity",     "obl": "0-n", "type": "numbered", "value": resource.interactivities.all()})
-            resource_items.append({"name": "Involvement",       "obl": "0-n", "type": "numbered", "value": resource.involvements.all()})
-            resource_items.append({"name": "Audience",          "obl": "0-n", "type": "numbered", "value": resource.audiences.all()})
+            append_item(resource_items, "Dublin-Core Type",  "1", "single", sDCtype)
+            append_item(resource_items, "subtype",           "0-1", "single", sSubtype)
+            append_item(resource_items, "Modality",          "1-n", "list", resource.modalities.all())
+            append_item(resource_items, "Recording environment", "0-n", "list", resource.recordingenvironments.all())
+            append_item(resource_items, "Recording condition", "0-n", "list", resource.recordingconditions.all())
+            append_item(resource_items, "Channel",           "0-n", "list", resource.channels.all())
+            append_item(resource_items, "Social context",    "0-n", "list", resource.socialcontexts.all())
+            append_item(resource_items, "Planning type",     "0-n", "list", resource.planningtypes.all())
+            append_item(resource_items, "Interactivity",     "0-n", "list", resource.interactivities.all())
+            append_item(resource_items, "Involvement",       "0-n", "list", resource.involvements.all())
+            append_item(resource_items, "Audience",          "0-n", "list", resource.audiences.all())
             # speech corpus stuff
             if resource.speechCorpus:
-                resource_items.append({"name": "SC duration speech", "obl": "0-1", "type": "single", "value": resource.speechCorpus.durationOfEffectiveSpeech})
-                resource_items.append({"name": "SC duration full",  "obl": "0-1", "type": "single", "value": resource.speechCorpus.durationOfFullDatabase})
-                resource_items.append({"name": "SC speakers",       "obl": "0-1", "type": "single", "value": resource.speechCorpus.numberOfSpeakers})
-                resource_items.append({"name": "SC sp. demogr",     "obl": "0-1", "type": "single", "value": resource.speechCorpus.speakerDemographics})
+                append_item(resource_items, "SC duration speech",   "0-1", "single", resource.speechCorpus.durationOfEffectiveSpeech)
+                append_item(resource_items, "SC duration full",     "0-1", "single", resource.speechCorpus.durationOfFullDatabase)
+                append_item(resource_items, "SC speakers",          "0-1", "single", resource.speechCorpus.numberOfSpeakers)
+                append_item(resource_items, "SC sp. demogr",        "0-1", "single", resource.speechCorpus.speakerDemographics)
             # Written corpus stuff
             if resource.writtenCorpus:
-                resource_items.append({"name": "WC authors", "obl": "0-1", "type": "single", "value": resource.writtenCorpus.numberOfAuthors})
-                resource_items.append({"name": "WC auth. demogr", "obl": "0-1", "type": "single", "value": resource.writtenCorpus.authorDemographics})
+                append_item(resource_items, "WC authors", "0-1", "single", resource.writtenCorpus.numberOfAuthors)
+                append_item(resource_items, "WC auth. demogr", "0-1", "single", resource.writtenCorpus.authorDemographics)
             # Look at the sizes
             for item in resource.totalsize12m_resource.all():
                 sSize = "{} {}".format(item.size, item.sizeUnit)
-                resource_items.append({"name": "Size", "obl": "0-n", "type": "single", "value": sSize})
+                append_item(resource_items, "Size", "0-n", "single", sSize)
+
             # Look at the annotations
-            for item in resource.annotations.all():
-                sFmts = ""
-                for fmt in item.annotation_formats.all():
-                    if sFmts != "": 
-                        sFmts += ", "
-                    sFmts += fmt.get_name_display()
-                sAnnot = "[{}] [{}] [{}]".format(item.get_type_display(), item.get_mode_display(), sFmts)
-                resource_items.append({"name": "Annotation", "obl": "0-n", "type": "single", "value": sAnnot})
+            append_item(resource_items, "Annotation", "0-n", "numbered", resource.annotations.all())
+
             # Look at the media
             for item in resource.media_items.all():
                 sFmts = ""
@@ -1049,7 +1060,7 @@ class CollectionDetailView(DetailView):
                     if sFmts != "": 
                         sFmts += ", "
                     sFmts += fmt.get_name_display()
-                resource_items.append({"name": "Media", "obl": "0-n", "type": "single", "value": sFmts})
+                append_item(resource_items, "Media", "0-n", "single", sFmts)
             # Combine
             resource_obj = {'resource': resource, 'info_list': resource_items}
             # Add to the list
@@ -1063,18 +1074,23 @@ class CollectionDetailView(DetailView):
             prov_this = []
             # Look for temporal
             if provenance.temporalProvenance:
-                prov_this.append({"name": "Temporal", "obl": "0-1", "type": "single", "value": provenance.temporalProvenance.get_view()})
+                append_item(prov_this, "Temporal", "0-1", "single", provenance.temporalProvenance.get_view())
             for geo in provenance.g_provenances.all():
-                prov_this.append({"name": "Cities", "obl": "0-n", "type": "list", "value": geo.cities.all()})
+                append_item(prov_this, "Cities", "0-n", "list", geo.cities.all())
                 cntry = geo.country
                 if cntry != None:
                     # Look up the country in the list
                     (sEnglish, sAlpha2) = get_country(cntry)
                     sCountry = "{} {}".format(sEnglish, sAlpha2)
-                    prov_this.append({"name": "Country", "obl": "0-1", "type": "single", "value": sCountry})
+                    append_item(prov_this, "Country", "0-1", "single", sCountry)
             coll_provenances.append(prov_this)
         # Add the list of povenances to the context
         context['coll_provenances'] = coll_provenances
+
+        ## See what relations there are from this collection to other(s)
+        #coll_relations = []
+        #for relation in self.instance.collection12m_relation.all():
+        #    rel_this = []
 
         # Return the whole context
         return context

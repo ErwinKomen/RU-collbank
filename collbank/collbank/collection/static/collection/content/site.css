@@ -50,6 +50,10 @@ input[type="checkbox"].input-validation-error {
   font-size: x-small;
   color: darkblue;
 }
+.coll-funder {
+  font-size: x-small;
+  color: darkblue;
+}
 
 /* My own modifications */
 a.list-group-item-info:hover {

@@ -38,20 +38,20 @@
             {% for item in main.value %}
             <div>
               {% if main.value|length > 1 %}<span style="font-size: x-small;">[{{forloop.counter}}]: </span>{% endif %}
-              <span>{{item.get_view}}</span>
+              <span>{{item.get_view | safe}}</span>
             </div>
             {% endfor %}
           {% elif main.type == 'list' %}
             <div>
             {% for item in main.value %}
-              <span class="closed-list">{{item.get_view}}</span>
+              <span class="closed-list">{{item.get_view | safe}}</span>
               {% if not forloop.last %}<span>, </span>{% endif %}
             {% endfor %}
             </div>
           {% elif main.type == 'code' %}
             {% if main.value == '' %}-{% else %}<code>{{main.value}}</code>{% endif %}
           {% else %}
-            {% if main.value == '' %}-{% else %}{{main.value}}{% endif %}
+            {% if main.value == '' %}-{% else %}{{main.value | safe}}{% endif %}
           {% endif %}
         </div>
       </div>
@@ -87,16 +87,16 @@
                       <div class="col-md-3">{{res_info.name}}<span class="obl">{{res_info.obl}}</span></div>
                       <div class="col-md-9">
                         {% if res_info.type == 'numbered' %}
-                          <div>
                           {% for item in res_info.value %}
+                          <div>
                             {% if res_info.value|length > 1 %}<span style="font-size: x-small;">[{{forloop.counter}}]: </span>{% endif %}
                             <span>{{item.get_view}}</span>{% if not forloop.last %}, {% endif %}
-                          {% endfor %}
                           </div>
+                          {% endfor %}
                         {% elif res_info.type == 'list' %}
                           <div>
                           {% for item in res_info.value %}
-                            <span><code>{{item.get_view}}</code></span>
+                            <span class="closed-list">{{item.get_view}}</span>
                             {% if not forloop.last %}, {% endif %}
                           {% endfor %}
                           </div>
