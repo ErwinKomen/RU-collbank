@@ -487,9 +487,6 @@ def publish_collection(coll_this, sUserName, sHomeUrl):
         oBack['coll'] = coll_this
     return oBack
 
-
-
-
 def get_country(cntryCode):
     # Get the country string according to field-choice
     sCountry = choice_english(PROVENANCE_GEOGRAPHIC_COUNTRY, cntryCode).strip()
@@ -888,6 +885,7 @@ class CollectionDetailView(DetailView):
     
     def get(self, request, *args, **kwargs):
         context = {}
+        self.template_name = 'collection/coll_detail.html'
         # If this is 'registry' then get the id
         if 'type' in kwargs and kwargs['type'] == 'registry':
             # Find out which instance this is
@@ -968,6 +966,62 @@ class CollectionDetailView(DetailView):
                 # Publish it
                 self.publish()
                 return self.download_to_xml(context)
+            elif kwargs['type'] == 'evaluate':
+                # Get an evaluation context
+                context = self.get_context_data()
+                # Start evaluating
+                evaluate = {}
+                evaluate['status'] = 'This collection contains no errors'
+                eval_list = []
+                num_errors = 0
+                # Check the main part
+                coll_main = context['coll_main']
+                for oMain in coll_main:
+                    if oMain['obl'].startswith('1'):
+                        # This is an obligatory one
+                        v = oMain['value']
+                        t = oMain['type']
+                        if (t == 'single' or t == 'code') and (v == None or v == ''):
+                            eval_list.append({'field': oMain['name'], 
+                                              'value': "Main field {} should occur {} time(s), but it is empty".format(
+                                                  oMain['name'], oMain['obl'])})
+                            num_errors += 1
+                        elif (v == None or len(v) == 0):
+                            eval_list.append({'field': oMain['name'], 
+                                              'value': "Main field {} is a list that should occur {} time(s), but it is empty".format(
+                                                  oMain['name'], oMain['obl'])})
+                            num_errors += 1
+                # Check for resources
+                if not 'coll_resources' in context or len(context['coll_resources']) == 0:
+                    eval_list.append({'field': 'resources', 'value': "No resources are defined, but each collection must have at least one"})
+                    num_errors += 1
+                # Check each resource
+                for idx, res_spec in enumerate(context['coll_resources']):
+                    resource = res_spec['resource']
+                    oRes = res_spec['info_list']
+                    for item in oRes:
+                        if item['obl'].startswith('1'):
+                            # This is an obligatory one
+                            v = item['value']
+                            t = item['type']
+                            if (t == 'single' or t == 'code') and (v == None or v == ''):
+                                eval_list.append({'field': item['name'], 
+                                                  'value': "Resource {}: field {} should occur {} time(s), but it is empty".format(
+                                                      idx+1, item['name'], item['obl'])})
+                                num_errors += 1
+                            elif (v == None or len(v) == 0):
+                                eval_list.append({'field': item['name'], 
+                                                  'value': "Resource {}: field {} is a list that should occur {} time(s), but it is empty".format(
+                                                      idx+1, item['name'], item['obl'])})
+                                num_errors += 1
+                if num_errors > 0:
+                    evaluate['status'] = "This collection contains at least {} error(s)".format(num_errors)
+
+                evaluate['eval_list'] = eval_list
+                # Make the evaluation available
+                context['evaluate'] = evaluate
+                # Evaluate this collection to see if all is okay
+                return self.render_to_response(context)
 
         # This is where we get in all other cases (e.g. no 'type' in the kwargs)
 
@@ -1001,8 +1055,13 @@ class CollectionDetailView(DetailView):
             if sType == "single" or sType == "code" or (qs != None and qs.count() > 0):
                 oItem = {"name": sName, "obl": sObl, "type": sType, "value": qs}
                 coll_this.append(oItem)
+            elif (sType == "numbered" or sType == "list" ) and sObl.startswith("1") and (qs==None or qs.count() == 0):
+                oItem = {"name": sName, "obl": sObl, "type": sType, "value": qs}
+                coll_this.append(oItem)
+
 
         # Provide the main-level information for the fields
+        append_item(coll_main, "LandingPage",              "1",   "single", self.instance.landingPage)
         append_item(coll_main, "Title(s)",                 "1-n", "numbered", self.instance.collection12m_title.all())
         append_item(coll_main, "Owner(s)",                 "0-n", "numbered", self.instance.collection12m_owner.all())
         append_item(coll_main, "Genre(s)",                 "0-n", "list", self.instance.collection12m_genre.all())

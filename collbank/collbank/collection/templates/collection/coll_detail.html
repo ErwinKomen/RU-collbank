@@ -15,6 +15,23 @@
 <div class="container body-content">
 
   <h2>{{object.identifier.value}}</h2>
+
+  {% if evaluate %}
+  <div class="panel panel-default">
+    <p>{{evaluate.status}}</p>
+    {% if evaluate.eval_list|length > 0 %}
+      <table>
+        <thead><tr><th>Field</th><th>Error</th></tr></thead>
+        <tbody>
+          {% for eval_item in evaluate.eval_list %}
+          <tr><td>{{eval_item.field}}</td><td style="width:100%;">{{eval_item.value}}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
+  </div>
+  {% endif %}
+
   <div class="panel panel-default">
     <!-- Description -->
     <div class="row">
@@ -28,7 +45,6 @@
         </div>
       </div>
     </div>
-
     <!-- Show the main fields in the collection -->
     {% for main in coll_main %}
       <div class="row">

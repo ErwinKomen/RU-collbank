@@ -1825,8 +1825,25 @@ class ExtCollAdmin(admin.ModelAdmin):
         models.TextField: {'widget': Textarea(attrs={'rows': 1, 'cols': 80})},
         }
 
+class CollectionForm(forms.ModelForm):
+
+    bUseEvaluate = False
+
+    class Meta:
+        model = Collection
+        fields = '__all__'
+
+    def __init__(self, *args, **kwargs):
+        if 'use_evalute' in kwargs:
+            self.bUseEvaluate = kwargs.pop('use_evaluate')
+        super(CollectionForm, self).__init__(*args, **kwargs)
+        self.fields['landingPage'].required = self.bUseEvaluate
+
+
 
 class CollectionAdmin(nested_admin.NestedModelAdmin):
+    form = CollectionForm
+
     fieldsets = ( ('Searchable', {'fields': ('identifier', 'pidname', 'landingPage', 'searchPage', 'linguality',  )}),
                   ('Other',      {'fields': ('description', 'clarinCentre', 'access', 'version', 'documentation', 'validation', )}),
                 )
@@ -1903,7 +1920,6 @@ class CollectionAdmin(nested_admin.NestedModelAdmin):
             # Remove it from the fieldsets
             remove_from_fieldsets(self.fieldsets, ('identifier',))
             
-
         # return the form
         return form
 
