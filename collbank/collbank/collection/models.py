@@ -993,11 +993,20 @@ class DocumentationLanguage(Language):
     documentationParent = models.ForeignKey("Documentation", blank=False, null=False, default=1, related_name="doc_languages")
     
     def __str__(self):
-        arColl = self.documentationParent.collection_set.all()
-        # arColl = Collection.objects.filter(documentation=self.documentationParent)
-        idt = arColl[0].identifier
-        # idt = self.documentationParent.collection.identifier
-        sBack = "[{}] {}".format(idt,choice_english("language.name", self.name))
+        sBack = "[unclear]"
+        # There is only ONE collection parent
+        doc = self.documentationParent
+        if doc != None:
+            col = Collection.objects.filter(documentation=doc).first()
+            if col != None:
+                idt = col.identifier
+                sBack = "[{}] {}".format(idt,choice_english("language.name", self.name))
+
+        #arColl = self.documentationParent.collection_set.all()
+        ## arColl = Collection.objects.filter(documentation=self.documentationParent)
+        #idt = arColl[0].identifier
+        ## idt = self.documentationParent.collection.identifier
+        #sBack = "[{}] {}".format(idt,choice_english("language.name", self.name))
         return sBack
 
     def get_copy(self):
@@ -1192,6 +1201,9 @@ class LicenseName(models.Model):
         # Return the new copy
         return new_copy
 
+    def get_view(self):
+        return self.name
+
 
 class LicenseUrl(models.Model):
     """URL of the license"""
@@ -1208,6 +1220,9 @@ class LicenseUrl(models.Model):
         new_copy = get_instance_copy(self)
         # Return the new copy
         return new_copy
+
+    def get_view(self):
+        return self.name
 
 
 class NonCommercialUsageOnly(models.Model):
@@ -1227,6 +1242,9 @@ class NonCommercialUsageOnly(models.Model):
         new_copy = get_instance_copy(self)
         # Return the new copy
         return new_copy
+
+    def get_view(self):
+        return self.get_name_display()
 
 
 class AccessContact(models.Model):
@@ -1248,6 +1266,9 @@ class AccessContact(models.Model):
         # Return the new copy
         return new_copy
 
+    def get_view(self):
+        return self.__str__()
+
 
 class AccessWebsite(models.Model):
     """Website to access the collection"""
@@ -1265,6 +1286,9 @@ class AccessWebsite(models.Model):
         # Return the new copy
         return new_copy
 
+    def get_view(self):
+        return self.name
+
 
 class AccessMedium(models.Model):
     """Medium used to access a resource of the collection"""
@@ -1281,6 +1305,9 @@ class AccessMedium(models.Model):
         new_copy = get_instance_copy(self)
         # Return the new copy
         return new_copy
+
+    def get_view(self):
+        return self.get_format_display()
 
 
 class Access(models.Model):
@@ -1428,6 +1455,9 @@ class DocumentationType(models.Model):
         # Return the new copy
         return new_copy
 
+    def get_view(self):
+        return self.get_format_display()
+
 
 class DocumentationFile(models.Model):
     """File name for documentation"""
@@ -1444,6 +1474,9 @@ class DocumentationFile(models.Model):
         new_copy = get_instance_copy(self)
         # Return the new copy
         return new_copy
+
+    def get_view(self):
+        return self.name
 
 
 class DocumentationUrl(models.Model):
@@ -1462,6 +1495,9 @@ class DocumentationUrl(models.Model):
         # Return the new copy
         return new_copy
 
+    def get_view(self):
+        return self.name
+
 
 class Documentation(models.Model):
     """Creator of this resource"""
@@ -1475,7 +1511,18 @@ class Documentation(models.Model):
     def __str__(self):
         fld_tp = m2m_combi(self.doc_types)
         fld_fl = m2m_combi(self.doc_files)
-        return "t:{}|f:{}".format(fld_tp, fld_fl)
+        fld_ur = m2m_combi(self.doc_urls)
+        fld_ln = m2m_combi(self.doc_languages)
+        lBack = []
+        if fld_tp != "": lBack.append("t:{}".format(fld_tp))
+        if fld_fl != "": lBack.append("f:{}".format(fld_fl))
+        if fld_ur != "": lBack.append("u:{}".format(fld_ur))
+        if fld_ln != "": lBack.append("l:{}".format(fld_ln))
+        if len(lBack) > 0:
+            sBack = " ".join(lBack)
+        else:
+            sBack = "(empty)"
+        return sBack
 
     def get_copy(self):
         # Make a clean copy
@@ -1503,6 +1550,9 @@ class ValidationType(models.Model):
         # Return the new copy
         return new_copy
 
+    def get_view(self):
+        return self.get_name_display()
+
 
 class ValidationMethod(models.Model):
     """Validation method"""
@@ -1519,6 +1569,9 @@ class ValidationMethod(models.Model):
         new_copy = get_instance_copy(self)
         # Return the new copy
         return new_copy
+
+    def get_view(self):
+        return self.get_name_display()
 
 
 class Validation(models.Model):

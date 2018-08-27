@@ -1,0 +1,26 @@
+{% load i18n %}
+
+  <div class="row">
+    <div class="col-md-3">{{item_info.name}}<span class="obl">{{item_info.obl}}</span></div>
+    <div class="col-md-9">
+      {% if item_info.type == 'numbered' %}
+        {% for item in item_info.value %}
+        <div>
+          {% if item_info.value|length > 1 %}<span style="font-size: x-small;">[{{forloop.counter}}]: </span>{% endif %}
+          <span>{{item.get_view|safe}}</span>{% if not forloop.last %}, {% endif %}
+        </div>
+        {% endfor %}
+      {% elif item_info.type == 'list' %}
+        <div>
+        {% for item in item_info.value %}
+          <span class="closed-list">{{item.get_view|safe}}</span>
+          {% if not forloop.last %}, {% endif %}
+        {% endfor %}
+        </div>
+      {% elif item_info.type == 'code' %}
+        {% if item_info.value == '' %}-{% else %}<code>{{item_info.value}}</code>{% endif %}
+      {% else %}
+        {% if item_info.value == '' %}-{% else %}{{item_info.value|safe}}{% endif %}
+      {% endif %}
+    </div>
+  </div>

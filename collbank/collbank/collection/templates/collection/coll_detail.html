@@ -47,30 +47,7 @@
     </div>
     <!-- Show the main fields in the collection -->
     {% for main in coll_main %}
-      <div class="row">
-        <div class="col-md-3">{{main.name}}<span class="obl">{{main.obl}}</span></div>
-        <div class="col-md-9">
-          {% if main.type == 'numbered' %}
-            {% for item in main.value %}
-            <div>
-              {% if main.value|length > 1 %}<span style="font-size: x-small;">[{{forloop.counter}}]: </span>{% endif %}
-              <span>{{item.get_view | safe}}</span>
-            </div>
-            {% endfor %}
-          {% elif main.type == 'list' %}
-            <div>
-            {% for item in main.value %}
-              <span class="closed-list">{{item.get_view | safe}}</span>
-              {% if not forloop.last %}<span>, </span>{% endif %}
-            {% endfor %}
-            </div>
-          {% elif main.type == 'code' %}
-            {% if main.value == '' %}-{% else %}<code>{{main.value}}</code>{% endif %}
-          {% else %}
-            {% if main.value == '' %}-{% else %}{{main.value | safe}}{% endif %}
-          {% endif %}
-        </div>
-      </div>
+      {% include 'collection/coll_item.html' with item_info=main %}
     {% endfor %}
 
     <!-- Resources -->
@@ -99,30 +76,7 @@
                   </div>
 
                   {% for res_info in res_item.info_list %}
-                    <div class="row">
-                      <div class="col-md-3">{{res_info.name}}<span class="obl">{{res_info.obl}}</span></div>
-                      <div class="col-md-9">
-                        {% if res_info.type == 'numbered' %}
-                          {% for item in res_info.value %}
-                          <div>
-                            {% if res_info.value|length > 1 %}<span style="font-size: x-small;">[{{forloop.counter}}]: </span>{% endif %}
-                            <span>{{item.get_view}}</span>{% if not forloop.last %}, {% endif %}
-                          </div>
-                          {% endfor %}
-                        {% elif res_info.type == 'list' %}
-                          <div>
-                          {% for item in res_info.value %}
-                            <span class="closed-list">{{item.get_view}}</span>
-                            {% if not forloop.last %}, {% endif %}
-                          {% endfor %}
-                          </div>
-                        {% elif res_info.type == 'code' %}
-                          {% if res_info.value == '' %}-{% else %}<code>{{res_info.value}}</code>{% endif %}
-                        {% else %}
-                          {% if res_info.value == '' %}-{% else %}{{res_info.value}}{% endif %}
-                        {% endif %}
-                      </div>
-                    </div>
+                    {% include 'collection/coll_item.html' with item_info=res_info %}
                   {% endfor %}
 
               </div>
@@ -145,37 +99,98 @@
             <div id="provenance_{{forloop.counter}}" class="row collapse" style="height: auto;">
               <div class="col-md-12">
 
-                  {% for prov_info in prov_this %}
-                    <div class="row">
-                      <div class="col-md-3">{{prov_info.name}}<span class="obl">{{prov_info.obl}}</span></div>
-                      <div class="col-md-9">
-                        {% if prov_info.type == 'numbered' %}
-                          {% for item in prov_info.value %}
-                          <div>
-                            <span>{{forloop.counter}}: </span>
-                            <span>{{item.get_view}}</span>
-                          </div>
-                          {% endfor %}
-                        {% elif prov_info.type == 'list' %}
-                          <div>
-                          {% for item in prov_info.value %}
-                            <span><code>{{item.get_view}}</code></span>
-                            {% if not forloop.last %}, {% endif %}
-                          {% endfor %}
-                          </div>
-                        {% elif prov_info.type == 'code' %}
-                          {% if prov_info.value == '' %}-{% else %}<code>{{prov_info.value}}</code>{% endif %}
-                        {% else %}
-                          {% if prov_info.value == '' %}-{% else %}{{prov_info.value}}{% endif %}
-                        {% endif %}
-                      </div>
-                    </div>
+                  {% for item_info in prov_this %}
+                    {% include 'collection/coll_item.html' with item_info=item_info %}
                   {% endfor %}
 
               </div>
             </div>
           </div>
         {% endfor %}
+      </div>
+    </div>
+
+    <!-- Linguality -->
+    <div class="row">
+      <div class="col-md-3">Linguality<span class="obl">0-1</span></div>
+      <div class="col-md-9">
+        <div class="panel panel-default">
+          <div class="panel-heading collapsed" data-toggle="collapse" data-target="#linguality">Linguality</div>
+          <div id="linguality" class="row collapse" style="height: auto;">
+            <div class="col-md-12">
+              {% if coll_linguality|length == 0 %}
+                <i>not specified</i>
+              {% else %}
+                {% for ling_this in coll_linguality %}
+                  {% include 'collection/coll_item.html' with item_info=ling_this %}
+                {% endfor %}
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Access -->
+    <div class="row">
+      <div class="col-md-3">Accessibility<span class="obl">0-1</span></div>
+      <div class="col-md-9">
+        <div class="panel panel-default">
+          <div class="panel-heading collapsed" data-toggle="collapse" data-target="#accessibility">Accessibility</div>
+          <div id="accessibility" class="row collapse" style="height: auto;">
+            <div class="col-md-12">
+              {% if coll_access|length == 0 %}
+                <i>not specified</i>
+              {% else %}
+                {% for access_this in coll_access %}
+                  {% include 'collection/coll_item.html' with item_info=access_this %}
+                {% endfor %}
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Documentation -->
+    <div class="row">
+      <div class="col-md-3">Documentation<span class="obl">0-1</span></div>
+      <div class="col-md-9">
+        <div class="panel panel-default">
+          <div class="panel-heading collapsed" data-toggle="collapse" data-target="#documentation">Documentation</div>
+          <div id="documentation" class="row collapse" style="height: auto;">
+            <div class="col-md-12">
+              {% if coll_docu|length == 0 %}
+                <i>not specified</i>
+              {% else %}
+                {% for docu_this in coll_docu %}
+                  {% include 'collection/coll_item.html' with item_info=docu_this %}
+                {% endfor %}
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Validation -->
+    <div class="row">
+      <div class="col-md-3">Validation<span class="obl">0-1</span></div>
+      <div class="col-md-9">
+        <div class="panel panel-default">
+          <div class="panel-heading collapsed" data-toggle="collapse" data-target="#validation">Validation</div>
+          <div id="validation" class="row collapse" style="height: auto;">
+            <div class="col-md-12">
+              {% if coll_vali|length == 0 %}
+                <i>not specified</i>
+              {% else %}
+                {% for vali_this in coll_vali %}
+                  {% include 'collection/coll_item.html' with item_info=vali_this %}
+                {% endfor %}
+              {% endif %}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 

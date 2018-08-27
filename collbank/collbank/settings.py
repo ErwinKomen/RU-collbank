@@ -40,6 +40,9 @@ if "/scratch" in WRITABLE_DIR:
     admin.site.site_url = "/collbank/"
 elif '/applejack' in WRITABLE_DIR:
     admin.site.site_url = "/collbank/"
+elif "D:" in WRITABLE_DIR:
+    admin.site.site_url = "/"
+    APP_PREFIX = "" 
 
 FORCE_SCRIPT_NAME = admin.site.site_url
 

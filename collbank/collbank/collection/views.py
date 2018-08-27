@@ -704,6 +704,17 @@ def subtype_choices(request):
         sOut = "{}"
     return HttpResponse(sOut)
 
+def treat_bom(sHtml):
+    """REmove the BOM marker except at the beginning of the string"""
+
+    # Check if it is in the beginning
+    bStartsWithBom = sHtml.startswith(u'\ufeff')
+    # Remove everywhere
+    sHtml = sHtml.replace(u'\ufeff', '')
+    # Return what we have
+    return sHtml
+
+
 class CollectionListView(ListView):
     """Listview of collections"""
 
@@ -1067,6 +1078,7 @@ class CollectionDetailView(DetailView):
         append_item(coll_main, "Genre(s)",                 "0-n", "list", self.instance.collection12m_genre.all())
         append_item(coll_main, "Language disorder(s)",     "0-n", "numbered", self.instance.collection12m_languagedisorder.all())
         append_item(coll_main, "Domain(s)",                "0-n", "list", self.instance.collection12m_domain.all())
+        append_item(coll_main, "Language(s)",              "0-n", "list", self.instance.coll_languages.all())
         append_item(coll_main, "CLARIN centre",            "0-1", "single", self.instance.clarinCentre)
         append_item(coll_main, "Persistent identifier(s)", "0-n", "list", self.instance.collection12m_pid.all())
         append_item(coll_main, "Version",                  "0-1", "code", self.instance.version)
@@ -1146,10 +1158,53 @@ class CollectionDetailView(DetailView):
         # Add the list of povenances to the context
         context['coll_provenances'] = coll_provenances
 
-        ## See what relations there are from this collection to other(s)
-        #coll_relations = []
-        #for relation in self.instance.collection12m_relation.all():
-        #    rel_this = []
+        # Linguality
+        linguality = self.instance.linguality
+        coll_ling = []
+        if linguality != None:
+            append_item(coll_ling, "Type", "0-n", "list", linguality.linguality_types.all())
+            append_item(coll_ling, "Nativeness", "0-n", "list", linguality.linguality_nativenesses.all())
+            append_item(coll_ling, "AgeGroup", "0-n", "list", linguality.linguality_agegroups.all())
+            append_item(coll_ling, "Status", "0-n", "list", linguality.linguality_statuses.all())
+            append_item(coll_ling, "Variant", "0-n", "list", linguality.linguality_variants.all())
+            append_item(coll_ling, "MultiType", "0-n", "list", linguality.multilinguality_types.all())
+        context['coll_linguality'] = coll_ling
+
+        # Accessibility
+        access = self.instance.access
+        coll_access = []
+        if access != None:
+            append_item(coll_access, "Name", "1", "single", access.name)
+            append_item(coll_access, "Availability", "0-n", "list", access.acc_availabilities.all())
+            append_item(coll_access, "License name(s)", "0-n", "list", access.acc_licnames.all())
+            append_item(coll_access, "Licence URL(s)", "0-n", "list", access.acc_licurls.all())
+            append_item(coll_access, "Non-commercial usage", "0-1", "single", access.nonCommercialUsageOnly)
+            append_item(coll_access, "Website(s)", "0-n", "list", access.acc_websites.all())
+            append_item(coll_access, "ISBN", "0-1", "single", access.ISBN)
+            append_item(coll_access, "ISLRN", "0-1", "single", access.ISLRN)
+            append_item(coll_access, "Contact(s)", "0-n", "list", access.acc_contacts.all())
+            append_item(coll_access, "Medium(s)", "0-n", "list", access.acc_mediums.all())
+
+        context['coll_access'] = coll_access
+
+        # Documentation
+        docu = self.instance.documentation
+        coll_docu = []
+        if docu != None:
+            append_item(coll_docu, "Language(s)", "0-n", "list", docu.doc_languages.all())
+            append_item(coll_docu, "Type(s)", "0-n", "list", docu.doc_types.all())
+            append_item(coll_docu, "File(s)", "0-n", "list", docu.doc_files.all())
+            append_item(coll_docu, "URL(s)", "0-n", "list", docu.doc_urls.all())
+        context['coll_docu'] = coll_docu
+
+        # Validation
+        vali = self.instance.validation
+        coll_vali = []
+        if vali != None:
+            append_item(coll_vali, "Type", "0-1", "single", vali.type)
+            append_item(coll_vali, "Method(s)", "0-n", "list", vali.validationmethods.all())
+
+        context['coll_vali'] = coll_vali
 
         # Return the whole context
         return context
