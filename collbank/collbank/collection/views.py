@@ -1078,7 +1078,7 @@ class CollectionDetailView(DetailView):
         append_item(coll_main, "Genre(s)",                 "0-n", "list", self.instance.collection12m_genre.all())
         append_item(coll_main, "Language disorder(s)",     "0-n", "numbered", self.instance.collection12m_languagedisorder.all())
         append_item(coll_main, "Domain(s)",                "0-n", "list", self.instance.collection12m_domain.all())
-        append_item(coll_main, "Language(s)",              "0-n", "list", self.instance.coll_languages.all())
+        append_item(coll_main, "Language(s)",              "1-n", "list", self.instance.coll_languages.all())
         append_item(coll_main, "CLARIN centre",            "0-1", "single", self.instance.clarinCentre)
         append_item(coll_main, "Persistent identifier(s)", "0-n", "list", self.instance.collection12m_pid.all())
         append_item(coll_main, "Version",                  "0-1", "code", self.instance.version)
