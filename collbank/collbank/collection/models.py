@@ -296,6 +296,8 @@ def build_choice_list(field, position=None, subcat=None):
             # Take a default list
             choice_list = [('0','-'),('1','N/A')]
         else:
+            ## Force a real choice to be made
+            #choice_list = [('-1','-')]
             for choice in FieldChoice.objects.filter(field__iexact=field):
                 # Default
                 sEngName = ""

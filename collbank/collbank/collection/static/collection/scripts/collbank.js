@@ -1,4 +1,11 @@
-﻿(function ($) {
+﻿var django = {
+  "jQuery": jQuery.noConflict(true)
+};
+var jQuery = django.jQuery;
+var $ = jQuery;
+
+
+(function ($) {
   $(function () {
     $(document).ready(function () {
       var i = 0,    // COunter
@@ -26,6 +33,9 @@
 // based on the type, action will be loaded
 
 var $ = django.jQuery.noConflict();
+
+
+//var $ = jQuery;
 
 var ru = (function ($, ru) {
   "use strict";
