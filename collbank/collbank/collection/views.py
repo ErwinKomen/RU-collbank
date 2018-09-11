@@ -969,10 +969,21 @@ class CollectionDetailView(DetailView):
                 # Return the result
                 return response
             elif kwargs['type'] == 'publish':
-                # Publish it
-                self.publish()
-                # Return to the overview
-                return redirect(reverse('overview'))
+                # Get an evaluation context
+                context = self.get_context_data()
+                # First perform validation
+                evaluate = self.get_validation(context)
+                # Action depends on the size of eval_list
+                if len(evaluate['eval_list']) == 0:
+                    # Publish it
+                    self.publish()
+                    # Return to the overview
+                    return redirect(reverse('overview'))
+                else:
+                    # Make the evaluation available
+                    context['evaluate'] = evaluate
+                    # Show the list of errors to the user
+                    return self.render_to_response(context)
             elif kwargs['type'] == 'output':
                 # Publish it
                 self.publish()
@@ -980,55 +991,8 @@ class CollectionDetailView(DetailView):
             elif kwargs['type'] == 'evaluate':
                 # Get an evaluation context
                 context = self.get_context_data()
-                # Start evaluating
-                evaluate = {}
-                evaluate['status'] = 'This collection contains no errors'
-                eval_list = []
-                num_errors = 0
-                # Check the main part
-                coll_main = context['coll_main']
-                for oMain in coll_main:
-                    if oMain['obl'].startswith('1'):
-                        # This is an obligatory one
-                        v = oMain['value']
-                        t = oMain['type']
-                        if (t == 'single' or t == 'code') and (v == None or v == ''):
-                            eval_list.append({'field': oMain['name'], 
-                                              'value': "Main field {} should occur {} time(s), but it is empty".format(
-                                                  oMain['name'], oMain['obl'])})
-                            num_errors += 1
-                        elif (v == None or len(v) == 0):
-                            eval_list.append({'field': oMain['name'], 
-                                              'value': "Main field {} is a list that should occur {} time(s), but it is empty".format(
-                                                  oMain['name'], oMain['obl'])})
-                            num_errors += 1
-                # Check for resources
-                if not 'coll_resources' in context or len(context['coll_resources']) == 0:
-                    eval_list.append({'field': 'resources', 'value': "No resources are defined, but each collection must have at least one"})
-                    num_errors += 1
-                # Check each resource
-                for idx, res_spec in enumerate(context['coll_resources']):
-                    resource = res_spec['resource']
-                    oRes = res_spec['info_list']
-                    for item in oRes:
-                        if item['obl'].startswith('1'):
-                            # This is an obligatory one
-                            v = item['value']
-                            t = item['type']
-                            if (t == 'single' or t == 'code') and (v == None or v == ''):
-                                eval_list.append({'field': item['name'], 
-                                                  'value': "Resource {}: field {} should occur {} time(s), but it is empty".format(
-                                                      idx+1, item['name'], item['obl'])})
-                                num_errors += 1
-                            elif (v == None or len(v) == 0):
-                                eval_list.append({'field': item['name'], 
-                                                  'value': "Resource {}: field {} is a list that should occur {} time(s), but it is empty".format(
-                                                      idx+1, item['name'], item['obl'])})
-                                num_errors += 1
-                if num_errors > 0:
-                    evaluate['status'] = "This collection contains at least {} error(s)".format(num_errors)
-
-                evaluate['eval_list'] = eval_list
+                # Get an evaluation context
+                evaluate = self.get_validation(context)
                 # Make the evaluation available
                 context['evaluate'] = evaluate
                 # Evaluate this collection to see if all is okay
@@ -1041,6 +1005,100 @@ class CollectionDetailView(DetailView):
 
         # Visualize using the context
         return self.render_to_response(context)
+
+    def get_validation(self, context):
+        # Initialisation
+        lZeroN = [{'list': 'coll_resources', 'name': 'Resource'},
+                  {'list': 'coll_provenances', 'name': 'Provenance'}]
+        lZeroOne = [{'list': 'coll_linguality', 'name': 'Linguality'},
+                  {'list': 'coll_access', 'name': 'Access'},
+                  {'list': 'coll_docu', 'name': 'Documentation'}]
+
+        # Start evaluating
+        evaluate = {}
+        evaluate['status'] = 'This collection contains no errors'
+        eval_list = []
+        num_errors = 0
+        # Check the main part
+        coll_main = context['coll_main']
+        for oMain in coll_main:
+            if oMain['obl'].startswith('1'):
+                # This is an obligatory one
+                v = oMain['value']
+                t = oMain['type']
+                if (t == 'single' or t == 'code') and (v == None or v == ''):
+                    eval_list.append({'field': oMain['name'], 
+                                        'value': "Main field {} should occur {} time(s), but it is empty".format(
+                                            oMain['name'], oMain['obl'])})
+                    num_errors += 1
+                elif (v == None or len(v) == 0):
+                    eval_list.append({'field': oMain['name'], 
+                                        'value': "Main field {} is a list that should occur {} time(s), but it is empty".format(
+                                            oMain['name'], oMain['obl'])})
+                    num_errors += 1
+
+        # Check for all the lists that must occur at least once
+        # That is only 1 list: resources
+        if not 'coll_resources' in context or len(context['coll_resources']) == 0:
+            eval_list.append({'field': 'resources', 'value': "No resources are defined, but each collection must have at least one"})
+            num_errors += 1
+
+        # Check all lists that occur 0-n
+        for list_spec in lZeroN:
+            list_this = context[list_spec['list']]
+            list_name = list_spec['name']
+            # Check each resource
+            # for idx, res_spec in enumerate(context['coll_resources']):
+            for idx, res_spec in enumerate(list_this):
+                # resource = res_spec['resource']
+                oRes = res_spec['info_list']
+                for item in oRes:
+                    if item['obl'].startswith('1'):
+                        # This is an obligatory one
+                        v = item['value']
+                        t = item['type']
+                        if (t == 'single' or t == 'code') and (v == None or v == ''):
+                            eval_list.append({'field': item['name'], 
+                                                'value': "{} {}: field {} should occur {} time(s), but it is empty".format(
+                                                    list_name, idx+1, item['name'], item['obl'])})
+                            num_errors += 1
+                        elif (v == None or len(v) == 0):
+                            eval_list.append({'field': item['name'], 
+                                                'value': "{} {}: field {} is a list that should occur {} time(s), but it is empty".format(
+                                                    list_name, idx+1, item['name'], item['obl'])})
+                            num_errors += 1
+
+        # Check for everything that occurs 0-1 times
+        for list_spec in lZeroOne:
+            list_this = context[list_spec['list']]
+            list_name = list_spec['name']
+            # Check all the items in the list
+            for item in list_this:
+                if item['obl'].startswith('1'):
+                    # This is an obligatory one
+                    v = item['value']
+                    t = item['type']
+                    if (t == 'single' or t == 'code') and (v == None or v == ''):
+                        eval_list.append({'field': item['name'], 
+                                            'value': "{} {}: field {} should occur {} time(s), but it is empty".format(
+                                                list_name, idx+1, item['name'], item['obl'])})
+                        num_errors += 1
+                    elif (v == None or len(v) == 0):
+                        eval_list.append({'field': item['name'], 
+                                            'value': "{} {}: field {} is a list that should occur {} time(s), but it is empty".format(
+                                                list_name, idx+1, item['name'], item['obl'])})
+                        num_errors += 1
+
+        # Define the status if there are errors
+        if num_errors > 0:
+            evaluate['status'] = "This collection contains at least {} error(s)".format(num_errors)
+
+        # The following lists or elements need no further checking because they are either 0-1 or 0-n:
+        # validation [0-1]
+
+        evaluate['eval_list'] = eval_list
+        # Return the evaluation
+        return evaluate
 
     def get_object(self):
         obj = super(CollectionDetailView,self).get_object()
@@ -1154,7 +1212,7 @@ class CollectionDetailView(DetailView):
                     (sEnglish, sAlpha2) = get_country(cntry)
                     sCountry = "{} {}".format(sEnglish, sAlpha2)
                     append_item(prov_this, "Country", "0-1", "single", sCountry)
-            coll_provenances.append(prov_this)
+            coll_provenances.append({'info_list': prov_this})
         # Add the list of povenances to the context
         context['coll_provenances'] = coll_provenances
 
@@ -1191,7 +1249,7 @@ class CollectionDetailView(DetailView):
         docu = self.instance.documentation
         coll_docu = []
         if docu != None:
-            append_item(coll_docu, "Language(s)", "0-n", "list", docu.doc_languages.all())
+            append_item(coll_docu, "Language(s)", "1-n", "list", docu.doc_languages.all())
             append_item(coll_docu, "Type(s)", "0-n", "list", docu.doc_types.all())
             append_item(coll_docu, "File(s)", "0-n", "list", docu.doc_files.all())
             append_item(coll_docu, "URL(s)", "0-n", "list", docu.doc_urls.all())

@@ -99,7 +99,7 @@
             <div id="provenance_{{forloop.counter}}" class="row collapse" style="height: auto;">
               <div class="col-md-12">
 
-                  {% for item_info in prov_this %}
+                  {% for item_info in prov_this.info_list %}
                     {% include 'collection/coll_item.html' with item_info=item_info %}
                   {% endfor %}
 
