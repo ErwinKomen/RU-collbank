@@ -98,7 +98,7 @@ def make_collection_top(colThis, sUserName, sHomeUrl):
     # Define the top-level of the xml output
     topattributes = {'xmlns': "http://www.clarin.eu/cmd/" ,
                      'xmlns:xsd':"http://www.w3.org/2001/XMLSchema/",
-                     'xmlns:xsi': "http://www.w3.org/2001/XMLSchema-instance/",
+                     'xmlns:xsi': "http://www.w3.org/2001/XMLSchema-instance",
                      'xsi:schemaLocation': XSI_CMD + " " + XSI_XSD,
                      'CMDVersion':'1.1'}
     # topattributes = {'CMDVersion':'1.1'}
