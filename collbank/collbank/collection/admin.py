@@ -338,10 +338,10 @@ class RelationInline(nested_admin.NestedTabularInline):
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         formfield = super(RelationInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
         # Look for the field's name as it is used in the Collection model
-        if db_field.name == "related":
+        if db_field.name == "related" and self.instance != None:
             formfield.queryset = Collection.objects.exclude(id=self.instance.id).order_by(Lower('identifier'))
             x = Collection.objects.all()
-        if db_field.name == "extrel":
+        if db_field.name == "extrel" and self.instance != None:
             formfield.queryset = ExtColl.objects.exclude(id=self.instance.id).order_by(Lower('identifier'))
             x = ExtColl.objects.all()
         return formfield
@@ -487,6 +487,12 @@ class ModalityForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(ModalityForm, self).__init__(*args, **kwargs)
         init_choices(self, 'name', RESOURCE_MODALITY)
+
+    def save(self, *args, **kwargs):
+        """Override the default saving"""
+        # Perform the actual saving
+        response = super(ModalityForm, self).save(*args, **kwargs)
+        return response
 
             
 class ModalityAdmin(admin.ModelAdmin):
@@ -1140,6 +1146,12 @@ class ResourceAdminForm(forms.ModelForm):
             'description': forms.Textarea(attrs={'rows': 1})
         }
 
+    def save(self, *args, **kwargs):
+        """Override the default saving"""
+        # Perform the actual saving
+        response = super(ResourceAdminForm, self).save(*args, **kwargs)
+        return response
+
 
 class ResourceInline(nested_admin.NestedStackedInline):
     model = Resource
@@ -1180,6 +1192,13 @@ class ResourceAdmin(admin.ModelAdmin):
     class Media:
         js = ('/'+APP_PREFIX+'static/collection/scripts/collbank.js',)
 
+    def save_form(self, request, form, change):
+        response = super(ResourceAdmin, self).save_form(request, form, change)
+        return response
+
+    def save_formset(self, request, form, formset, change):
+        response = super(ResourceAdmin, self).save_formset(request, form, formset, change)
+        return response
 
     def get_form(self, request, obj=None, **kwargs):
         # Get the instance before the form gets generated
@@ -1232,7 +1251,7 @@ class ResourceAdmin(admin.ModelAdmin):
                 # Note which DCtype was selected
                 # ERWIN db_field.choices = build_choice_list(RESOURCE_TYPE, 'after', self.current_dctype)
                 formfield.initial = formfield.initial
-        elif db_field.name == "modality" :                         # M2M
+        elif db_field.name == "modality" :                         # M2M ==> SHOULD BE 12m
             formfield.queryset = get_formfield_qs(Modality, self.instance, "resource")
         elif db_field.name == "annotation" :                       # M2M
             formfield.queryset = get_formfield_qs(Annotation, self.instance, "resource")
@@ -1825,8 +1844,30 @@ class ExtCollAdmin(admin.ModelAdmin):
         models.TextField: {'widget': Textarea(attrs={'rows': 1, 'cols': 80})},
         }
 
+class CollectionForm(forms.ModelForm):
+
+    bUseEvaluate = False
+
+    class Meta:
+        model = Collection
+        fields = '__all__'
+
+    def __init__(self, *args, **kwargs):
+        if 'use_evalute' in kwargs:
+            self.bUseEvaluate = kwargs.pop('use_evaluate')
+        super(CollectionForm, self).__init__(*args, **kwargs)
+        self.fields['landingPage'].required = self.bUseEvaluate
+
+    def save(self, *args, **kwargs):
+        """Override the default saving"""
+        # Perform the actual saving
+        response = super(CollectionForm, self).save(*args, **kwargs)
+        return response
+    
 
 class CollectionAdmin(nested_admin.NestedModelAdmin):
+    form = CollectionForm
+
     fieldsets = ( ('Searchable', {'fields': ('identifier', 'pidname', 'landingPage', 'searchPage', 'linguality',  )}),
                   ('Other',      {'fields': ('description', 'clarinCentre', 'access', 'version', 'documentation', 'validation', )}),
                 )
@@ -1903,7 +1944,6 @@ class CollectionAdmin(nested_admin.NestedModelAdmin):
             # Remove it from the fieldsets
             remove_from_fieldsets(self.fieldsets, ('identifier',))
             
-
         # return the form
         return form
 

@@ -98,7 +98,7 @@ def make_collection_top(colThis, sUserName, sHomeUrl):
     # Define the top-level of the xml output
     topattributes = {'xmlns': "http://www.clarin.eu/cmd/" ,
                      'xmlns:xsd':"http://www.w3.org/2001/XMLSchema/",
-                     'xmlns:xsi': "http://www.w3.org/2001/XMLSchema-instance/",
+                     'xmlns:xsi': "http://www.w3.org/2001/XMLSchema-instance",
                      'xsi:schemaLocation': XSI_CMD + " " + XSI_XSD,
                      'CMDVersion':'1.1'}
     # topattributes = {'CMDVersion':'1.1'}
@@ -110,12 +110,18 @@ def make_collection_top(colThis, sUserName, sHomeUrl):
     # mdCreator.text = request.user.username
     mdCreator.text = sUserName
     mdSelf = ET.SubElement(hdr, "MdSelfLink")
+
     # If published: add the self link
     if colThis.pidname != None:
         # The selflink is the persistent identifier, preceded by 'hdl:'
         mdSelf.text = "hdl:{}/{}".format(colThis.handledomain, colThis.pidname)
     mdProf = ET.SubElement(hdr, "MdProfile")
     mdProf.text = XSD_ID
+
+    # Obligatory for Collbank: add a display-name
+    mdDisplayName = ET.SubElement(hdr, "MdCollectionDisplayName")
+    mdDisplayName.text = "CollBank"
+
     # Add obligatory Resources
     rsc = ET.SubElement(top, "Resources", {})
     lproxy = ET.SubElement(rsc, "ResourceProxyList")
@@ -143,7 +149,8 @@ def make_collection_top(colThis, sUserName, sHomeUrl):
         oProxy.set('id', sProxyId)
         # Add resource type
         oSubItem = ET.SubElement(oProxy, "ResourceType")
-        oSubItem.set("mimetype", "text/plain")
+        # Dieter: use mimetype [text/tab-separated-values] for this
+        oSubItem.set("mimetype", "text/tab-separated-values")
         oSubItem.text = "Resource"
         # Add resource ref
         oSubItem = ET.SubElement(oProxy, "ResourceRef")
@@ -151,19 +158,20 @@ def make_collection_top(colThis, sUserName, sHomeUrl):
 
 
     # Produce a link to the resource: search page
-    oProxy = ET.SubElement(lproxy, "ResourceProxy")
-    sProxyId = "sru_{}".format(colThis.get_xmlfilename())
-    oProxy.set('id', sProxyId)
-    # Add resource type
-    oSubItem = ET.SubElement(oProxy, "ResourceType")
-    oSubItem.set("mimetype", "application/sru+xml")
-    oSubItem.text = "SearchService"
-    # Add resource ref
-    oSubItem = ET.SubElement(oProxy, "ResourceRef")
-    #  "http://applejack.science.ru.nl/collbank"
-    # oSubItem.text = request.build_absolute_uri(reverse('home'))
-    # oSubItem.text = sHomeUrl 
-    oSubItem.text = colThis.searchPage
+    if colThis.searchPage != None and colThis.searchPage != "":
+        oProxy = ET.SubElement(lproxy, "ResourceProxy")
+        sProxyId = "sru_{}".format(colThis.get_xmlfilename())
+        oProxy.set('id', sProxyId)
+        # Add resource type
+        oSubItem = ET.SubElement(oProxy, "ResourceType")
+        oSubItem.set("mimetype", "application/x-http") # SearchService would have: "application/sru+xml"
+        oSubItem.text = "SearchPage"    # N.B: "SearchService" is reserved for the federated xml content search link
+        # Add resource ref
+        oSubItem = ET.SubElement(oProxy, "ResourceRef")
+        #  "http://applejack.science.ru.nl/collbank"
+        # oSubItem.text = request.build_absolute_uri(reverse('home'))
+        # oSubItem.text = sHomeUrl 
+        oSubItem.text = colThis.searchPage
 
     ET.SubElement(rsc, "JournalFileProxyList")
     ET.SubElement(rsc, "ResourceRelationList")
@@ -467,13 +475,17 @@ def publish_collection(coll_this, sUserName, sHomeUrl):
         # Write it to a file in the XML directory
         with open(fPublish, encoding="utf-8", mode="w") as f:  
             f.write(sXmlText)
+
+        # Publish the .cmdi.xml
+        fPublish = coll_this.get_publisfilename("joai")
+        # Write it to a file in the XML directory
+        with open(fPublish, encoding="utf-8", mode="w") as f:  
+            f.write(sXmlText)
     else:
         oBack['status'] = 'error'
         oBack['msg'] = sXmlText
+        oBack['coll'] = coll_this
     return oBack
-
-
-
 
 def get_country(cntryCode):
     # Get the country string according to field-choice
@@ -542,7 +554,8 @@ def xsd_error_list(lError, sXmlStr):
     """Transform a list of XSD error objects into a list of strings"""
 
     lHtml = []
-    lHtml.append("<html><body><h3>Fouten in het XML bestand</h3><table>")
+    # lHtml.append("<html><body><h3>Fouten in het XML bestand</h3><table>")
+    lHtml.append("<h3>Fouten in het XML bestand</h3><table>")
     lHtml.append("<thead><th>line</th><th>column</th><th>level</th><th>domain</th><th>type</th><th>message</th></thead>")
     lHtml.append("<tbody>")
     for oError in lError:
@@ -557,7 +570,7 @@ def xsd_error_list(lError, sXmlStr):
     lHtml.append("<h3>Het XML bestand:</h3>")
     lHtml.append("<div class='rawxml'><pre class='brush: xml;'>" + sXmlStr.replace("<", "&lt;").replace(">", "&gt;") + "</pre></div>")
     # Finish the HTML feedback
-    lHtml.append("</body></html>")
+    # lHtml.append("</body></html>")
     return "\n".join(lHtml)
 
 def xsd_error_as_simple_string(error):
@@ -690,6 +703,17 @@ def subtype_choices(request):
         # rturn empty-handedly
         sOut = "{}"
     return HttpResponse(sOut)
+
+def treat_bom(sHtml):
+    """REmove the BOM marker except at the beginning of the string"""
+
+    # Check if it is in the beginning
+    bStartsWithBom = sHtml.startswith(u'\ufeff')
+    # Remove everywhere
+    sHtml = sHtml.replace(u'\ufeff', '')
+    # Return what we have
+    return sHtml
+
 
 class CollectionListView(ListView):
     """Listview of collections"""
@@ -834,17 +858,25 @@ class CollectionListView(ListView):
         qs = context['overview_list']
         oBack = {'status': 'unknown', 'written': 0}
         iWritten = 0
+        iErrors = 0
         if qs != None and len(qs) > 0:
             # Assuming all goes well
             oBack['status'] = 'published'
+            coll_list = []
+            sHomeUrl = self.request.build_absolute_uri(reverse('home'))
+            sUserName = self.request.user.username
             # Walk all the descriptors in the queryset
             for coll_this in qs:
-                oBack = publish_collection(coll_this,self.request)
-                if oBack['status'] != 'ok':
-                    break
-                iWritten += 1
+                oPublish = publish_collection(coll_this, sUserName, sHomeUrl)
+                if oPublish['status'] == 'error':
+                    iErrors += 1
+                    coll_list.append(oPublish)
+                else:
+                    iWritten += 1
             # Adapt the status
             oBack['written'] = iWritten
+            oBack['errors'] = iErrors
+            oBack['coll_list'] = coll_list
         else:
             oBack['status'] = 'empty'
 
@@ -864,6 +896,7 @@ class CollectionDetailView(DetailView):
     
     def get(self, request, *args, **kwargs):
         context = {}
+        self.template_name = 'collection/coll_detail.html'
         # If this is 'registry' then get the id
         if 'type' in kwargs and kwargs['type'] == 'registry':
             # Find out which instance this is
@@ -936,14 +969,34 @@ class CollectionDetailView(DetailView):
                 # Return the result
                 return response
             elif kwargs['type'] == 'publish':
-                # Publish it
-                self.publish()
-                # Return to the overview
-                return redirect(reverse('overview'))
+                # Get an evaluation context
+                context = self.get_context_data()
+                # First perform validation
+                evaluate = self.get_validation(context)
+                # Action depends on the size of eval_list
+                if len(evaluate['eval_list']) == 0:
+                    # Publish it
+                    self.publish()
+                    # Return to the overview
+                    return redirect(reverse('overview'))
+                else:
+                    # Make the evaluation available
+                    context['evaluate'] = evaluate
+                    # Show the list of errors to the user
+                    return self.render_to_response(context)
             elif kwargs['type'] == 'output':
                 # Publish it
                 self.publish()
                 return self.download_to_xml(context)
+            elif kwargs['type'] == 'evaluate':
+                # Get an evaluation context
+                context = self.get_context_data()
+                # Get an evaluation context
+                evaluate = self.get_validation(context)
+                # Make the evaluation available
+                context['evaluate'] = evaluate
+                # Evaluate this collection to see if all is okay
+                return self.render_to_response(context)
 
         # This is where we get in all other cases (e.g. no 'type' in the kwargs)
 
@@ -953,6 +1006,100 @@ class CollectionDetailView(DetailView):
         # Visualize using the context
         return self.render_to_response(context)
 
+    def get_validation(self, context):
+        # Initialisation
+        lZeroN = [{'list': 'coll_resources', 'name': 'Resource'},
+                  {'list': 'coll_provenances', 'name': 'Provenance'}]
+        lZeroOne = [{'list': 'coll_linguality', 'name': 'Linguality'},
+                  {'list': 'coll_access', 'name': 'Access'},
+                  {'list': 'coll_docu', 'name': 'Documentation'}]
+
+        # Start evaluating
+        evaluate = {}
+        evaluate['status'] = 'This collection contains no errors'
+        eval_list = []
+        num_errors = 0
+        # Check the main part
+        coll_main = context['coll_main']
+        for oMain in coll_main:
+            if oMain['obl'].startswith('1'):
+                # This is an obligatory one
+                v = oMain['value']
+                t = oMain['type']
+                if (t == 'single' or t == 'code') and (v == None or v == ''):
+                    eval_list.append({'field': oMain['name'], 
+                                        'value': "Main field {} should occur {} time(s), but it is empty".format(
+                                            oMain['name'], oMain['obl'])})
+                    num_errors += 1
+                elif (v == None or len(v) == 0):
+                    eval_list.append({'field': oMain['name'], 
+                                        'value': "Main field {} is a list that should occur {} time(s), but it is empty".format(
+                                            oMain['name'], oMain['obl'])})
+                    num_errors += 1
+
+        # Check for all the lists that must occur at least once
+        # That is only 1 list: resources
+        if not 'coll_resources' in context or len(context['coll_resources']) == 0:
+            eval_list.append({'field': 'resources', 'value': "No resources are defined, but each collection must have at least one"})
+            num_errors += 1
+
+        # Check all lists that occur 0-n
+        for list_spec in lZeroN:
+            list_this = context[list_spec['list']]
+            list_name = list_spec['name']
+            # Check each resource
+            # for idx, res_spec in enumerate(context['coll_resources']):
+            for idx, res_spec in enumerate(list_this):
+                # resource = res_spec['resource']
+                oRes = res_spec['info_list']
+                for item in oRes:
+                    if item['obl'].startswith('1'):
+                        # This is an obligatory one
+                        v = item['value']
+                        t = item['type']
+                        if (t == 'single' or t == 'code') and (v == None or v == ''):
+                            eval_list.append({'field': item['name'], 
+                                                'value': "{} {}: field {} should occur {} time(s), but it is empty".format(
+                                                    list_name, idx+1, item['name'], item['obl'])})
+                            num_errors += 1
+                        elif (v == None or len(v) == 0):
+                            eval_list.append({'field': item['name'], 
+                                                'value': "{} {}: field {} is a list that should occur {} time(s), but it is empty".format(
+                                                    list_name, idx+1, item['name'], item['obl'])})
+                            num_errors += 1
+
+        # Check for everything that occurs 0-1 times
+        for list_spec in lZeroOne:
+            list_this = context[list_spec['list']]
+            list_name = list_spec['name']
+            # Check all the items in the list
+            for item in list_this:
+                if item['obl'].startswith('1'):
+                    # This is an obligatory one
+                    v = item['value']
+                    t = item['type']
+                    if (t == 'single' or t == 'code') and (v == None or v == ''):
+                        eval_list.append({'field': item['name'], 
+                                            'value': "{} {}: field {} should occur {} time(s), but it is empty".format(
+                                                list_name, idx+1, item['name'], item['obl'])})
+                        num_errors += 1
+                    elif (v == None or len(v) == 0):
+                        eval_list.append({'field': item['name'], 
+                                            'value': "{} {}: field {} is a list that should occur {} time(s), but it is empty".format(
+                                                list_name, idx+1, item['name'], item['obl'])})
+                        num_errors += 1
+
+        # Define the status if there are errors
+        if num_errors > 0:
+            evaluate['status'] = "This collection contains at least {} error(s)".format(num_errors)
+
+        # The following lists or elements need no further checking because they are either 0-1 or 0-n:
+        # validation [0-1]
+
+        evaluate['eval_list'] = eval_list
+        # Return the evaluation
+        return evaluate
+
     def get_object(self):
         obj = super(CollectionDetailView,self).get_object()
         self.instance = obj
@@ -960,21 +1107,43 @@ class CollectionDetailView(DetailView):
         return form
 
     def get_context_data(self, **kwargs):
+        # Get the basic context
         context = super(CollectionDetailView, self).get_context_data(**kwargs)
+
+        # Initialize
+        coll_main = []
+
+        # Preliminary own context information
         context['now'] = timezone.now()
         context['collection'] = self.instance
         # Make sure we know whether it was authenticated
         context['authenticated'] = self.request.user.is_authenticated()
+
+        # For ease of processing
+        def append_item(coll_this, sName, sObl, sType, qs):
+            if sType == "single" or sType == "code" or (qs != None and qs.count() > 0):
+                oItem = {"name": sName, "obl": sObl, "type": sType, "value": qs}
+                coll_this.append(oItem)
+            elif (sType == "numbered" or sType == "list" ) and sObl.startswith("1") and (qs==None or qs.count() == 0):
+                oItem = {"name": sName, "obl": sObl, "type": sType, "value": qs}
+                coll_this.append(oItem)
+
+
         # Provide the main-level information for the fields
-        coll_main = []
-        coll_main.append({"name": "Title(s)", "obl": "1-n", "type": "numbered", "value": self.instance.collection12m_title.all()})
-        coll_main.append({"name": "Owner(s)", "obl": "0-n", "type": "numbered", "value": self.instance.collection12m_owner.all()})
-        coll_main.append({"name": "Genre(s)", "obl": "0-n", "type": "list", "value": self.instance.collection12m_genre.all()})
-        coll_main.append({"name": "Language disorder(s)", "obl": "0-n", "type": "numbered", "value": self.instance.collection12m_owner.all()})
-        coll_main.append({"name": "Domain(s)", "obl": "0-n", "type": "list", "value": self.instance.collection12m_domain.all()})
-        coll_main.append({"name": "CLARIN centre", "obl": "0-1", "type": "single", "value": self.instance.clarinCentre})
-        coll_main.append({"name": "Persistent identifier(s)", "obl": "0-n", "type": "list", "value": self.instance.collection12m_pid.all()})
-        coll_main.append({"name": "Version", "obl": "0-1", "type": "code", "value": self.instance.version})
+        append_item(coll_main, "LandingPage",              "1",   "single", self.instance.landingPage)
+        append_item(coll_main, "Title(s)",                 "1-n", "numbered", self.instance.collection12m_title.all())
+        append_item(coll_main, "Owner(s)",                 "0-n", "numbered", self.instance.collection12m_owner.all())
+        append_item(coll_main, "Genre(s)",                 "0-n", "list", self.instance.collection12m_genre.all())
+        append_item(coll_main, "Language disorder(s)",     "0-n", "numbered", self.instance.collection12m_languagedisorder.all())
+        append_item(coll_main, "Domain(s)",                "0-n", "list", self.instance.collection12m_domain.all())
+        append_item(coll_main, "Language(s)",              "1-n", "list", self.instance.coll_languages.all())
+        append_item(coll_main, "CLARIN centre",            "0-1", "single", self.instance.clarinCentre)
+        append_item(coll_main, "Persistent identifier(s)", "0-n", "list", self.instance.collection12m_pid.all())
+        append_item(coll_main, "Version",                  "0-1", "code", self.instance.version)
+        append_item(coll_main, "Size(s)",                  "0-n", "list", self.instance.collection12m_totalsize.all())
+        append_item(coll_main, "Relation(s)",              "0-n", "numbered", self.instance.collection12m_relation.all())
+        append_item(coll_main, "Creator(s)",               "0-n", "numbered", self.instance.collection12m_resourcecreator.all())
+        append_item(coll_main, "Project(s)",               "0-n", "numbered", self.instance.collection12m_project.all())
         context['coll_main'] = coll_main
         # Get through all resources
         coll_resources = []
@@ -984,40 +1153,35 @@ class CollectionDetailView(DetailView):
             sSubtype = "No DCtype available" if resource.DCtype == None else resource.subtype_only()
             # Create an item for this resource
             resource_items = []
-            resource_items.append({"name": "Dublin-Core Type", "obl": "1", "type": "single", "value": sDCtype})
-            resource_items.append({"name": "subtype", "obl": "0-1", "type": "single", "value": sSubtype})
-            resource_items.append({"name": "Modality", "obl": "1-n", "type": "numbered", "value": resource.modalities.all()})
-            resource_items.append({"name": "Recording environment", "obl": "0-n", "type": "numbered", "value": resource.recordingenvironments.all()})
-            resource_items.append({"name": "Recording condition", "obl": "0-n", "type": "numbered", "value": resource.recordingconditions.all()})
-            resource_items.append({"name": "Channel", "obl": "0-n", "type": "numbered", "value": resource.channels.all()})
-            resource_items.append({"name": "Social context", "obl": "0-n", "type": "numbered", "value": resource.socialcontexts.all()})
-            resource_items.append({"name": "Planning type", "obl": "0-n", "type": "numbered", "value": resource.planningtypes.all()})
-            resource_items.append({"name": "Interactivity", "obl": "0-n", "type": "numbered", "value": resource.interactivities.all()})
-            resource_items.append({"name": "Involvement", "obl": "0-n", "type": "numbered", "value": resource.involvements.all()})
-            resource_items.append({"name": "Audience", "obl": "0-n", "type": "numbered", "value": resource.audiences.all()})
+            append_item(resource_items, "Dublin-Core Type",  "1", "single", sDCtype)
+            append_item(resource_items, "subtype",           "0-1", "single", sSubtype)
+            append_item(resource_items, "Modality",          "1-n", "list", resource.modalities.all())
+            append_item(resource_items, "Recording environment", "0-n", "list", resource.recordingenvironments.all())
+            append_item(resource_items, "Recording condition", "0-n", "list", resource.recordingconditions.all())
+            append_item(resource_items, "Channel",           "0-n", "list", resource.channels.all())
+            append_item(resource_items, "Social context",    "0-n", "list", resource.socialcontexts.all())
+            append_item(resource_items, "Planning type",     "0-n", "list", resource.planningtypes.all())
+            append_item(resource_items, "Interactivity",     "0-n", "list", resource.interactivities.all())
+            append_item(resource_items, "Involvement",       "0-n", "list", resource.involvements.all())
+            append_item(resource_items, "Audience",          "0-n", "list", resource.audiences.all())
             # speech corpus stuff
             if resource.speechCorpus:
-                resource_items.append({"name": "SC duration speech", "obl": "0-1", "type": "single", "value": resource.speechCorpus.durationOfEffectiveSpeech})
-                resource_items.append({"name": "SC duration full", "obl": "0-1", "type": "single", "value": resource.speechCorpus.durationOfFullDatabase})
-                resource_items.append({"name": "SC speakers", "obl": "0-1", "type": "single", "value": resource.speechCorpus.numberOfSpeakers})
-                resource_items.append({"name": "SC sp. demogr", "obl": "0-1", "type": "single", "value": resource.speechCorpus.speakerDemographics})
+                append_item(resource_items, "SC duration speech",   "0-1", "single", resource.speechCorpus.durationOfEffectiveSpeech)
+                append_item(resource_items, "SC duration full",     "0-1", "single", resource.speechCorpus.durationOfFullDatabase)
+                append_item(resource_items, "SC speakers",          "0-1", "single", resource.speechCorpus.numberOfSpeakers)
+                append_item(resource_items, "SC sp. demogr",        "0-1", "single", resource.speechCorpus.speakerDemographics)
             # Written corpus stuff
             if resource.writtenCorpus:
-                resource_items.append({"name": "WC authors", "obl": "0-1", "type": "single", "value": resource.writtenCorpus.numberOfAuthors})
-                resource_items.append({"name": "WC auth. demogr", "obl": "0-1", "type": "single", "value": resource.writtenCorpus.authorDemographics})
+                append_item(resource_items, "WC authors", "0-1", "single", resource.writtenCorpus.numberOfAuthors)
+                append_item(resource_items, "WC auth. demogr", "0-1", "single", resource.writtenCorpus.authorDemographics)
             # Look at the sizes
             for item in resource.totalsize12m_resource.all():
                 sSize = "{} {}".format(item.size, item.sizeUnit)
-                resource_items.append({"name": "Size", "obl": "0-n", "type": "single", "value": sSize})
+                append_item(resource_items, "Size", "0-n", "single", sSize)
+
             # Look at the annotations
-            for item in resource.annotations.all():
-                sFmts = ""
-                for fmt in item.annotation_formats.all():
-                    if sFmts != "": 
-                        sFmts += ", "
-                    sFmts += fmt.get_name_display()
-                sAnnot = "[{}] [{}] [{}]".format(item.get_type_display(), item.get_mode_display(), sFmts)
-                resource_items.append({"name": "Annotation", "obl": "0-n", "type": "single", "value": sAnnot})
+            append_item(resource_items, "Annotation", "0-n", "numbered", resource.annotations.all())
+
             # Look at the media
             for item in resource.media_items.all():
                 sFmts = ""
@@ -1025,7 +1189,7 @@ class CollectionDetailView(DetailView):
                     if sFmts != "": 
                         sFmts += ", "
                     sFmts += fmt.get_name_display()
-                resource_items.append({"name": "Media", "obl": "0-n", "type": "single", "value": sFmts})
+                append_item(resource_items, "Media", "0-n", "single", sFmts)
             # Combine
             resource_obj = {'resource': resource, 'info_list': resource_items}
             # Add to the list
@@ -1039,18 +1203,66 @@ class CollectionDetailView(DetailView):
             prov_this = []
             # Look for temporal
             if provenance.temporalProvenance:
-                prov_this.append({"name": "Temporal", "obl": "0-1", "type": "single", "value": provenance.temporalProvenance.get_view()})
+                append_item(prov_this, "Temporal", "0-1", "single", provenance.temporalProvenance.get_view())
             for geo in provenance.g_provenances.all():
-                prov_this.append({"name": "Cities", "obl": "0-n", "type": "list", "value": geo.cities.all()})
+                append_item(prov_this, "Cities", "0-n", "list", geo.cities.all())
                 cntry = geo.country
                 if cntry != None:
                     # Look up the country in the list
                     (sEnglish, sAlpha2) = get_country(cntry)
                     sCountry = "{} {}".format(sEnglish, sAlpha2)
-                    prov_this.append({"name": "Country", "obl": "0-1", "type": "single", "value": sCountry})
-            coll_provenances.append(prov_this)
+                    append_item(prov_this, "Country", "0-1", "single", sCountry)
+            coll_provenances.append({'info_list': prov_this})
         # Add the list of povenances to the context
         context['coll_provenances'] = coll_provenances
+
+        # Linguality
+        linguality = self.instance.linguality
+        coll_ling = []
+        if linguality != None:
+            append_item(coll_ling, "Type", "0-n", "list", linguality.linguality_types.all())
+            append_item(coll_ling, "Nativeness", "0-n", "list", linguality.linguality_nativenesses.all())
+            append_item(coll_ling, "AgeGroup", "0-n", "list", linguality.linguality_agegroups.all())
+            append_item(coll_ling, "Status", "0-n", "list", linguality.linguality_statuses.all())
+            append_item(coll_ling, "Variant", "0-n", "list", linguality.linguality_variants.all())
+            append_item(coll_ling, "MultiType", "0-n", "list", linguality.multilinguality_types.all())
+        context['coll_linguality'] = coll_ling
+
+        # Accessibility
+        access = self.instance.access
+        coll_access = []
+        if access != None:
+            append_item(coll_access, "Name", "1", "single", access.name)
+            append_item(coll_access, "Availability", "0-n", "list", access.acc_availabilities.all())
+            append_item(coll_access, "License name(s)", "0-n", "list", access.acc_licnames.all())
+            append_item(coll_access, "Licence URL(s)", "0-n", "list", access.acc_licurls.all())
+            append_item(coll_access, "Non-commercial usage", "0-1", "single", access.nonCommercialUsageOnly)
+            append_item(coll_access, "Website(s)", "0-n", "list", access.acc_websites.all())
+            append_item(coll_access, "ISBN", "0-1", "single", access.ISBN)
+            append_item(coll_access, "ISLRN", "0-1", "single", access.ISLRN)
+            append_item(coll_access, "Contact(s)", "0-n", "list", access.acc_contacts.all())
+            append_item(coll_access, "Medium(s)", "0-n", "list", access.acc_mediums.all())
+
+        context['coll_access'] = coll_access
+
+        # Documentation
+        docu = self.instance.documentation
+        coll_docu = []
+        if docu != None:
+            append_item(coll_docu, "Language(s)", "1-n", "list", docu.doc_languages.all())
+            append_item(coll_docu, "Type(s)", "0-n", "list", docu.doc_types.all())
+            append_item(coll_docu, "File(s)", "0-n", "list", docu.doc_files.all())
+            append_item(coll_docu, "URL(s)", "0-n", "list", docu.doc_urls.all())
+        context['coll_docu'] = coll_docu
+
+        # Validation
+        vali = self.instance.validation
+        coll_vali = []
+        if vali != None:
+            append_item(coll_vali, "Type", "0-1", "single", vali.type)
+            append_item(coll_vali, "Method(s)", "0-n", "list", vali.validationmethods.all())
+
+        context['coll_vali'] = coll_vali
 
         # Return the whole context
         return context

@@ -20,10 +20,13 @@ WRITABLE_DIR = os.path.abspath(os.path.join(BASE_DIR, "../../writable/database/"
 if "RU-collbank\\writable" in WRITABLE_DIR:
     # Need another string
     WRITABLE_DIR = os.path.abspath(os.path.join(BASE_DIR, "../../../writable/database/"))
+elif "/applejack" in BASE_DIR:
+    WRITABLE_DIR = os.path.abspath(os.path.join(BASE_DIR, "../../writable/collbank/database/"))
 
 OUTPUT_XML = os.path.abspath(os.path.join(WRITABLE_DIR, "../collbank-file.xml"))
 
 REGISTRY_DIR = os.path.abspath(os.path.join(WRITABLE_DIR, "../registry/"))
+PUBLISH_DIR = os.path.abspath(os.path.join(WRITABLE_DIR, "../joai/"))
 
 #APP_PREFIX = "ru/"
 #if "d:" in WRITABLE_DIR or "D:" in WRITABLE_DIR:
@@ -35,6 +38,11 @@ REGISTRY_DIR = os.path.abspath(os.path.join(WRITABLE_DIR, "../registry/"))
 APP_PREFIX = "collbank/"
 if "/scratch" in WRITABLE_DIR:
     admin.site.site_url = "/collbank/"
+elif '/applejack' in WRITABLE_DIR:
+    admin.site.site_url = "/collbank/"
+elif "D:" in WRITABLE_DIR:
+    admin.site.site_url = "/"
+    APP_PREFIX = "" 
 
 FORCE_SCRIPT_NAME = admin.site.site_url
 
@@ -142,7 +150,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Europe/Amsterdam'
 
 USE_I18N = True
 
@@ -8099,7 +8107,7 @@ LANGUAGE_CODE_LIST = [
 # https://docs.djangoproject.com/en/1.9/howto/static-files/
 
 STATIC_URL = '/static/'
-if ("/scratch" in WRITABLE_DIR):
+if ("/scratch" in WRITABLE_DIR or "/applejack" in WRITABLE_DIR):
     STATIC_URL = '/'+APP_PREFIX+'static/'
 
 STATIC_ROOT = os.path.abspath(os.path.join("/", posixpath.join(*(BASE_DIR.split(os.path.sep) + ['static']))))

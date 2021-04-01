@@ -8,7 +8,7 @@ Each resource in the collection is characterised by its own annotations.
 from django.db import models
 from django.contrib.auth.models import User
 from datetime import datetime
-from collbank.settings import REGISTRY_URL, REGISTRY_DIR
+from collbank.settings import REGISTRY_URL, REGISTRY_DIR, PUBLISH_DIR
 import requests
 from requests.auth import HTTPBasicAuth
 
@@ -296,6 +296,8 @@ def build_choice_list(field, position=None, subcat=None):
             # Take a default list
             choice_list = [('0','-'),('1','N/A')]
         else:
+            ## Force a real choice to be made
+            #choice_list = [('-1','-')]
             for choice in FieldChoice.objects.filter(field__iexact=field):
                 # Default
                 sEngName = ""
@@ -553,6 +555,9 @@ class MediaFormat(models.Model):
         # Return the new copy
         return new_copy
 
+    def get_view(self):
+        return self.get_name_display()
+
 
 class AnnotationFormat(models.Model):
     """Format of an annotation"""
@@ -569,6 +574,9 @@ class AnnotationFormat(models.Model):
         new_copy = get_instance_copy(self)
         # Return the new copy
         return new_copy
+
+    def get_view(self):
+        return self.get_name_display()
 
 
 class Annotation(models.Model):
@@ -606,6 +614,12 @@ class Annotation(models.Model):
         copy_m2m(self, new_copy, "annotation_formats")
         # Return the new copy
         return new_copy
+
+    def get_view(self):
+        """Present the current annotation format"""
+        sFmts = m2m_combi(self.annotation_formats)
+        sBack = "[{}] [{}] [{}]".format(self.get_type_display(), self.get_mode_display(), sFmts)
+        return sBack
 
 
 class TotalSize(models.Model):
@@ -650,6 +664,9 @@ class TotalCollectionSize(models.Model):
         # Return the new copy
         return new_copy
 
+    def get_view(self):
+        return "{} {}".format(self.size, self.sizeUnit)
+
 
 class Modality(models.Model):
     """Modality of a resource"""
@@ -676,7 +693,7 @@ class Modality(models.Model):
         return new_copy
 
     def get_view(self):
-        return self.name
+        return self.get_name_display()
 
 
 class TemporalProvenance(models.Model):
@@ -837,6 +854,9 @@ class LingualityNativeness(models.Model):
         # Return the new copy
         return new_copy
 
+    def get_view(self):
+        return self.get_name_display()
+
 
 class LingualityAgeGroup(models.Model):
     """Age group of linguality"""
@@ -853,6 +873,9 @@ class LingualityAgeGroup(models.Model):
         new_copy = get_instance_copy(self)
         # Return the new copy
         return new_copy
+
+    def get_view(self):
+        return self.get_name_display()
 
 
 class LingualityStatus(models.Model):
@@ -874,6 +897,9 @@ class LingualityStatus(models.Model):
         # Return the new copy
         return new_copy
 
+    def get_view(self):
+        return self.get_name_display()
+
 
 class LingualityVariant(models.Model):
     """Variant of linguality"""
@@ -891,6 +917,9 @@ class LingualityVariant(models.Model):
         # Return the new copy
         return new_copy
 
+    def get_view(self):
+        return self.get_name_display()
+
 
 class MultilingualityType(models.Model):
     """Type of multi-linguality"""
@@ -907,6 +936,9 @@ class MultilingualityType(models.Model):
         new_copy = get_instance_copy(self)
         # Return the new copy
         return new_copy
+
+    def get_view(self):
+        return self.get_name_display()
 
 
 class Linguality(models.Model):
@@ -953,6 +985,9 @@ class Language(models.Model):
             sBack = "[{}] {}".format(idt,choice_english("language.name", self.name))
         return sBack
 
+    def get_view(self):
+        return self.get_name_display()
+
 
 class DocumentationLanguage(Language):
 
@@ -960,11 +995,20 @@ class DocumentationLanguage(Language):
     documentationParent = models.ForeignKey("Documentation", blank=False, null=False, default=1, related_name="doc_languages")
     
     def __str__(self):
-        arColl = self.documentationParent.collection_set.all()
-        # arColl = Collection.objects.filter(documentation=self.documentationParent)
-        idt = arColl[0].identifier
-        # idt = self.documentationParent.collection.identifier
-        sBack = "[{}] {}".format(idt,choice_english("language.name", self.name))
+        sBack = "[unclear]"
+        # There is only ONE collection parent
+        doc = self.documentationParent
+        if doc != None:
+            col = Collection.objects.filter(documentation=doc).first()
+            if col != None:
+                idt = col.identifier
+                sBack = "[{}] {}".format(idt,choice_english("language.name", self.name))
+
+        #arColl = self.documentationParent.collection_set.all()
+        ## arColl = Collection.objects.filter(documentation=self.documentationParent)
+        #idt = arColl[0].identifier
+        ## idt = self.documentationParent.collection.identifier
+        #sBack = "[{}] {}".format(idt,choice_english("language.name", self.name))
         return sBack
 
     def get_copy(self):
@@ -1035,15 +1079,19 @@ class Relation(models.Model):
         if self.rtype != '0':
             type = choice_english(RELATION_TYPE, self.rtype)
         else:
-            type = '(unspecified)'
+            type = '(unspecified relation)'
         if self.related == None:
-            withcoll = ""
+            if self.extrel == None:
+                withcoll = "(unspecified collection)"
+            else:
+                withcoll = self.extrel.identifier
         else:
             withcoll = self.related.identifier
         return "[{}] {} [{}]".format(idt,type, withcoll)
 
     def get_relation_fname(self):
-        sCsvFile = "cbrelation_{}_{}.txt".format(self.collection.id, self.id)
+        # Show that this is a tab-separated CSV
+        sCsvFile = "cbrelation_{}_{}.tsv".format(self.collection.id, self.id)
         return sCsvFile
 
     def get_relation_path(self):
@@ -1084,6 +1132,10 @@ class Relation(models.Model):
         # Return the new copy
         return new_copy
 
+    def get_view(self):
+        """How this relation must be shown in the detail-view"""
+        return self.__str__()
+
 
 class Domain(models.Model):
     """Domain"""
@@ -1110,8 +1162,7 @@ class Domain(models.Model):
 
     def get_view(self):
         return self.name
-
-
+    
 
 class AccessAvailability(models.Model):
     """Access availability"""
@@ -1132,7 +1183,10 @@ class AccessAvailability(models.Model):
         # Return the new copy
         return new_copy
 
+    def get_view(self):
+        return self.get_name_display()
 
+    
 class LicenseName(models.Model):
     """Name of the license"""
 
@@ -1148,6 +1202,9 @@ class LicenseName(models.Model):
         new_copy = get_instance_copy(self)
         # Return the new copy
         return new_copy
+
+    def get_view(self):
+        return self.name
 
 
 class LicenseUrl(models.Model):
@@ -1165,6 +1222,9 @@ class LicenseUrl(models.Model):
         new_copy = get_instance_copy(self)
         # Return the new copy
         return new_copy
+
+    def get_view(self):
+        return self.name
 
 
 class NonCommercialUsageOnly(models.Model):
@@ -1184,6 +1244,9 @@ class NonCommercialUsageOnly(models.Model):
         new_copy = get_instance_copy(self)
         # Return the new copy
         return new_copy
+
+    def get_view(self):
+        return self.get_name_display()
 
 
 class AccessContact(models.Model):
@@ -1205,6 +1268,9 @@ class AccessContact(models.Model):
         # Return the new copy
         return new_copy
 
+    def get_view(self):
+        return self.__str__()
+
 
 class AccessWebsite(models.Model):
     """Website to access the collection"""
@@ -1222,6 +1288,9 @@ class AccessWebsite(models.Model):
         # Return the new copy
         return new_copy
 
+    def get_view(self):
+        return self.name
+
 
 class AccessMedium(models.Model):
     """Medium used to access a resource of the collection"""
@@ -1238,6 +1307,9 @@ class AccessMedium(models.Model):
         new_copy = get_instance_copy(self)
         # Return the new copy
         return new_copy
+
+    def get_view(self):
+        return self.get_format_display()
 
 
 class Access(models.Model):
@@ -1338,17 +1410,18 @@ class Person(models.Model):
 class ResourceCreator(models.Model):
     """Creator of this resource"""
 
-    # [1]
+    # [1] Organization that created the resource
     organization = models.ManyToManyField(Organization, blank=False, related_name="resourcecreatorm2m_organization")
     # [1]     Each collection can have [0-n] resource creators
     collection = models.ForeignKey("Collection", blank=False, null=False, default=1, related_name="collection12m_resourcecreator")
 
     def __str__(self):
-        # idt = m2m_identifier(self.collection_set)
-        idt = self.collection.identifier
-        orgs = m2m_combi(self.organizations)
-        pers = m2m_combi(self.persons)
-        return "[{}] o:{}|p:{}".format(idt,orgs,pers)
+        # OLD: idt = self.collection.identifier
+        orgs = m2m_combi(self.organizations)    # One or more organizations
+        pers = m2m_combi(self.persons)          # M-to-1 link from Person to ResourceCreator
+        sBack = "o:{} p:{}".format(orgs, pers)
+        # OLD sBack = "[{}] o:{}|p:{}".format(idt,orgs,pers)
+        return sBack
 
     def get_copy(self):
         # Make a clean copy
@@ -1358,6 +1431,14 @@ class ResourceCreator(models.Model):
         copy_m2m(self, new_copy, "persons")
         # Return the new copy
         return new_copy
+
+    def get_view(self):
+        """The view for detail-view"""
+
+        orgs = m2m_combi(self.organizations)    # One or more organizations
+        pers = m2m_combi(self.persons)          # M-to-1 link from Person to ResourceCreator
+        sBack = "{} ({})".format(pers, orgs)
+        return sBack
 
 
 class DocumentationType(models.Model):
@@ -1376,6 +1457,9 @@ class DocumentationType(models.Model):
         # Return the new copy
         return new_copy
 
+    def get_view(self):
+        return self.get_format_display()
+
 
 class DocumentationFile(models.Model):
     """File name for documentation"""
@@ -1392,6 +1476,9 @@ class DocumentationFile(models.Model):
         new_copy = get_instance_copy(self)
         # Return the new copy
         return new_copy
+
+    def get_view(self):
+        return self.name
 
 
 class DocumentationUrl(models.Model):
@@ -1410,6 +1497,9 @@ class DocumentationUrl(models.Model):
         # Return the new copy
         return new_copy
 
+    def get_view(self):
+        return self.name
+
 
 class Documentation(models.Model):
     """Creator of this resource"""
@@ -1423,7 +1513,18 @@ class Documentation(models.Model):
     def __str__(self):
         fld_tp = m2m_combi(self.doc_types)
         fld_fl = m2m_combi(self.doc_files)
-        return "t:{}|f:{}".format(fld_tp, fld_fl)
+        fld_ur = m2m_combi(self.doc_urls)
+        fld_ln = m2m_combi(self.doc_languages)
+        lBack = []
+        if fld_tp != "": lBack.append("t:{}".format(fld_tp))
+        if fld_fl != "": lBack.append("f:{}".format(fld_fl))
+        if fld_ur != "": lBack.append("u:{}".format(fld_ur))
+        if fld_ln != "": lBack.append("l:{}".format(fld_ln))
+        if len(lBack) > 0:
+            sBack = " ".join(lBack)
+        else:
+            sBack = "(empty)"
+        return sBack
 
     def get_copy(self):
         # Make a clean copy
@@ -1451,6 +1552,9 @@ class ValidationType(models.Model):
         # Return the new copy
         return new_copy
 
+    def get_view(self):
+        return self.get_name_display()
+
 
 class ValidationMethod(models.Model):
     """Validation method"""
@@ -1467,6 +1571,9 @@ class ValidationMethod(models.Model):
         new_copy = get_instance_copy(self)
         # Return the new copy
         return new_copy
+
+    def get_view(self):
+        return self.get_name_display()
 
 
 class Validation(models.Model):
@@ -1501,7 +1608,9 @@ class ProjectFunder(models.Model):
     project = models.ForeignKey("Project", blank=False, null=False, default=1, related_name="funders")
 
     def __str__(self):
-        return self.name[:50]
+        # OLD: sBack = self.name[:50]
+        sBack = self.name
+        return sBack
 
     def get_copy(self):
         # Make a clean copy
@@ -1538,7 +1647,6 @@ class Project(models.Model):
     collection = models.ForeignKey("Collection", blank=False, null=False, default=1, related_name="collection12m_project")
 
     def __str__(self):
-        # idt = m2m_identifier(self.collection_set)
         idt = self.collection.identifier
         sName = self.title
         if sName == "": sName = self.URL
@@ -1553,6 +1661,11 @@ class Project(models.Model):
         copy_fk(self, new_copy, "URL")
         # Return the new copy
         return new_copy
+
+    def get_view(self):
+        """The view for detail-view"""
+        sFunders = m2m_combi(self.funder)
+        return "{} <a href=\"{}\">site</a> (Funder: <span class=\"coll-funder\">{}</span>)".format(self.title, self.URL, sFunders)
 
 
 class CharacterEncoding(models.Model):
@@ -1615,6 +1728,9 @@ class RecordingEnvironment(models.Model):
         # Return the new copy
         return new_copy
 
+    def get_view(self):
+        return self.get_name_display()
+
 
 class Channel(models.Model):
     """Channel for the speech corpus"""
@@ -1633,7 +1749,7 @@ class Channel(models.Model):
         return new_copy
 
     def get_view(self):
-        return self.__str__()
+        return self.get_name_display()
 
 
 class ConversationalType(models.Model):
@@ -1651,6 +1767,9 @@ class ConversationalType(models.Model):
         new_copy = get_instance_copy(self)
         # Return the new copy
         return new_copy
+
+    def get_view(self):
+        return self.get_name_display()
 
 
 class RecordingCondition(models.Model):
@@ -1670,6 +1789,9 @@ class RecordingCondition(models.Model):
         # Return the new copy
         return new_copy
 
+    def get_view(self):
+        return self.name
+
 
 class SocialContext(models.Model):
     """Social context"""
@@ -1688,7 +1810,7 @@ class SocialContext(models.Model):
         return new_copy
 
     def get_view(self):
-        return self.__str__()
+        return self.get_name_display()
 
 
 class PlanningType(models.Model):
@@ -1708,7 +1830,7 @@ class PlanningType(models.Model):
         return new_copy
 
     def get_view(self):
-        return self.__str__()
+        return self.get_name_display()
 
 
 class Interactivity(models.Model):
@@ -1731,7 +1853,7 @@ class Interactivity(models.Model):
         return new_copy
 
     def get_view(self):
-        return self.__str__()
+        return self.get_name_display()
 
 
 class Involvement(models.Model):
@@ -1751,7 +1873,7 @@ class Involvement(models.Model):
         return new_copy
 
     def get_view(self):
-        return self.__str__()
+        return self.get_name_display()
 
 
 class Audience(models.Model):
@@ -1771,7 +1893,7 @@ class Audience(models.Model):
         return new_copy
 
     def get_view(self):
-        return self.__str__()
+        return self.get_name_display()
 
 
 class AudioFormat(models.Model):
@@ -2086,11 +2208,14 @@ class Collection(models.Model):
         sFileName = "cbmetadata_{0:05d}".format(self.id)
         return sFileName
 
-    def get_publisfilename(self):
+    def get_publisfilename(self, sType=""):
         # Get the correct pidname
         sFileName = self.get_xmlfilename()
         # THink of a filename
-        sPublish = os.path.abspath(os.path.join(REGISTRY_DIR, sFileName))
+        if sType == "joai":
+            sPublish = os.path.abspath(os.path.join(PUBLISH_DIR, sFileName)) + ".cmdi.xml"
+        else:
+            sPublish = os.path.abspath(os.path.join(REGISTRY_DIR, sFileName))
         return sPublish
 
     def get_targeturl(self):
@@ -2165,11 +2290,14 @@ class Collection(models.Model):
 
     def get_copy(self):
         # Make a clean copy
-        new_copy = get_instance_copy(self)
+        # new_copy = get_instance_copy(self)
+        new_copy = Collection(url=self.url, handledomain=self.handledomain, landingPage = self.landingPage,
+                              searchPage = self.searchPage, description=self.description, clarinCentre=self.clarinCentre)
+        new_copy.save()
         # Reset the PIDFIELD 
         new_copy.pidname = "empty_{0:05d}".format(self.id)
         # Create a unique identifier
-        new_copy.identifier = "coll_{}".format(self.id)
+        new_copy.identifier = "{}_{}".format(self.identifier[:25],new_copy.id)
         # Copy the one-to-many fields
         copy_m2m(self, new_copy, "collection12m_title")             # Title               +
         copy_m2m(self, new_copy, "collection12m_owner")             # Owner               +
@@ -2189,14 +2317,6 @@ class Collection(models.Model):
         copy_fk(self, new_copy, "access")
         copy_fk(self, new_copy, "documentation")
         copy_fk(self, new_copy, "validation")
-        #if self.linguality != None:                                 # Linguality
-        #    new_copy.linguality = self.linguality.get_copy()
-        #if self.access != None:                                     # Access
-        #    new_copy.access = self.access.get_copy()
-        #if self.documentation != None:                              # Documentation
-        #    new_copy.documentation = self.documentation.get_copy()
-        #if self.validation != None:                                 # Validation
-        #    new_copy.validation = self.validation.get_copy()
         # Return the new copy
         return new_copy
 
