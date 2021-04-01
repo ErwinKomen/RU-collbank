@@ -3,7 +3,7 @@ django-adaptors==0.2.5
 django-nested-admin==3.0.13
 et-xmlfile==1.0.1
 jdcal==1.3
-lxml==3.6.4
+lxml==4.6.3
 openpyxl==2.4.0
 python-monkey-business==1.0.0
 six==1.10.0
