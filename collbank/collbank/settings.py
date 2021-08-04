@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/1.9/ref/settings/
 
 import os
 import posixpath
+import sys
 from django.contrib import admin
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -28,23 +29,24 @@ OUTPUT_XML = os.path.abspath(os.path.join(WRITABLE_DIR, "../collbank-file.xml"))
 REGISTRY_DIR = os.path.abspath(os.path.join(WRITABLE_DIR, "../registry/"))
 PUBLISH_DIR = os.path.abspath(os.path.join(WRITABLE_DIR, "../joai/"))
 
-#APP_PREFIX = "ru/"
-#if "d:" in WRITABLE_DIR or "D:" in WRITABLE_DIR:
-#    APP_PREFIX = ""
-#elif "/scratch" in WRITABLE_DIR:
-#    APP_PREFIX = "collbank/"
-#    admin.site.site_url = "/collbank/"
+print("writable dir: {}".format(WRITABLE_DIR), file=sys.stderr)
+print("output xml: {}".format(OUTPUT_XML), file=sys.stderr)
+print("registry dir: {}".format(REGISTRY_DIR), file=sys.stderr)
+print("publish dir: {}".format(PUBLISH_DIR), file=sys.stderr)
 
 APP_PREFIX = "collbank/"
 if "/scratch" in WRITABLE_DIR:
-    admin.site.site_url = "/collbank/"
+    # admin.site.site_url = "/collbank/"
+    ADMIN_SITE_URL = "/colbank/"
 elif '/applejack' in WRITABLE_DIR:
-    admin.site.site_url = "/collbank/"
+    # admin.site.site_url = "/collbank/"
+    ADMIN_SITE_URL = "/colbank/"
 elif "D:" in WRITABLE_DIR:
-    admin.site.site_url = "/"
+    # admin.site.site_url = "/"
+    ADMIN_SITE_URL = "/"
     APP_PREFIX = "" 
 
-FORCE_SCRIPT_NAME = admin.site.site_url
+# FORCE_SCRIPT_NAME = admin.site.site_url
 
 # Not the location of the wsgi.py file for "reload_collbank"
 WSGI_FILE = os.path.abspath(os.path.join(BASE_DIR,"collbank/wsgi.py"))
@@ -83,13 +85,14 @@ INSTALLED_APPS = [
     'collbank.collection',
 ]
 
-MIDDLEWARE_CLASSES = [
+# MIDDLEWARE_CLASSES = [
+MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
+    # 'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]

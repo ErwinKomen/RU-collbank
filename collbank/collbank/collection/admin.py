@@ -1,13 +1,12 @@
 from django import forms
 from django.contrib import admin
 from django.contrib.contenttypes.models import ContentType
-from django.core.urlresolvers import resolve
 from django.core import serializers
 from django.db.models import Q
 from django.db.models.functions import Lower
 from django.forms import Textarea
 from django.shortcuts import redirect
-from django.core.urlresolvers import reverse
+from django.urls import reverse, resolve
 from collbank.collection.models import *
 from collbank.settings import APP_PREFIX
 from functools import partial
@@ -60,7 +59,7 @@ def get_formfield_qs(modelThis, instanceThis, parentName, bNoEmpty = False):
 
 def copy_item(request=None):
     # Check for authentications
-    if not request.user.is_authenticated():
+    if not request.user.is_authenticated:
         # Redirect to the home page?
         return redirect(reverse('home'))
     # Get the parameters from the request object

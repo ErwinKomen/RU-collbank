@@ -474,7 +474,7 @@ class Title(models.Model):
     # [1; f]
     name = models.TextField("Title used for the collection as a whole", help_text=get_help('title'))
     # [1]     Each collection can have [1-n] titles
-    collection = models.ForeignKey("Collection", blank=False, null=False, default=1, related_name="collection12m_title")
+    collection = models.ForeignKey("Collection", blank=False, null=False, default=1, on_delete=models.CASCADE, related_name="collection12m_title")
 
     def __str__(self):
         # idt = m2m_identifier(self.collection_set)
@@ -497,7 +497,7 @@ class Owner(models.Model):
     # [1; f]
     name = models.TextField("One of the collection or resource owners", help_text=get_help('owner'))
     # [1]     Each collection can have [0-n] owvers
-    collection = models.ForeignKey("Collection", blank=False, null=False, default=1, related_name="collection12m_owner")
+    collection = models.ForeignKey("Collection", blank=False, null=False, on_delete=models.CASCADE, default=1, related_name="collection12m_owner")
 
     def __str__(self):
         # idt = m2m_identifier(self.collection_set)
@@ -523,7 +523,7 @@ class Media(models.Model):
     # format (0-n; c)
     # format = models.ManyToManyField("MediaFormat", blank=True, related_name="mediam2m_mediaformat")
     # [1]
-    resource = models.ForeignKey("Resource", blank=False, null=False, default=-1 , related_name="media_items")
+    resource = models.ForeignKey("Resource", blank=False, null=False, default=-1 , on_delete=models.CASCADE, related_name="media_items")
 
     def __str__(self):
         sFormats = m2m_combi(self.mediaformat12m_media)
@@ -544,7 +544,7 @@ class MediaFormat(models.Model):
 
     name = models.CharField("Format of a medium", choices=build_choice_list(MEDIA_FORMAT), max_length=5, help_text=get_help(MEDIA_FORMAT), default='0')
     # [1]     Each [Media] object can have [0-n] MediaFormat items
-    media = models.ForeignKey(Media, blank=False, null=False, default=1, related_name="mediaformat12m_media")
+    media = models.ForeignKey(Media, blank=False, null=False, default=1, on_delete=models.CASCADE, related_name="mediaformat12m_media")
 
     def __str__(self):
         return choice_english(MEDIA_FORMAT, self.name)
@@ -564,7 +564,7 @@ class AnnotationFormat(models.Model):
 
     name = models.CharField("Annotation format", choices=build_choice_list(ANNOTATION_FORMAT), max_length=5, help_text=get_help(ANNOTATION_FORMAT), default='0')
     # [1] link to the parent Annotation (many-to-one relation)
-    annotation = models.ForeignKey("Annotation", blank=False, null=False, default=-1, related_name = "annotation_formats")
+    annotation = models.ForeignKey("Annotation", blank=False, null=False, default=-1, on_delete=models.CASCADE, related_name = "annotation_formats")
 
     def __str__(self):
         return choice_english(ANNOTATION_FORMAT, self.name)
@@ -589,7 +589,7 @@ class Annotation(models.Model):
     # The [formatAnn] field is the m2m field that should now be used
     formatAnn = models.ManyToManyField(AnnotationFormat, related_name="annotationm2m_formatann")
     # [1]
-    resource = models.ForeignKey("Resource", blank=False, null=False, default=-1 , related_name="annotations")
+    resource = models.ForeignKey("Resource", blank=False, null=False, default=-1 , on_delete=models.CASCADE, related_name="annotations")
 
     def __str__(self):
         try:
@@ -629,7 +629,7 @@ class TotalSize(models.Model):
     size = models.CharField("Size of the collection", default="unknown", max_length=80)
     sizeUnit = models.CharField("Units", help_text=get_help(SIZEUNIT), max_length=50, default='MB')
     # [1]     Each resource can have [0-n] total-sizes
-    resource = models.ForeignKey("Resource", blank=False, null=False, default=1, related_name="totalsize12m_resource")
+    resource = models.ForeignKey("Resource", blank=False, null=False, default=1, on_delete=models.CASCADE, related_name="totalsize12m_resource")
 
     def __str__(self):
         if self.resource.collection_id >0:
@@ -653,7 +653,7 @@ class TotalCollectionSize(models.Model):
     # [1]
     sizeUnit = models.CharField("Units", help_text=get_help(SIZEUNIT), max_length=50, default='MB')
     # [1]     Each collection can have [0-n] total-sizes
-    collection = models.ForeignKey("Collection", blank=False, null=False, default=1, related_name="collection12m_totalsize")
+    collection = models.ForeignKey("Collection", blank=False, null=False, default=1, on_delete=models.CASCADE, related_name="collection12m_totalsize")
 
     def __str__(self):
         return "[{}] {} {}".format(self.collection.identifier,self.size,self.sizeUnit)
@@ -677,7 +677,7 @@ class Modality(models.Model):
     name = models.CharField("Resource modality", choices=build_choice_list(RESOURCE_MODALITY), max_length=5, 
                             help_text=get_help(RESOURCE_MODALITY), default='0')
     # [1] Link to the parent Resource instance
-    resource = models.ForeignKey("Resource", blank=False, null=False, default=-1, related_name="modalities")
+    resource = models.ForeignKey("Resource", blank=False, null=False, default=-1, on_delete=models.CASCADE, related_name="modalities")
 
     def __str__(self):
         if self.resource_id >0 and self.resource.collection_id >0:
@@ -727,7 +727,7 @@ class City(models.Model):
 
     name = models.CharField("Place (city)", max_length=80, help_text=get_help(PROVENANCE_GEOGRAPHIC_PLACE))
     # [1]     Each geographic provenance can have [0-n] cities
-    geographicProvenance = models.ForeignKey("GeographicProvenance", blank=False, null=False, default=-1, related_name="cities")
+    geographicProvenance = models.ForeignKey("GeographicProvenance", blank=False, null=False, default=-1, on_delete=models.CASCADE, related_name="cities")
 
     def __str__(self):
         return self.name
@@ -749,7 +749,7 @@ class GeographicProvenance(models.Model):
     country = models.CharField("Country included in this geographic coverage", choices=build_choice_list(PROVENANCE_GEOGRAPHIC_COUNTRY), 
                                max_length=5, help_text=get_help(PROVENANCE_GEOGRAPHIC_COUNTRY), default='0')
     # [1]     Each Provenance can have [0-n] geographic provenances
-    provenance = models.ForeignKey("Provenance", blank=False, null=False, default=-1, related_name="g_provenances")
+    provenance = models.ForeignKey("Provenance", blank=False, null=False, default=-1, on_delete=models.CASCADE, related_name="g_provenances")
 
     def __str__(self):
         cnt = choice_english(PROVENANCE_GEOGRAPHIC_COUNTRY, self.country)
@@ -772,10 +772,10 @@ class Provenance(models.Model):
     """Temporal and/or geographic provenance of the collection"""
 
     # temporalProvenance (0-1) 
-    temporalProvenance = models.ForeignKey(TemporalProvenance, blank=True, null=True)
+    temporalProvenance = models.ForeignKey(TemporalProvenance, blank=True, null=True, on_delete=models.SET_NULL)
     # geographicProvenance (0-n) 
     # [1]     Each collection can have [0-n] provenances
-    collection = models.ForeignKey("Collection", blank=False, null=False, default=1, related_name="collection12m_provenance")
+    collection = models.ForeignKey("Collection", blank=False, null=False, default=1, on_delete=models.CASCADE, related_name="collection12m_provenance")
 
     def __str__(self):
         # idt = m2m_identifier(self.collection_set)
@@ -801,7 +801,7 @@ class Genre(models.Model):
     # (0-n; c)
     name = models.CharField("Collection genre", choices=build_choice_list(GENRE_NAME), max_length=5, help_text=get_help(GENRE_NAME), default='0')
     # [1]     Each collection can have [1-n] genres
-    collection = models.ForeignKey("Collection", blank=False, null=False, default=1, related_name="collection12m_genre")
+    collection = models.ForeignKey("Collection", blank=False, null=False, default=1, on_delete=models.CASCADE, related_name="collection12m_genre")
 
     def __str__(self):
         # idt = m2m_identifier(self.collection_set)
@@ -823,7 +823,7 @@ class LingualityType(models.Model):
 
     name = models.CharField("Type of linguality", choices=build_choice_list(LINGUALITY_TYPE), max_length=5, help_text=get_help(LINGUALITY_TYPE), default='0')
     # [1]     Each Linguality instance can have [0-n] linguality types
-    linguality = models.ForeignKey("Linguality", blank=False, null=False, default=1, related_name="linguality_types")
+    linguality = models.ForeignKey("Linguality", blank=False, null=False, default=1, on_delete=models.CASCADE, related_name="linguality_types")
 
     def __str__(self):
         return choice_english(LINGUALITY_TYPE, self.name)
@@ -843,7 +843,7 @@ class LingualityNativeness(models.Model):
 
     name = models.CharField("Nativeness type of linguality", choices=build_choice_list(LINGUALITY_NATIVENESS), max_length=5, help_text=get_help(LINGUALITY_NATIVENESS), default='0')
     # [1]     Each Linguality instance can have [0-n] linguality nativenesses
-    linguality = models.ForeignKey("Linguality", blank=False, null=False, default=1, related_name="linguality_nativenesses")
+    linguality = models.ForeignKey("Linguality", blank=False, null=False, on_delete=models.CASCADE, default=1, related_name="linguality_nativenesses")
 
     def __str__(self):
         return choice_english(LINGUALITY_NATIVENESS, self.name)
@@ -863,7 +863,7 @@ class LingualityAgeGroup(models.Model):
 
     name = models.CharField("Age group of linguality", choices=build_choice_list(LINGUALITY_AGEGROUP), max_length=5, help_text=get_help(LINGUALITY_AGEGROUP), default='0')
     # [1]     Each Linguality instance can have [0-n] linguality age groups
-    linguality = models.ForeignKey("Linguality", blank=False, null=False, default=1, related_name="linguality_agegroups")
+    linguality = models.ForeignKey("Linguality", blank=False, null=False, default=1, on_delete=models.CASCADE, related_name="linguality_agegroups")
 
     def __str__(self):
         return choice_english(LINGUALITY_AGEGROUP, self.name)
@@ -886,7 +886,7 @@ class LingualityStatus(models.Model):
 
     name = models.CharField("Status of linguality", choices=build_choice_list(LINGUALITY_STATUS), max_length=5, help_text=get_help(LINGUALITY_STATUS), default='0')
     # [1]     Each Linguality instance can have [0-n] linguality statuses
-    linguality = models.ForeignKey("Linguality", blank=False, null=False, default=1, related_name="linguality_statuses")
+    linguality = models.ForeignKey("Linguality", blank=False, null=False, default=1, on_delete=models.CASCADE, related_name="linguality_statuses")
 
     def __str__(self):
         return choice_english(LINGUALITY_STATUS, self.name)
@@ -906,7 +906,7 @@ class LingualityVariant(models.Model):
 
     name = models.CharField("Variant of linguality", choices=build_choice_list(LINGUALITY_VARIANT), max_length=5, help_text=get_help(LINGUALITY_VARIANT), default='0')
     # [1]     Each Linguality instance can have [0-n] linguality variants
-    linguality = models.ForeignKey("Linguality", blank=False, null=False, default=1, related_name="linguality_variants")
+    linguality = models.ForeignKey("Linguality", blank=False, null=False, default=1, on_delete=models.CASCADE, related_name="linguality_variants")
 
     def __str__(self):
         return choice_english(LINGUALITY_VARIANT, self.name)
@@ -926,7 +926,7 @@ class MultilingualityType(models.Model):
 
     name = models.CharField("Type of multi-linguality", choices=build_choice_list(LINGUALITY_MULTI), max_length=5, help_text=get_help(LINGUALITY_MULTI), default='0')
     # [1]     Each Linguality instance can have [0-n] multilinguality types
-    linguality = models.ForeignKey("Linguality", blank=False, null=False, default=1, related_name="multilinguality_types")
+    linguality = models.ForeignKey("Linguality", blank=False, null=False, default=1, on_delete=models.CASCADE, related_name="multilinguality_types")
 
     def __str__(self):
         return choice_english(LINGUALITY_MULTI, self.name)
@@ -992,7 +992,7 @@ class Language(models.Model):
 class DocumentationLanguage(Language):
 
     # [1]     Each documentation object can have [0-n] languages associated with it
-    documentationParent = models.ForeignKey("Documentation", blank=False, null=False, default=1, related_name="doc_languages")
+    documentationParent = models.ForeignKey("Documentation", blank=False, null=False, default=1, on_delete=models.CASCADE, related_name="doc_languages")
     
     def __str__(self):
         sBack = "[unclear]"
@@ -1021,7 +1021,7 @@ class DocumentationLanguage(Language):
 class CollectionLanguage(Language):
 
     # [1]     Each collection can have [0-n] languages associated with it
-    collectionParent = models.ForeignKey("Collection", blank=False, null=False, default=1, related_name="coll_languages")
+    collectionParent = models.ForeignKey("Collection", blank=False, null=False, default=1, on_delete=models.CASCADE, related_name="coll_languages")
 
     def __str__(self):
         idt = self.collectionParent.identifier
@@ -1041,7 +1041,7 @@ class LanguageDisorder(models.Model):
     # [1]
     name = models.CharField("Language disorder", max_length=50, help_text=get_help("languagedisorder.name"), default='unknown')
     # [1]     Each collection can have [0-n] language disorders
-    collection = models.ForeignKey("Collection", blank=False, null=False, default=1, related_name="collection12m_languagedisorder")
+    collection = models.ForeignKey("Collection", blank=False, null=False, default=1, on_delete=models.CASCADE, related_name="collection12m_languagedisorder")
 
     def __str__(self):
         # idt = m2m_identifier(self.collection_set)
@@ -1067,11 +1067,11 @@ class Relation(models.Model):
     # [0-1] Type of relation
     rtype = models.CharField(choices=build_choice_list(RELATION_TYPE), max_length=5, help_text=get_help(RELATION_TYPE), default='0', verbose_name="type of relation")
     # [0-1] The collection with which the relation holds
-    related = models.ForeignKey("Collection", blank=True, null=True, related_name="relatedcollection", verbose_name="with collection")
+    related = models.ForeignKey("Collection", blank=True, null=True, on_delete=models.CASCADE, related_name="relatedcollection", verbose_name="with collection")
     # [0-1] The externalcollection with which the relation holds
-    extrel = models.ForeignKey("ExtColl", blank=True, null=True, related_name="relatedextcoll", verbose_name="with external collection")
+    extrel = models.ForeignKey("ExtColl", blank=True, null=True, on_delete=models.CASCADE, related_name="relatedextcoll", verbose_name="with external collection")
     # [1]     Each collection can have [0-n] relations
-    collection = models.ForeignKey("Collection", blank=False, null=False, default=1, related_name="collection12m_relation")
+    collection = models.ForeignKey("Collection", blank=False, null=False, default=1, on_delete=models.CASCADE, related_name="collection12m_relation")
 
     def __str__(self):
         # idt = m2m_identifier(self.collection_set)
@@ -1143,7 +1143,7 @@ class Domain(models.Model):
     # Description of this domain (to be copied from [DomainDescription]
     name = models.TextField("Domain", help_text=get_help(DOMAIN_NAME), default='0')
     # [1]     Each collection can have [0-n] domains
-    collection = models.ForeignKey("Collection", blank=False, null=False, default=1, related_name="collection12m_domain")
+    collection = models.ForeignKey("Collection", blank=False, null=False, default=1, on_delete=models.CASCADE, related_name="collection12m_domain")
 
     def __str__(self):
         # idt = m2m_identifier(self.collection_set)
@@ -1172,7 +1172,7 @@ class AccessAvailability(models.Model):
 
     name = models.CharField("Access availability", choices=build_choice_list(ACCESS_AVAILABILITY), max_length=5, help_text=get_help(ACCESS_AVAILABILITY), default='0')
     # [1]     Each access instance can have [0-n] availabilities
-    access = models.ForeignKey("Access", blank=False, null=False, default=-1, related_name="acc_availabilities")
+    access = models.ForeignKey("Access", blank=False, null=False, default=-1, on_delete=models.CASCADE, related_name="acc_availabilities")
 
     def __str__(self):
         return choice_english(ACCESS_AVAILABILITY, self.name)
@@ -1192,7 +1192,7 @@ class LicenseName(models.Model):
 
     name = models.TextField("Name of the license", help_text=get_help('access.licenseName'))
     # [1]     Each access instance can have [0-n] licence Names
-    access = models.ForeignKey("Access", blank=False, null=False, default=-1, related_name="acc_licnames")
+    access = models.ForeignKey("Access", blank=False, null=False, default=-1, on_delete=models.CASCADE, related_name="acc_licnames")
 
     def __str__(self):
         return self.name[:50]
@@ -1212,7 +1212,7 @@ class LicenseUrl(models.Model):
 
     name = models.URLField("URL of the license", help_text=get_help('access.licenseURL'))
     # [1]     Each access instance can have [0-n] license URLs
-    access = models.ForeignKey("Access", blank=False, null=False, default=-1, related_name="acc_licurls")
+    access = models.ForeignKey("Access", blank=False, null=False, default=-1, on_delete=models.CASCADE, related_name="acc_licurls")
 
     def __str__(self):
         return self.name
@@ -1256,7 +1256,7 @@ class AccessContact(models.Model):
     address = models.TextField("Access: address of contact", help_text=get_help('access.contact.address'))
     email = models.EmailField("Access: email of contact", help_text=get_help('access.contact.email'))
     # [1]     Each access instance can have [0-n] contacts
-    access = models.ForeignKey("Access", blank=False, null=False, default=-1, related_name="acc_contacts")
+    access = models.ForeignKey("Access", blank=False, null=False, default=-1, on_delete=models.CASCADE, related_name="acc_contacts")
 
     def __str__(self):
         return "{}: {}, ({})".format(
@@ -1277,7 +1277,7 @@ class AccessWebsite(models.Model):
 
     name = models.URLField("Website to access the collection", help_text=get_help('access.website'))
     # [1]     Each access instance can have [0-n] websites
-    access = models.ForeignKey("Access", blank=False, null=False, default=-1, related_name="acc_websites")
+    access = models.ForeignKey("Access", blank=False, null=False, default=-1, on_delete=models.CASCADE, related_name="acc_websites")
 
     def __str__(self):
         return self.name
@@ -1297,7 +1297,7 @@ class AccessMedium(models.Model):
 
     format = models.CharField("Resource medium", choices=build_choice_list(ACCESS_MEDIUM ), max_length=5, help_text=get_help(ACCESS_MEDIUM ), default='0')
     # [1]     Each access instance can have [0-n] mediums
-    access = models.ForeignKey("Access", blank=False, null=False, default=-1, related_name="acc_mediums")
+    access = models.ForeignKey("Access", blank=False, null=False, default=-1, on_delete=models.CASCADE, related_name="acc_mediums")
 
     def __str__(self):
         return choice_english(ACCESS_MEDIUM, self.format)
@@ -1320,7 +1320,7 @@ class Access(models.Model):
 
     name = models.TextField("Name of this access type", default='-')
     # nonCommercialUsageOnly (0-1;c yes; no)
-    nonCommercialUsageOnly = models.ForeignKey(NonCommercialUsageOnly, blank=True, null=True)
+    nonCommercialUsageOnly = models.ForeignKey(NonCommercialUsageOnly, blank=True, null=True, on_delete=models.SET_NULL)
     # ISBN (0-1;f)
     ISBN = models.TextField("ISBN of collection", help_text=get_help('access.ISBN'), blank=True)
     # ISLRN (0-1;f)
@@ -1355,7 +1355,7 @@ class PID(models.Model):
     # [1]
     code = models.TextField("Persistent identifier of the collection", help_text=get_help('PID'))
     # [1]     Each collection can have [0-n] PIDs
-    collection = models.ForeignKey("Collection", blank=False, null=False, default=1, related_name="collection12m_pid")
+    collection = models.ForeignKey("Collection", blank=False, null=False, default=1, on_delete=models.CASCADE, related_name="collection12m_pid")
 
     def __str__(self):
         # idt = m2m_identifier(self.collection_set)
@@ -1378,7 +1378,7 @@ class Organization(models.Model):
 
     name = models.TextField("Name of organization", help_text=get_help('resourceCreator.organization'))
     # [1]     Each resourceCreator can have [0-n] organizations
-    resourceCreator = models.ForeignKey("ResourceCreator", blank=False, null=False, default=-1, related_name="organizations")
+    resourceCreator = models.ForeignKey("ResourceCreator", blank=False, null=False, default=-1, on_delete=models.CASCADE, related_name="organizations")
 
     def __str__(self):
         return self.name[:50]
@@ -1395,7 +1395,7 @@ class Person(models.Model):
 
     name = models.TextField("Name of person", help_text=get_help('resourceCreator.person'))
     # [1]     Each resourceCreator can have [0-n] persons
-    resourceCreator = models.ForeignKey("ResourceCreator", blank=False, null=False, default=-1, related_name="persons")
+    resourceCreator = models.ForeignKey("ResourceCreator", blank=False, null=False, default=-1, on_delete=models.CASCADE, related_name="persons")
 
     def __str__(self):
         return self.name[:50]
@@ -1413,7 +1413,7 @@ class ResourceCreator(models.Model):
     # [1] Organization that created the resource
     organization = models.ManyToManyField(Organization, blank=False, related_name="resourcecreatorm2m_organization")
     # [1]     Each collection can have [0-n] resource creators
-    collection = models.ForeignKey("Collection", blank=False, null=False, default=1, related_name="collection12m_resourcecreator")
+    collection = models.ForeignKey("Collection", blank=False, null=False, default=1, on_delete=models.CASCADE, related_name="collection12m_resourcecreator")
 
     def __str__(self):
         # OLD: idt = self.collection.identifier
@@ -1446,7 +1446,7 @@ class DocumentationType(models.Model):
 
     format = models.CharField("Kind of documentation", choices=build_choice_list(DOCUMENTATION_TYPE ), max_length=5, help_text=get_help(DOCUMENTATION_TYPE ), default='0')
     # [1]
-    documentation = models.ForeignKey("Documentation", blank=False, null=False, default=1, related_name="doc_types")
+    documentation = models.ForeignKey("Documentation", blank=False, null=False, default=1, on_delete=models.CASCADE, related_name="doc_types")
 
     def __str__(self):
         return choice_english(DOCUMENTATION_TYPE, self.format)
@@ -1466,7 +1466,7 @@ class DocumentationFile(models.Model):
 
     name = models.TextField("File name for documentation", help_text=get_help('documentation.file'))
     # [1]
-    documentation = models.ForeignKey("Documentation", blank=False, null=False, default=1, related_name="doc_files")
+    documentation = models.ForeignKey("Documentation", blank=False, null=False, default=1, on_delete=models.CASCADE, related_name="doc_files")
 
     def __str__(self):
         return self.name[:50]
@@ -1486,7 +1486,7 @@ class DocumentationUrl(models.Model):
 
     name = models.URLField("URL of documentation", help_text=get_help('documentation.url'))
     # [1]
-    documentation = models.ForeignKey("Documentation", blank=False, null=False, default=1, related_name="doc_urls")
+    documentation = models.ForeignKey("Documentation", blank=False, null=False, default=1, on_delete=models.CASCADE, related_name="doc_urls")
 
     def __str__(self):
         return self.name
@@ -1561,7 +1561,7 @@ class ValidationMethod(models.Model):
 
     name = models.CharField("Validation method", choices=build_choice_list(VALIDATION_METHOD), max_length=5, help_text=get_help(VALIDATION_METHOD), default='0')
     # [1]
-    validation = models.ForeignKey("Validation", blank=False, null=False, default=1, related_name="validationmethods")
+    validation = models.ForeignKey("Validation", blank=False, null=False, default=1, on_delete=models.CASCADE, related_name="validationmethods")
 
     def __str__(self):
         return choice_english(VALIDATION_METHOD, self.name)
@@ -1580,7 +1580,7 @@ class Validation(models.Model):
     """Validation"""
 
     # type (0-1; c)
-    type = models.ForeignKey(ValidationType, blank=True, null=True)
+    type = models.ForeignKey(ValidationType, blank=True, null=True, on_delete=models.SET_NULL)
     # Many-to-one relations:
     # ValidationMethod (0-n; c)
 
@@ -1605,7 +1605,7 @@ class ProjectFunder(models.Model):
 
     name = models.TextField("Funder of project", help_text=get_help('project.funder'))
     # [1]
-    project = models.ForeignKey("Project", blank=False, null=False, default=1, related_name="funders")
+    project = models.ForeignKey("Project", blank=False, null=False, default=1, on_delete=models.CASCADE, related_name="funders")
 
     def __str__(self):
         # OLD: sBack = self.name[:50]
@@ -1642,9 +1642,9 @@ class Project(models.Model):
     # funder (0-n; f)
     funder = models.ManyToManyField(ProjectFunder, blank=True, related_name="projectm2m_funder")
     # url (0-1; f)
-    URL = models.ForeignKey(ProjectUrl, blank=True, null=True)
+    URL = models.ForeignKey(ProjectUrl, blank=True, null=True, on_delete=models.SET_NULL)
     # [1]     Each collection can have [0-n] projects
-    collection = models.ForeignKey("Collection", blank=False, null=False, default=1, related_name="collection12m_project")
+    collection = models.ForeignKey("Collection", blank=False, null=False, default=1, on_delete=models.CASCADE, related_name="collection12m_project")
 
     def __str__(self):
         idt = self.collection.identifier
@@ -1673,7 +1673,7 @@ class CharacterEncoding(models.Model):
 
     name = models.CharField("Character encoding", choices=build_choice_list(CHARACTERENCODING), max_length=5, help_text=get_help(CHARACTERENCODING), default='0')
     # [1]     Each written corpus can have [0-n] character encodings
-    writtenCorpus = models.ForeignKey("WrittenCorpus", blank=False, null=False, default=1, related_name="charenc_writtencorpora")
+    writtenCorpus = models.ForeignKey("WrittenCorpus", blank=False, null=False, default=1, on_delete=models.CASCADE, related_name="charenc_writtencorpora")
 
     def __str__(self):
         return choice_english(CHARACTERENCODING, self.name)
@@ -1717,7 +1717,7 @@ class RecordingEnvironment(models.Model):
     # [1]
     name = models.CharField("Environment for the recording", choices=build_choice_list(SPEECHCORPUS_RECORDINGENVIRONMENT), max_length=5, help_text=get_help(SPEECHCORPUS_RECORDINGENVIRONMENT), default='0')
     # [1]
-    resource = models.ForeignKey("Resource", blank=False, null=False, default=-1 , related_name="recordingenvironments")
+    resource = models.ForeignKey("Resource", blank=False, null=False, default=-1 , on_delete=models.CASCADE, related_name="recordingenvironments")
 
     def __str__(self):
         return choice_english(SPEECHCORPUS_RECORDINGENVIRONMENT, self.name)
@@ -1737,7 +1737,7 @@ class Channel(models.Model):
 
     name = models.CharField("Channel for the speech corpus", choices=build_choice_list(SPEECHCORPUS_CHANNEL), max_length=5, help_text=get_help(SPEECHCORPUS_CHANNEL), default='0')
     # [1]
-    resource = models.ForeignKey("Resource", blank=False, null=False, default=-1 , related_name="channels")
+    resource = models.ForeignKey("Resource", blank=False, null=False, default=-1 , on_delete=models.CASCADE, related_name="channels")
 
     def __str__(self):
         return choice_english(SPEECHCORPUS_CHANNEL, self.name)
@@ -1757,7 +1757,7 @@ class ConversationalType(models.Model):
 
     name = models.CharField("Type of conversation", choices=build_choice_list(SPEECHCORPUS_CONVERSATIONALTYPE), max_length=5, help_text=get_help(SPEECHCORPUS_CONVERSATIONALTYPE), default='0')
     # [1]     Each speech corpus can have [0-n] conversational types
-    speechCorpus = models.ForeignKey("SpeechCorpus", blank=False, null=False, default=1, related_name="conversationaltypes")
+    speechCorpus = models.ForeignKey("SpeechCorpus", blank=False, null=False, default=1, on_delete=models.CASCADE, related_name="conversationaltypes")
 
     def __str__(self):
         return choice_english(SPEECHCORPUS_CONVERSATIONALTYPE, self.name)
@@ -1777,7 +1777,7 @@ class RecordingCondition(models.Model):
 
     name = models.TextField("Recording condition", help_text=get_help('speechcorpus.recordingConditions'))
     # [1]
-    resource = models.ForeignKey("Resource", blank=False, null=False, default=-1 , related_name="recordingconditions")
+    resource = models.ForeignKey("Resource", blank=False, null=False, default=-1 , on_delete=models.CASCADE, related_name="recordingconditions")
 
     def __str__(self):
         # Max 80 characters
@@ -1798,7 +1798,7 @@ class SocialContext(models.Model):
 
     name = models.CharField("Social context", choices=build_choice_list(SPEECHCORPUS_SOCIALCONTEXT), max_length=5, help_text=get_help(SPEECHCORPUS_SOCIALCONTEXT), default='0')
     # [1]
-    resource = models.ForeignKey("Resource", blank=False, null=False, default=-1 , related_name="socialcontexts")
+    resource = models.ForeignKey("Resource", blank=False, null=False, default=-1 , on_delete=models.CASCADE, related_name="socialcontexts")
 
     def __str__(self):
         return choice_english(SPEECHCORPUS_SOCIALCONTEXT, self.name)
@@ -1818,7 +1818,7 @@ class PlanningType(models.Model):
 
     name = models.CharField("Type of planning", choices=build_choice_list(SPEECHCORPUS_PLANNINGTYPE), max_length=5, help_text=get_help(SPEECHCORPUS_PLANNINGTYPE), default='0')
     # [1]
-    resource = models.ForeignKey("Resource", blank=False, null=False, default=-1 , related_name="planningtypes")
+    resource = models.ForeignKey("Resource", blank=False, null=False, default=-1 , on_delete=models.CASCADE, related_name="planningtypes")
 
     def __str__(self):
         return choice_english(SPEECHCORPUS_PLANNINGTYPE, self.name)
@@ -1841,7 +1841,7 @@ class Interactivity(models.Model):
 
     name = models.CharField("Interactivity", choices=build_choice_list(SPEECHCORPUS_INTERACTIVITY), max_length=5, help_text=get_help(SPEECHCORPUS_INTERACTIVITY), default='0')
     # [1]
-    resource = models.ForeignKey("Resource", blank=False, null=False, default=-1 , related_name="interactivities")
+    resource = models.ForeignKey("Resource", blank=False, null=False, default=-1 , on_delete=models.CASCADE, related_name="interactivities")
 
     def __str__(self):
         return choice_english(SPEECHCORPUS_INTERACTIVITY, self.name)
@@ -1861,7 +1861,7 @@ class Involvement(models.Model):
 
     name = models.CharField("Type of involvement", choices=build_choice_list(SPEECHCORPUS_INVOLVEMENT), max_length=5, help_text=get_help(SPEECHCORPUS_INVOLVEMENT), default='0')
     # [1]
-    resource = models.ForeignKey("Resource", blank=False, null=False, default=-1 , related_name="involvements")
+    resource = models.ForeignKey("Resource", blank=False, null=False, default=-1 , on_delete=models.CASCADE, related_name="involvements")
 
     def __str__(self):
         return choice_english(SPEECHCORPUS_INVOLVEMENT, self.name)
@@ -1881,7 +1881,7 @@ class Audience(models.Model):
 
     name = models.CharField("Audience", choices=build_choice_list(SPEECHCORPUS_AUDIENCE), max_length=5, help_text=get_help(SPEECHCORPUS_AUDIENCE), default='0')
     # [1]
-    resource = models.ForeignKey("Resource", blank=False, null=False, default=-1 , related_name="audiences")
+    resource = models.ForeignKey("Resource", blank=False, null=False, default=-1 , on_delete=models.CASCADE, related_name="audiences")
 
     def __str__(self):
         return choice_english(SPEECHCORPUS_AUDIENCE, self.name)
@@ -1908,7 +1908,7 @@ class AudioFormat(models.Model):
     # bitResolution  (0-1; f)
     bitResolution = models.CharField("Bit resolution", blank=True, help_text=get_help('audioformat.bitResolution'), max_length=25, default='unknown')
     # [1]     Each speech corpus can have [0-n] AudioFormats
-    speechCorpus = models.ForeignKey("SpeechCorpus", blank=False, null=False, default=1, related_name="audioformats")
+    speechCorpus = models.ForeignKey("SpeechCorpus", blank=False, null=False, default=1, on_delete=models.CASCADE, related_name="audioformats")
 
     def __str__(self):
         sc = self.speechCoding
@@ -1958,27 +1958,6 @@ class SpeechCorpus(models.Model):
         return new_copy
 
 
-#class SubType(models.Model):
-#    """Every DCtype can optionally have max 1 SubType"""
-
-#    name = models.CharField("Resource sub type", null=False, blank=False, 
-#                            max_length=MAX_IDENTIFIER_LEN, help_text=get_help(RESOURCE_SUBTYPE))
-#    DCtype = models.ForeignKey("DublinCoreType", null=False, blank=False)
-
-#    def __str__(self):
-#        return self.name
-
-
-#class DublinCoreType(models.Model):
-#    """Every must have exactly 1 DCtype"""
-
-#    name = models.CharField("Resource DCtype", max_length=MAX_IDENTIFIER_LEN, help_text=get_help(RESOURCE_DCTYPE))
-#    resource = models.ForeignKey("Resource", null=False, blank=False)
-
-#    def __str__(self):
-#        return self.name
-
-
 class Resource(models.Model):
     """A resource is part of a collection"""
 
@@ -1996,12 +1975,12 @@ class Resource(models.Model):
                             help_text=get_help(RESOURCE_SUBTYPE), blank=True, null=True)
 
     # [1]     Each collection can have [1-n] resources
-    collection = models.ForeignKey("Collection", blank=False, null=False, default=1, related_name="collection12m_resource")
+    collection = models.ForeignKey("Collection", blank=False, null=False, default=1, on_delete=models.CASCADE, related_name="collection12m_resource")
 
     # == writtenCorpus (0-1)
-    writtenCorpus = models.ForeignKey(WrittenCorpus, blank=True, null=True)
+    writtenCorpus = models.ForeignKey(WrittenCorpus, blank=True, null=True, on_delete=models.SET_NULL)
     # speechCorpus (0-1)
-    speechCorpus = models.ForeignKey(SpeechCorpus, blank=True, null=True)
+    speechCorpus = models.ForeignKey(SpeechCorpus, blank=True, null=True, on_delete=models.SET_NULL)
 
     def __str__(self):
         # idt = m2m_identifier(self.collection_set)
@@ -2044,7 +2023,11 @@ class Resource(models.Model):
             return ""
         sTypeFull = self.get_subtype_display()
         arType = sTypeFull.split(":")
-        return arType[1]
+        if len(arType) > 1:
+            sBack = arType[1]
+        else:
+            sBack = sTypeFull
+        return sBack
 
 
 class ExtColl(models.Model):
@@ -2101,7 +2084,7 @@ class Collection(models.Model):
     # provenance (0-n)          [many-to-one]
     provenance = models.ManyToManyField(Provenance, blank=True, related_name="collectionm2m_provenance")
     # linguality (0-1)
-    linguality = models.ForeignKey(Linguality, blank=True, null=True)   # , related_name="collectionm2m_linguality")
+    linguality = models.ForeignKey(Linguality, blank=True, null=True, on_delete=models.SET_NULL)   # , related_name="collectionm2m_linguality")
     # language (1-n; c)   Many-to-Many!!
     language = models.ManyToManyField(Language, blank=False)
     # languageDisorder (0-n;f)  [many-to-one]
@@ -2113,7 +2096,7 @@ class Collection(models.Model):
     # == clarinCentre (0-1; f)
     clarinCentre = models.TextField("Clarin centre in charge", blank=True, help_text=get_help('clarincentre.name'))
     # == access (0-1)
-    access = models.ForeignKey(Access, blank=True, null=True)
+    access = models.ForeignKey(Access, blank=True, null=True, on_delete=models.SET_NULL)
     # == totalSize (0-n)        [many-to-one] - verander in 'TotalCollectionSize'
     totalSize = models.ManyToManyField(TotalSize, blank=True, related_name="collectionm2m_totalsize")
     # == PID (0-n)              [many-to-one]
@@ -2123,9 +2106,9 @@ class Collection(models.Model):
     # == resourceCreator (0-n)  [many-to-one]
     resourceCreator = models.ManyToManyField(ResourceCreator, blank=True, related_name="collectionm2m_resourcecreator")
     # == documentation (0-1)
-    documentation = models.ForeignKey(Documentation, blank=True, null=True)
+    documentation = models.ForeignKey(Documentation, blank=True, null=True, on_delete=models.SET_NULL)
     # == validation (0-1)
-    validation = models.ForeignKey(Validation, blank=True, null=True)
+    validation = models.ForeignKey(Validation, blank=True, null=True, on_delete=models.SET_NULL)
     # == project (0-n)          [many-to-one]
     project = models.ManyToManyField(Project, blank=True, related_name="collectionm2m_project")
 

@@ -5,7 +5,7 @@ Definition of views.
 from django.contrib.admin.templatetags.admin_list import result_headers
 from django.contrib.auth import login, authenticate
 from django.contrib.auth.models import Group
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.db.models.functions import Lower
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render, redirect
@@ -1117,7 +1117,7 @@ class CollectionDetailView(DetailView):
         context['now'] = timezone.now()
         context['collection'] = self.instance
         # Make sure we know whether it was authenticated
-        context['authenticated'] = self.request.user.is_authenticated()
+        context['authenticated'] = self.request.user.is_authenticated
 
         # For ease of processing
         def append_item(coll_this, sName, sObl, sType, qs):
