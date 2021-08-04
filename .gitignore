@@ -352,3 +352,6 @@ migrations/
 /collbank/static/admin/css/dashboard.css
 /collbank/static/admin/css/changelists.css
 /collbank/static/admin/css/base.css
+/collbank/static/collection/content/ru-form.css
+/collbank/static/collection/content/ru-base.css
+/collbank/static/admin
