@@ -37,16 +37,17 @@ print("publish dir: {}".format(PUBLISH_DIR), file=sys.stderr)
 APP_PREFIX = "collbank/"
 if "/scratch" in WRITABLE_DIR:
     # admin.site.site_url = "/collbank/"
-    ADMIN_SITE_URL = "/colbank/"
+    ADMIN_SITE_URL = "/collbank/"
 elif '/applejack' in WRITABLE_DIR:
     # admin.site.site_url = "/collbank/"
-    ADMIN_SITE_URL = "/colbank/"
+    ADMIN_SITE_URL = "/collbank/"
 elif "D:" in WRITABLE_DIR:
     # admin.site.site_url = "/"
     ADMIN_SITE_URL = "/"
     APP_PREFIX = "" 
 
 # FORCE_SCRIPT_NAME = admin.site.site_url
+FORCE_SCRIPT_NAME = ADMIN_SITE_URL
 
 # Not the location of the wsgi.py file for "reload_collbank"
 WSGI_FILE = os.path.abspath(os.path.join(BASE_DIR,"collbank/wsgi.py"))

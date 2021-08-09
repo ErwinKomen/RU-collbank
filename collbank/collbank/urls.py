@@ -57,25 +57,6 @@ urlpatterns = [
     url(r'^subtype_choices/', collbank.collection.views.subtype_choices),
     url(r'^signup/$', collbank.collection.views.signup, name='signup'),
 
-    #url(r'^login/$',
-    #    django.contrib.auth.views.login,
-    #    {
-    #        'template_name': 'collection/login.html',
-    #        'authentication_form': collbank.collection.forms.BootstrapAuthenticationForm,
-    #        'extra_context':
-    #        {
-    #            'title': 'Log in',
-    #            'year': datetime.now().year,
-    #        }
-    #    },
-    #    name='login'),
-    #url(r'^logout$',
-    #    django.contrib.auth.views.logout,
-    #    {
-    #        'next_page': reverse_lazy('home'),
-    #    },
-    #    name='logout'),
-
     url(r'^login/$', LoginView.as_view
         (
             template_name= 'collection/login.html',

@@ -595,8 +595,7 @@ def home(request):
     response= render(request,'collection/index.html',
         {'title':'RU-CollBank','year':datetime.now().year,})
     # Return the response
-    return response
-    
+    return response    
 
 def contact(request):
     """Renders the contact page."""
