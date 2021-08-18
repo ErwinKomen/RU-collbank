@@ -24,13 +24,13 @@ if "RU-collbank\\writable" in WRITABLE_DIR:
 elif "/applejack" in BASE_DIR:
     WRITABLE_DIR = os.path.abspath(os.path.join(BASE_DIR, "../../writable/collbank/database/"))
 
-OUTPUT_XML = os.path.abspath(os.path.join(WRITABLE_DIR, "../collbank-file.xml"))
+# OUTPUT_XML = os.path.abspath(os.path.join(WRITABLE_DIR, "../collbank-file.xml"))
 
 REGISTRY_DIR = os.path.abspath(os.path.join(WRITABLE_DIR, "../registry/"))
 PUBLISH_DIR = os.path.abspath(os.path.join(WRITABLE_DIR, "../joai/"))
 
 print("writable dir: {}".format(WRITABLE_DIR), file=sys.stderr)
-print("output xml: {}".format(OUTPUT_XML), file=sys.stderr)
+# print("output xml: {}".format(OUTPUT_XML), file=sys.stderr)
 print("registry dir: {}".format(REGISTRY_DIR), file=sys.stderr)
 print("publish dir: {}".format(PUBLISH_DIR), file=sys.stderr)
 

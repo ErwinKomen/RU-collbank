@@ -26,7 +26,8 @@ import zipfile
 import tempfile
 import io
 from collbank.collection.models import *
-from collbank.settings import OUTPUT_XML, APP_PREFIX, WSGI_FILE, STATIC_ROOT, WRITABLE_DIR, COUNTRY_CODES, LANGUAGE_CODE_LIST
+from collbank.settings import APP_PREFIX, WSGI_FILE, STATIC_ROOT, WRITABLE_DIR, COUNTRY_CODES, LANGUAGE_CODE_LIST
+# Not used anymore: OUTPUT_XML
 from collbank.collection.admin import CollectionAdmin
 from collbank.collection.forms import *
 

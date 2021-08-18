@@ -4,8 +4,9 @@
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
     <Name>collbank</Name>
     <RootNamespace>collbank</RootNamespace>
-    <InterpreterId>MSBuild|{7a9a0be3-9280-4b9c-867c-2314c4b52aad}|$(MSBuildProjectFullPath)</InterpreterId>
+    <InterpreterId>{7a9a0be3-9280-4b9c-867c-2314c4b52aad}</InterpreterId>
     <WebBrowserPort>6505</WebBrowserPort>
+    <InterpreterVersion>3.5</InterpreterVersion>
   </PropertyGroup>
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
