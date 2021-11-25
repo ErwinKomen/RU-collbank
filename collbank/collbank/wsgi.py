@@ -13,7 +13,7 @@ middleware here, or combine a Django application with an application of another
 framework.
 
 """
-import os
+import os, sys
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "collbank.settings")
 
@@ -22,8 +22,20 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "collbank.settings")
 # file. This includes Django's development server, if the WSGI_APPLICATION
 # setting points here.
 from django.core.wsgi import get_wsgi_application
-application = get_wsgi_application()
+# application = get_wsgi_application()
 
 # Apply WSGI middleware here.
 # from helloworld.wsgi import HelloWorldApplication
 # application = HelloWorldApplication(application)
+
+_application = get_wsgi_application()
+
+
+def application(environ, start_response):
+    path_info = environ['PATH_INFO']
+    print("path is [{}]".format(path_info), file=sys.stderr)
+    if "//" in path_info:
+        path_info = path_info.replace("//", "/")
+        environ['PATH_INFO'] = path_info
+
+    return _application(environ, start_response)

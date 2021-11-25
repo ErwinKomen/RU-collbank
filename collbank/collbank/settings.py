@@ -37,10 +37,10 @@ print("publish dir: {}".format(PUBLISH_DIR), file=sys.stderr)
 APP_PREFIX = "collbank/"
 if "/scratch" in WRITABLE_DIR:
     # admin.site.site_url = "/collbank/"
-    ADMIN_SITE_URL = "/collbank/"
+    ADMIN_SITE_URL = "/collbank"
 elif '/applejack' in WRITABLE_DIR:
     # admin.site.site_url = "/collbank/"
-    ADMIN_SITE_URL = "/collbank/"
+    ADMIN_SITE_URL = "/collbank"
 elif "D:" in WRITABLE_DIR:
     # admin.site.site_url = "/"
     ADMIN_SITE_URL = "/"
@@ -70,6 +70,8 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['localhost', 'applejack.science.ru.nl']
 
+# if the request URL does not match any of the patterns in the URLconf and it doesn’t end in a slash, 
+#   an HTTP redirect is issued to the same URL with a slash appended.
 APPEND_SLASH = True
 
 # Application definition
