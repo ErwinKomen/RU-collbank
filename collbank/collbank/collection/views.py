@@ -4,7 +4,7 @@ Definition of views.
 
 from django.contrib.admin.templatetags.admin_list import result_headers
 from django.contrib.auth import login, authenticate
-from django.contrib.auth.models import Group
+from django.contrib.auth.models import Group, User
 from django.urls import reverse
 from django.db.models.functions import Lower
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
@@ -39,146 +39,11 @@ XSI_CMD = "http://www.clarin.eu/cmd/"
 XSD_ID = "clarin.eu:cr1:p_1493735943947"
 XSI_XSD = "https://catalog.clarin.eu/ds/ComponentRegistry/rest/registry/1.1/profiles/" + XSD_ID + "/xsd/"
 
+app_user = "RegistryUser"
+app_editor = "RegistryEditor"
+bDebug = False
+
 # General help functions
-def add_element(optionality, col_this, el_name, crp, **kwargs):
-    """Add element [el_name] from collection [col_this] under the XML element [crp]
-    
-    Note: make use of the options defined in [kwargs]
-    """
-
-    foreign = ""
-    if "foreign" in kwargs: foreign = kwargs["foreign"]
-    field_choice = ""
-    if "fieldchoice" in kwargs: field_choice = kwargs["fieldchoice"]
-    field_name = el_name
-    if "field_name" in kwargs: field_name = kwargs["field_name"]
-    col_this_el = getattr(col_this, field_name)
-    sub_name = el_name
-    if "subname" in kwargs: sub_name = kwargs["subname"]
-    if optionality == "0-1" or optionality == "1":
-        col_value = col_this_el
-        if optionality == "1" or col_value != None:
-            if foreign != "" and not isinstance(col_this_el, str):
-                col_value = getattr(col_this_el, foreign)
-            if field_choice != "": col_value = choice_english(field_choice, col_value)
-            # Make sure the value is a string
-            col_value = str(col_value)
-            # Do we need to discern parts?
-            if "part" in kwargs:
-                arPart = col_value.split(":")
-                iPart = kwargs["part"]
-                if iPart == 1:
-                    col_value = arPart[0]
-                elif iPart == 2:
-                    if len(arPart) == 2:
-                        col_value = arPart[1]
-                    else:
-                        col_value = ""
-            if col_value != "":
-                descr_element = ET.SubElement(crp, sub_name)
-                descr_element.text = col_value
-    elif optionality == "1-n" or optionality == "0-n":
-        # Test for obligatory foreign
-        if foreign == "": return False
-        for t in col_this_el.all():
-            col_value = getattr(t, foreign)
-            if field_choice != "": col_value = choice_english(field_choice, col_value)
-            # Make sure the value is a string
-            col_value = str(col_value)
-            if col_value == "(empty)": 
-                col_value = "unknown"
-            else:
-                title_element = ET.SubElement(crp, sub_name)
-                title_element.text = col_value
-    # Return positively
-    return True
-    
-def make_collection_top(colThis, sUserName, sHomeUrl):
-    """Create the top-level elements for a collection"""
-
-    # Define the top-level of the xml output
-    topattributes = {'xmlns': "http://www.clarin.eu/cmd/" ,
-                     'xmlns:xsd':"http://www.w3.org/2001/XMLSchema/",
-                     'xmlns:xsi': "http://www.w3.org/2001/XMLSchema-instance",
-                     'xsi:schemaLocation': XSI_CMD + " " + XSI_XSD,
-                     'CMDVersion':'1.1'}
-    # topattributes = {'CMDVersion':'1.1'}
-    top = ET.Element('CMD', topattributes)
-
-    # Add a header
-    hdr = ET.SubElement(top, "Header", {})
-    mdCreator = ET.SubElement(hdr, "MdCreator")
-    # mdCreator.text = request.user.username
-    mdCreator.text = sUserName
-    mdSelf = ET.SubElement(hdr, "MdSelfLink")
-
-    # If published: add the self link
-    if colThis.pidname != None:
-        # The selflink is the persistent identifier, preceded by 'hdl:'
-        mdSelf.text = "hdl:{}/{}".format(colThis.handledomain, colThis.pidname)
-    mdProf = ET.SubElement(hdr, "MdProfile")
-    mdProf.text = XSD_ID
-
-    # Obligatory for Collbank: add a display-name
-    mdDisplayName = ET.SubElement(hdr, "MdCollectionDisplayName")
-    mdDisplayName.text = "CollBank"
-
-    # Add obligatory Resources
-    rsc = ET.SubElement(top, "Resources", {})
-    lproxy = ET.SubElement(rsc, "ResourceProxyList")
-    # TODO: add resource proxy's under [lproxy]
-
-    # The Landing page is provided by the USER!!! take it over
-    oProxy = ET.SubElement(lproxy, "ResourceProxy")
-    sProxyId = "lp_{}".format(colThis.get_xmlfilename())
-    oProxy.set('id', sProxyId)
-    # Add resource type
-    oSubItem = ET.SubElement(oProxy, "ResourceType")
-    oSubItem.set("mimetype", "application/x-http")
-    oSubItem.text = "LandingPage"
-    # Add resource ref
-    oSubItem = ET.SubElement(oProxy, "ResourceRef")
-    #  "http://applejack.science.ru.nl/collbank"
-    # OLD: oSubItem.text = sHomeUrl  + "registry/" + colThis.get_xmlfilename()
-    # oSubItem.text = REGISTRY_URL + colThis.get_xmlfilename()
-    oSubItem.text = colThis.landingPage
-
-    # Produce links to RELATION txt files if needed
-    for rel_this in colThis.collection12m_relation.all():
-        oProxy = ET.SubElement(lproxy, "ResourceProxy")
-        sProxyId = "rel_{}_{}".format(rel_this.get_rtype_display(), rel_this.id)
-        oProxy.set('id', sProxyId)
-        # Add resource type
-        oSubItem = ET.SubElement(oProxy, "ResourceType")
-        # Dieter: use mimetype [text/tab-separated-values] for this
-        oSubItem.set("mimetype", "text/tab-separated-values")
-        oSubItem.text = "Resource"
-        # Add resource ref
-        oSubItem = ET.SubElement(oProxy, "ResourceRef")
-        oSubItem.text = rel_this.get_relation_url()
-
-
-    # Produce a link to the resource: search page
-    if colThis.searchPage != None and colThis.searchPage != "":
-        oProxy = ET.SubElement(lproxy, "ResourceProxy")
-        sProxyId = "sru_{}".format(colThis.get_xmlfilename())
-        oProxy.set('id', sProxyId)
-        # Add resource type
-        oSubItem = ET.SubElement(oProxy, "ResourceType")
-        oSubItem.set("mimetype", "application/x-http") # SearchService would have: "application/sru+xml"
-        oSubItem.text = "SearchPage"    # N.B: "SearchService" is reserved for the federated xml content search link
-        # Add resource ref
-        oSubItem = ET.SubElement(oProxy, "ResourceRef")
-        #  "http://applejack.science.ru.nl/collbank"
-        # oSubItem.text = request.build_absolute_uri(reverse('home'))
-        # oSubItem.text = sHomeUrl 
-        oSubItem.text = colThis.searchPage
-
-    ET.SubElement(rsc, "JournalFileProxyList")
-    ET.SubElement(rsc, "ResourceRelationList")
-    # Return the resulting top-level element
-    return top     
-            
 def add_collection_xml(col_this, crp):
     """Add the collection information from [col_this] to XML element [crp]"""
 
@@ -428,7 +293,61 @@ def add_collection_xml(col_this, crp):
         add_element("0-n", proj_this, "funder", proj, field_name="funders", foreign="name")
         add_element("0-1", proj_this, "URL", proj, foreign="name", subname="url")
     # There's no return value -- all has been added to [crp]
+    return None
 
+def add_element(optionality, col_this, el_name, crp, **kwargs):
+    """Add element [el_name] from collection [col_this] under the XML element [crp]
+    
+    Note: make use of the options defined in [kwargs]
+    """
+
+    foreign = ""
+    if "foreign" in kwargs: foreign = kwargs["foreign"]
+    field_choice = ""
+    if "fieldchoice" in kwargs: field_choice = kwargs["fieldchoice"]
+    field_name = el_name
+    if "field_name" in kwargs: field_name = kwargs["field_name"]
+    col_this_el = getattr(col_this, field_name)
+    sub_name = el_name
+    if "subname" in kwargs: sub_name = kwargs["subname"]
+    if optionality == "0-1" or optionality == "1":
+        col_value = col_this_el
+        if optionality == "1" or col_value != None:
+            if foreign != "" and not isinstance(col_this_el, str):
+                col_value = getattr(col_this_el, foreign)
+            if field_choice != "": col_value = choice_english(field_choice, col_value)
+            # Make sure the value is a string
+            col_value = str(col_value)
+            # Do we need to discern parts?
+            if "part" in kwargs:
+                arPart = col_value.split(":")
+                iPart = kwargs["part"]
+                if iPart == 1:
+                    col_value = arPart[0]
+                elif iPart == 2:
+                    if len(arPart) == 2:
+                        col_value = arPart[1]
+                    else:
+                        col_value = ""
+            if col_value != "":
+                descr_element = ET.SubElement(crp, sub_name)
+                descr_element.text = col_value
+    elif optionality == "1-n" or optionality == "0-n":
+        # Test for obligatory foreign
+        if foreign == "": return False
+        for t in col_this_el.all():
+            col_value = getattr(t, foreign)
+            if field_choice != "": col_value = choice_english(field_choice, col_value)
+            # Make sure the value is a string
+            col_value = str(col_value)
+            if col_value == "(empty)": 
+                col_value = "unknown"
+            else:
+                title_element = ET.SubElement(crp, sub_name)
+                title_element.text = col_value
+    # Return positively
+    return True
+    
 def create_collection_xml(collection_this, sUserName, sHomeUrl):
     """Convert the 'collection' object from the context to XML
     
@@ -459,6 +378,141 @@ def create_collection_xml(collection_this, sUserName, sHomeUrl):
     # Return this string
     return (True, xmlstr)
 
+def get_application_context(request, context):
+    context['is_app_user'] = user_is_ingroup(request, app_user)
+    context['is_app_editor'] = user_is_ingroup(request, app_editor)
+    return context
+
+def get_country(cntryCode):
+    # Get the country string according to field-choice
+    sCountry = choice_english(PROVENANCE_GEOGRAPHIC_COUNTRY, cntryCode).strip()
+    sCountryAlt = sCountry + " (the)"
+    # Walk all country codes
+    for tplCountry in COUNTRY_CODES:
+        # Check for country name or alternative country name
+        if sCountry == tplCountry[1] or sCountryAlt == tplCountry[1]:
+            # REturn the correct country name and code
+            return (tplCountry[1], tplCountry[0])
+    # Empty
+    return (None, None)
+
+def get_language(lngCode):
+    if str(lngCode) == "493": 
+        x = 1
+    # Get the language string according to the field choice
+    sLanguage = choice_english("language.name", lngCode).lower()
+    # Walk all language codes
+    for tplLang in LANGUAGE_CODE_LIST:
+        # Check in column #2 for the language name (must be complete match)
+        if sLanguage == tplLang[2].lower():
+            # Return the language code from column #0
+            return (sLanguage, tplLang[0])
+    # Empty
+    return (None, None)
+
+def getSchema():
+    # Get the XSD file into an LXML structure
+    # fSchema = os.path.abspath(os.path.join(STATIC_ROOT, "collection", "xsd", "CorpusCollection.xsd.txt"))
+    fSchema = os.path.abspath(os.path.join(WRITABLE_DIR, "xsd", "CorpusCollection.xsd.txt"))
+    with open(fSchema, encoding="utf-8", mode="r") as f:  
+        sText = f.read()                        
+        # doc = etree.parse(f)
+        doc = etree.XML(sText)                                                    
+    
+    # Load the schema
+    try:                                                                        
+        schema = etree.XMLSchema(doc)                                           
+        return schema
+    except lxml.etree.XMLSchemaParseError as e:                                 
+        print(e)                                                              
+        return None
+
+def make_collection_top(colThis, sUserName, sHomeUrl):
+    """Create the top-level elements for a collection"""
+
+    # Define the top-level of the xml output
+    topattributes = {'xmlns': "http://www.clarin.eu/cmd/" ,
+                     'xmlns:xsd':"http://www.w3.org/2001/XMLSchema/",
+                     'xmlns:xsi': "http://www.w3.org/2001/XMLSchema-instance",
+                     'xsi:schemaLocation': XSI_CMD + " " + XSI_XSD,
+                     'CMDVersion':'1.1'}
+    # topattributes = {'CMDVersion':'1.1'}
+    top = ET.Element('CMD', topattributes)
+
+    # Add a header
+    hdr = ET.SubElement(top, "Header", {})
+    mdCreator = ET.SubElement(hdr, "MdCreator")
+    # mdCreator.text = request.user.username
+    mdCreator.text = sUserName
+    mdSelf = ET.SubElement(hdr, "MdSelfLink")
+
+    # If published: add the self link
+    if colThis.pidname != None:
+        # The selflink is the persistent identifier, preceded by 'hdl:'
+        mdSelf.text = "hdl:{}/{}".format(colThis.handledomain, colThis.pidname)
+    mdProf = ET.SubElement(hdr, "MdProfile")
+    mdProf.text = XSD_ID
+
+    # Obligatory for Collbank: add a display-name
+    mdDisplayName = ET.SubElement(hdr, "MdCollectionDisplayName")
+    mdDisplayName.text = "CollBank"
+
+    # Add obligatory Resources
+    rsc = ET.SubElement(top, "Resources", {})
+    lproxy = ET.SubElement(rsc, "ResourceProxyList")
+    # TODO: add resource proxy's under [lproxy]
+
+    # The Landing page is provided by the USER!!! take it over
+    oProxy = ET.SubElement(lproxy, "ResourceProxy")
+    sProxyId = "lp_{}".format(colThis.get_xmlfilename())
+    oProxy.set('id', sProxyId)
+    # Add resource type
+    oSubItem = ET.SubElement(oProxy, "ResourceType")
+    oSubItem.set("mimetype", "application/x-http")
+    oSubItem.text = "LandingPage"
+    # Add resource ref
+    oSubItem = ET.SubElement(oProxy, "ResourceRef")
+    #  "http://applejack.science.ru.nl/collbank"
+    # OLD: oSubItem.text = sHomeUrl  + "registry/" + colThis.get_xmlfilename()
+    # oSubItem.text = REGISTRY_URL + colThis.get_xmlfilename()
+    oSubItem.text = colThis.landingPage
+
+    # Produce links to RELATION txt files if needed
+    for rel_this in colThis.collection12m_relation.all():
+        oProxy = ET.SubElement(lproxy, "ResourceProxy")
+        sProxyId = "rel_{}_{}".format(rel_this.get_rtype_display(), rel_this.id)
+        oProxy.set('id', sProxyId)
+        # Add resource type
+        oSubItem = ET.SubElement(oProxy, "ResourceType")
+        # Dieter: use mimetype [text/tab-separated-values] for this
+        oSubItem.set("mimetype", "text/tab-separated-values")
+        oSubItem.text = "Resource"
+        # Add resource ref
+        oSubItem = ET.SubElement(oProxy, "ResourceRef")
+        oSubItem.text = rel_this.get_relation_url()
+
+
+    # Produce a link to the resource: search page
+    if colThis.searchPage != None and colThis.searchPage != "":
+        oProxy = ET.SubElement(lproxy, "ResourceProxy")
+        sProxyId = "sru_{}".format(colThis.get_xmlfilename())
+        oProxy.set('id', sProxyId)
+        # Add resource type
+        oSubItem = ET.SubElement(oProxy, "ResourceType")
+        oSubItem.set("mimetype", "application/x-http") # SearchService would have: "application/sru+xml"
+        oSubItem.text = "SearchPage"    # N.B: "SearchService" is reserved for the federated xml content search link
+        # Add resource ref
+        oSubItem = ET.SubElement(oProxy, "ResourceRef")
+        #  "http://applejack.science.ru.nl/collbank"
+        # oSubItem.text = request.build_absolute_uri(reverse('home'))
+        # oSubItem.text = sHomeUrl 
+        oSubItem.text = colThis.searchPage
+
+    ET.SubElement(rsc, "JournalFileProxyList")
+    ET.SubElement(rsc, "ResourceRelationList")
+    # Return the resulting top-level element
+    return top     
+            
 def publish_collection(coll_this, sUserName, sHomeUrl):
     """Create the XML of this collection and put it in a publishing directory"""
 
@@ -488,32 +542,47 @@ def publish_collection(coll_this, sUserName, sHomeUrl):
         oBack['coll'] = coll_this
     return oBack
 
-def get_country(cntryCode):
-    # Get the country string according to field-choice
-    sCountry = choice_english(PROVENANCE_GEOGRAPHIC_COUNTRY, cntryCode).strip()
-    sCountryAlt = sCountry + " (the)"
-    # Walk all country codes
-    for tplCountry in COUNTRY_CODES:
-        # Check for country name or alternative country name
-        if sCountry == tplCountry[1] or sCountryAlt == tplCountry[1]:
-            # REturn the correct country name and code
-            return (tplCountry[1], tplCountry[0])
-    # Empty
-    return (None, None)
+def treat_bom(sHtml):
+    """REmove the BOM marker except at the beginning of the string"""
 
-def get_language(lngCode):
-    if str(lngCode) == "493": 
-        x = 1
-    # Get the language string according to the field choice
-    sLanguage = choice_english("language.name", lngCode).lower()
-    # Walk all language codes
-    for tplLang in LANGUAGE_CODE_LIST:
-        # Check in column #2 for the language name (must be complete match)
-        if sLanguage == tplLang[2].lower():
-            # Return the language code from column #0
-            return (sLanguage, tplLang[0])
-    # Empty
-    return (None, None)
+    # Check if it is in the beginning
+    bStartsWithBom = sHtml.startswith(u'\ufeff')
+    # Remove everywhere
+    sHtml = sHtml.replace(u'\ufeff', '')
+    # Return what we have
+    return sHtml
+
+def username_is_ingroup(user, sGroup):
+    # glist = user.groups.values_list('name', flat=True)
+
+    # Only look at group if the user is known
+    if user == None:
+        glist = []
+    else:
+        glist = [x.name for x in user.groups.all()]
+
+        # Only needed for debugging
+        if bDebug:
+            print("User [{}] is in groups: {}".format(user, glist))
+    # Evaluate the list
+    bIsInGroup = (sGroup in glist)
+    return bIsInGroup
+
+def user_is_ingroup(request, sGroup):
+    # Is this user part of the indicated group?
+    user = User.objects.filter(username=request.user.username).first()
+    response = username_is_ingroup(user, sGroup)
+    return response
+
+def user_is_superuser(request):
+    bFound = False
+    # Is this user part of the indicated group?
+    username = request.user.username
+    if username != "":
+        user = User.objects.filter(username=username).first()
+        if user != None:
+            bFound = user.is_superuser
+    return bFound
 
 def validateXml(xmlstr):
     """Validate an XML string against an XSD schema
@@ -533,23 +602,6 @@ def validateXml(xmlstr):
     validation = schema.validate(xml)
     # Return a tuple with the boolean validation and a possible error log
     return (validation, schema.error_log, )
-
-def getSchema():
-    # Get the XSD file into an LXML structure
-    # fSchema = os.path.abspath(os.path.join(STATIC_ROOT, "collection", "xsd", "CorpusCollection.xsd.txt"))
-    fSchema = os.path.abspath(os.path.join(WRITABLE_DIR, "xsd", "CorpusCollection.xsd.txt"))
-    with open(fSchema, encoding="utf-8", mode="r") as f:  
-        sText = f.read()                        
-        # doc = etree.parse(f)
-        doc = etree.XML(sText)                                                    
-    
-    # Load the schema
-    try:                                                                        
-        schema = etree.XMLSchema(doc)                                           
-        return schema
-    except lxml.etree.XMLSchemaParseError as e:                                 
-        print(e)                                                              
-        return None
 
 def xsd_error_list(lError, sXmlStr):
     """Transform a list of XSD error objects into a list of strings"""
@@ -589,40 +641,69 @@ def xsd_error_as_simple_string(error):
     ]
     return ':'.join([str(item) for item in parts])
 
+
+
+# ============= Standard Views ==================================
+
 def home(request):
     """Renders the home page."""
     assert isinstance(request, HttpRequest)
     # Make the response
-    response= render(request,'collection/index.html',
-        {'title':'RU-CollBank','year':datetime.now().year,})
+    context = dict(title="RU-CollBank",
+                   year=datetime.now().year)
+    context = get_application_context(request, context)
+    response= render(request,'collection/index.html', context=context)
+
     # Return the response
     return response    
 
 def contact(request):
     """Renders the contact page."""
     assert isinstance(request, HttpRequest)
-    return render(
-        request,
-        'collection/contact.html',
-        {
-            'title':'Contact',
-            'message':'Henk van den Heuvel (H.vandenHeuvel@Let.ru.nl)',
-            'year':datetime.now().year,
-        }
-    )
+    context = dict(title="Contact",
+                   message='Henk van den Heuvel (H.vandenHeuvel@Let.ru.nl)',
+                   year=datetime.now().year)
+    context = get_application_context(request, context)
+
+    response = render(request, 'collection/contact.html', context)
+    #return render(
+    #    request,
+    #    'collection/contact.html',
+    #    {
+    #        'title':'Contact',
+    #        'message':'Henk van den Heuvel (H.vandenHeuvel@Let.ru.nl)',
+    #        'year':datetime.now().year,
+    #    }
+    #)
+    return response
 
 def about(request):
     """Renders the about page."""
     assert isinstance(request, HttpRequest)
-    return render(
-        request,
-        'collection/about.html',
-        {
-            'title':'About',
-            'message':'Radboud University Collection Bank utility.',
-            'year':datetime.now().year,
-        }
-    )
+    context = dict(title="About",
+                   message='Radboud University Collection Bank utility.',
+                   year=datetime.now().year)
+    context = get_application_context(request, context)
+
+    response = render(request, 'collection/contact.html', context)
+    #return render(
+    #    request,
+    #    'collection/about.html',
+    #    {
+    #        'title':'About',
+    #        'message':'Radboud University Collection Bank utility.',
+    #        'year':datetime.now().year,
+    #    }
+    #)
+    return response
+
+def nlogin(request):
+    """Renders the not-logged-in page."""
+    assert isinstance(request, HttpRequest)
+    context =  {    'title':'Not logged in', 
+                    'message':'Radboud University Collbank utility.',
+                    'year':datetime.now().year,}
+    return render(request,'collection/nlogin.html', context)
 
 def signup(request):
     """Provide basic sign up and validation of it """
@@ -704,16 +785,6 @@ def subtype_choices(request):
         sOut = "{}"
     return HttpResponse(sOut)
 
-def treat_bom(sHtml):
-    """REmove the BOM marker except at the beginning of the string"""
-
-    # Check if it is in the beginning
-    bStartsWithBom = sHtml.startswith(u'\ufeff')
-    # Remove everywhere
-    sHtml = sHtml.replace(u'\ufeff', '')
-    # Return what we have
-    return sHtml
-
 
 class CollectionListView(ListView):
     """Listview of collections"""
@@ -749,6 +820,10 @@ class CollectionListView(ListView):
     def get_context_data(self, **kwargs):
         # Get the base implementation first of the context
         context = super(CollectionListView, self).get_context_data(**kwargs)
+
+        # Add permissions
+        context = get_application_context(self.request, context)
+
         # Add our own elements
         context['app_prefix'] = APP_PREFIX
         # context['static_root'] = STATIC_ROOT
