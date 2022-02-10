@@ -57,6 +57,8 @@ urlpatterns = [
     url(r'^subtype_choices/', collbank.collection.views.subtype_choices),
     url(r'^signup/$', collbank.collection.views.signup, name='signup'),
 
+    url(r'^login/user/(?P<user_id>\w[\w\d_]+)$', collbank.collection.views.login_as_user, name='login_as'),
+
     url(r'^login/$', LoginView.as_view
         (
             template_name= 'collection/login.html',
