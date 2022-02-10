@@ -99,6 +99,7 @@
     <Content Include="collbank\collection\static\collection\fonts\glyphicons-halflings-regular.woff" />
     <None Include="static\collection\scripts\_references.js" />
     <Content Include="collbank\collection\templates\collection\coll_item.html" />
+    <Content Include="collbank\collection\templates\collection\nlogin.html" />
     <Content Include="collbank\collection\templates\collection\signup.html" />
     <Content Include="static\admin\css\base.css" />
     <Content Include="static\admin\css\changelists.css" />
