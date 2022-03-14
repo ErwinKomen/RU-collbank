@@ -4,9 +4,10 @@
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
     <Name>collbank</Name>
     <RootNamespace>collbank</RootNamespace>
-    <InterpreterId>{7a9a0be3-9280-4b9c-867c-2314c4b52aad}</InterpreterId>
+    <InterpreterId>MSBuild|collbank2|$(MSBuildProjectFullPath)</InterpreterId>
     <WebBrowserPort>6505</WebBrowserPort>
-    <InterpreterVersion>3.5</InterpreterVersion>
+    <SuppressConfigureTestFrameworkPrompt>true</SuppressConfigureTestFrameworkPrompt>
+    <SuppressPackageInstallationPrompt>True</SuppressPackageInstallationPrompt>
   </PropertyGroup>
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -20,6 +21,7 @@
     <WorkingDirectory>.</WorkingDirectory>
     <LaunchProvider>Web launcher</LaunchProvider>
     <OutputPath>.</OutputPath>
+    <WebBrowserUrl>http://localhost</WebBrowserUrl>
     <WebBrowserUrl>http://localhost</WebBrowserUrl>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
@@ -44,6 +46,16 @@
     <Compile Include="collbank\collection\tests.py" />
     <Compile Include="collbank\collection\views.py" />
     <Compile Include="collbank\collection\__init__.py" />
+    <Compile Include="collbank\reader\admin.py" />
+    <Compile Include="collbank\reader\apps.py" />
+    <Compile Include="collbank\reader\forms.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="collbank\reader\migrations\__init__.py" />
+    <Compile Include="collbank\reader\models.py" />
+    <Compile Include="collbank\reader\tests.py" />
+    <Compile Include="collbank\reader\views.py" />
+    <Compile Include="collbank\reader\__init__.py" />
     <Compile Include="manage.py" />
     <Compile Include="collbank\__init__.py" />
     <Compile Include="collbank\settings.py" />
@@ -62,6 +74,10 @@
     <Folder Include="collbank\collection\static\collection\scripts\" />
     <Folder Include="collbank\collection\templates\" />
     <Folder Include="collbank\collection\templates\collection\" />
+    <Folder Include="collbank\reader\" />
+    <Folder Include="collbank\reader\migrations\" />
+    <Folder Include="collbank\reader\templates\" />
+    <Folder Include="collbank\reader\templates\reader\" />
     <Folder Include="collbank\templates\" />
     <Folder Include="collbank\templates\admin\" />
     <Folder Include="static\" />
@@ -87,6 +103,7 @@
     <Folder Include="static\nested_admin\src\vendor\browser-pack\" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include=".editorconfig" />
     <Content Include="collbank\collection\fixtures\initial_data.json" />
     <Content Include="collbank\collection\static\collection\content\bootstrap.css" />
     <Content Include="collbank\collection\static\collection\content\bootstrap.min.css" />
@@ -101,6 +118,7 @@
     <Content Include="collbank\collection\templates\collection\coll_item.html" />
     <Content Include="collbank\collection\templates\collection\nlogin.html" />
     <Content Include="collbank\collection\templates\collection\signup.html" />
+    <Content Include="collbank\reader\templates\reader\index.html" />
     <Content Include="static\admin\css\base.css" />
     <Content Include="static\admin\css\changelists.css" />
     <Content Include="static\admin\css\dashboard.css" />
@@ -229,14 +247,13 @@
   </ItemGroup>
   <ItemGroup>
     <Interpreter Include="..\..\..\..\..\env\collbank2\">
-      <Id>{7a9a0be3-9280-4b9c-867c-2314c4b52aad}</Id>
-      <Version>3.5</Version>
-      <Description>collbank2 (Python 64-bit 3.5)</Description>
+      <Id>collbank2</Id>
+      <Version>3.7</Version>
+      <Description>collbank2 (Python 3.7 (64-bit))</Description>
       <InterpreterPath>Scripts\python.exe</InterpreterPath>
       <WindowsInterpreterPath>Scripts\pythonw.exe</WindowsInterpreterPath>
-      <LibraryPath>Lib\</LibraryPath>
       <PathEnvironmentVariable>PYTHONPATH</PathEnvironmentVariable>
-      <Architecture>Amd64</Architecture>
+      <Architecture>X64</Architecture>
     </Interpreter>
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.Django.targets" />
