@@ -22,18 +22,11 @@ from django.contrib.auth.views import LoginView, LogoutView
 
 import nested_admin
 from collbank.settings import APP_PREFIX, STATIC_ROOT, STATIC_URL
-# from collbank.collection.models import one_time_startup
 admin.autodiscover()
 
 # set admin site names
 admin.site.site_header = 'Collection Bank Admin'
 admin.site.site_title = 'Collection Bank Site Admin'
-
-# define a site prefix: SET this for the production environment
-# pfx = "ru/"
-# SET this one for the development environment
-# pfx = ""
-# pfx = APP_PREFIX
 
 urlpatterns = [
     # Examples:
@@ -74,7 +67,5 @@ urlpatterns = [
     # Uncomment the next line to enable the admin:
     url(r'^admin/', admin.site.urls, name='admin_base'),
     url(r'^_nested_admin/', include('nested_admin.urls')),
-]  # + static('/static/', document_root='/scratch2/www/collbank/live/repo/collbank/static/')
-# ]  + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+]
 
-# one_time_startup()
