@@ -355,3 +355,5 @@ migrations/
 /collbank/static/collection/content/ru-form.css
 /collbank/static/collection/content/ru-base.css
 /collbank/static/admin
+/collbank/collbank/basic/static/basic/scripts/select2.js
+/collbank/collbank/basic/static/basic/scripts/select2.full.js

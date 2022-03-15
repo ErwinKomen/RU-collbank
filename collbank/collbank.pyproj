@@ -33,6 +33,21 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="collbank\basic\admin.py" />
+    <Compile Include="collbank\basic\apps.py" />
+    <Compile Include="collbank\basic\migrations\0001_initial.py" />
+    <Compile Include="collbank\basic\migrations\0002_auto_20210510_1054.py" />
+    <Compile Include="collbank\basic\migrations\0003_usersearch_count.py" />
+    <Compile Include="collbank\basic\migrations\__init__.py" />
+    <Compile Include="collbank\basic\models.py" />
+    <Compile Include="collbank\basic\tests.py" />
+    <Compile Include="collbank\basic\utils.py" />
+    <Compile Include="collbank\basic\views.py" />
+    <Compile Include="collbank\basic\widgets.py" />
+    <Compile Include="collbank\basic\__init__.py" />
+    <Compile Include="collbank\collection\adaptations.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="collbank\collection\admin.py" />
     <Compile Include="collbank\collection\apps.py" />
     <Compile Include="collbank\collection\forms.py">
@@ -64,6 +79,17 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="collbank\" />
+    <Folder Include="collbank\basic\" />
+    <Folder Include="collbank\basic\migrations\" />
+    <Folder Include="collbank\basic\migrations\__pycache__\" />
+    <Folder Include="collbank\basic\static\" />
+    <Folder Include="collbank\basic\static\basic\" />
+    <Folder Include="collbank\basic\static\basic\content\" />
+    <Folder Include="collbank\basic\static\basic\fonts\" />
+    <Folder Include="collbank\basic\static\basic\scripts\" />
+    <Folder Include="collbank\basic\templates\" />
+    <Folder Include="collbank\basic\templates\basic\" />
+    <Folder Include="collbank\basic\__pycache__\" />
     <Folder Include="collbank\collection\" />
     <Folder Include="collbank\collection\migrations\" />
     <Folder Include="collbank\collection\fixtures\" />
@@ -104,6 +130,58 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include=".editorconfig" />
+    <Content Include="collbank\basic\migrations\__pycache__\0001_initial.cpython-35.pyc" />
+    <Content Include="collbank\basic\migrations\__pycache__\0001_initial.cpython-36.pyc" />
+    <Content Include="collbank\basic\migrations\__pycache__\0001_initial.cpython-37.pyc" />
+    <Content Include="collbank\basic\migrations\__pycache__\0002_auto_20210510_1054.cpython-35.pyc" />
+    <Content Include="collbank\basic\migrations\__pycache__\0002_auto_20210510_1054.cpython-36.pyc" />
+    <Content Include="collbank\basic\migrations\__pycache__\0002_auto_20210510_1054.cpython-37.pyc" />
+    <Content Include="collbank\basic\migrations\__pycache__\0003_usersearch_count.cpython-35.pyc" />
+    <Content Include="collbank\basic\migrations\__pycache__\0003_usersearch_count.cpython-36.pyc" />
+    <Content Include="collbank\basic\migrations\__pycache__\0003_usersearch_count.cpython-37.pyc" />
+    <Content Include="collbank\basic\migrations\__pycache__\__init__.cpython-35.pyc" />
+    <Content Include="collbank\basic\migrations\__pycache__\__init__.cpython-36.pyc" />
+    <Content Include="collbank\basic\migrations\__pycache__\__init__.cpython-37.pyc" />
+    <Content Include="collbank\basic\static\basic\content\basic.css" />
+    <Content Include="collbank\basic\static\basic\content\font-awesome.min.css" />
+    <Content Include="collbank\basic\static\basic\fonts\fontawesome-webfont.eot" />
+    <Content Include="collbank\basic\static\basic\fonts\fontawesome-webfont.svg" />
+    <Content Include="collbank\basic\static\basic\fonts\fontawesome-webfont.ttf" />
+    <Content Include="collbank\basic\static\basic\fonts\fontawesome-webfont.woff" />
+    <Content Include="collbank\basic\static\basic\fonts\fontawesome-webfont.woff2" />
+    <Content Include="collbank\basic\static\basic\fonts\FontAwesome.otf" />
+    <Content Include="collbank\basic\static\basic\fonts\glyphicons-halflings-regular.eot" />
+    <Content Include="collbank\basic\static\basic\fonts\glyphicons-halflings-regular.svg" />
+    <Content Include="collbank\basic\static\basic\fonts\glyphicons-halflings-regular.ttf" />
+    <Content Include="collbank\basic\static\basic\fonts\glyphicons-halflings-regular.woff" />
+    <Content Include="collbank\basic\static\basic\fonts\glyphicons-halflings-regular.woff2" />
+    <Content Include="collbank\basic\static\basic\scripts\basic.js" />
+    <Content Include="collbank\basic\static\basic\scripts\html2canvas.js" />
+    <Content Include="collbank\basic\static\basic\scripts\htmlsvg2canvas.js" />
+    <Content Include="collbank\basic\static\basic\scripts\select2.full.js" />
+    <Content Include="collbank\basic\static\basic\scripts\select2.js" />
+    <Content Include="collbank\basic\templates\basic\basic_details.html" />
+    <Content Include="collbank\basic\templates\basic\basic_edit.html" />
+    <Content Include="collbank\basic\templates\basic\basic_list.html" />
+    <Content Include="collbank\basic\templates\basic\filter_help.html" />
+    <Content Include="collbank\basic\__pycache__\admin.cpython-35.pyc" />
+    <Content Include="collbank\basic\__pycache__\admin.cpython-36.pyc" />
+    <Content Include="collbank\basic\__pycache__\admin.cpython-37.pyc" />
+    <Content Include="collbank\basic\__pycache__\models.cpython-35.pyc" />
+    <Content Include="collbank\basic\__pycache__\models.cpython-36.pyc" />
+    <Content Include="collbank\basic\__pycache__\models.cpython-37.pyc" />
+    <Content Include="collbank\basic\__pycache__\utils.cpython-35.pyc" />
+    <Content Include="collbank\basic\__pycache__\utils.cpython-36.pyc" />
+    <Content Include="collbank\basic\__pycache__\utils.cpython-37.pyc" />
+    <Content Include="collbank\basic\__pycache__\views.cpython-35.pyc" />
+    <Content Include="collbank\basic\__pycache__\views.cpython-36.pyc" />
+    <Content Include="collbank\basic\__pycache__\views.cpython-37.pyc" />
+    <Content Include="collbank\basic\__pycache__\widgets.cpython-35.pyc" />
+    <Content Include="collbank\basic\__pycache__\widgets.cpython-36.pyc" />
+    <Content Include="collbank\basic\__pycache__\widgets.cpython-37.pyc" />
+    <Content Include="collbank\basic\__pycache__\__init__.cpython-35.pyc" />
+    <Content Include="collbank\basic\__pycache__\__init__.cpython-36.pyc" />
+    <Content Include="collbank\basic\__pycache__\__init__.cpython-37.pyc" />
     <Content Include="collbank\collection\fixtures\initial_data.json" />
     <Content Include="collbank\collection\static\collection\content\bootstrap.css" />
     <Content Include="collbank\collection\static\collection\content\bootstrap.min.css" />

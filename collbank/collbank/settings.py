@@ -84,7 +84,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django_select2',
     'nested_admin',
+    'collbank.basic',
     'collbank.reader',
     'collbank.collection',
 ]
