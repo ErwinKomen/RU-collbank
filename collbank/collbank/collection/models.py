@@ -8,7 +8,6 @@ Each resource in the collection is characterised by its own annotations.
 from django.db import models
 from django.contrib.auth.models import User
 from datetime import datetime
-from collbank.settings import REGISTRY_URL, REGISTRY_DIR, PUBLISH_DIR
 import requests
 from requests.auth import HTTPBasicAuth
 
@@ -16,6 +15,10 @@ import copy  # (1) use python copy
 import json
 import sys
 import os, time
+
+from collbank.settings import REGISTRY_URL, REGISTRY_DIR, PUBLISH_DIR
+from collbank.basic.views import get_current_datetime
+
 
 MAX_IDENTIFIER_LEN = 30
 MAX_NAME_LEN = 50
@@ -989,6 +992,56 @@ class Language(models.Model):
         return self.get_name_display()
 
 
+class LanguageIso(models.Model):
+    """Language and ISO-639-3 letter code"""
+
+    # [1] Three letter code
+    code = models.CharField("Three letter code", max_length=3)
+    # [0-1] URL to a description of the 3-letter code
+    url = models.URLField("Description", blank=True, null=True)
+
+    # [1] Obligatory time of creation
+    created = models.DateTimeField(default=get_current_datetime)
+
+    def __str__(self):
+        sBack = self.code
+        return sBack
+
+    def get_created(self):
+        sBack = self.created.strftime("%d/%b/%Y %H:%M")
+        return sBack
+
+    def get_view(self):
+        name = ""
+        obj = self.code_languagenames.first()
+        if not obj is None:
+            name = obj.name
+        sBack = "[{}] {}".format(self.code, name)
+        return sBack
+
+
+class LanguageName(models.Model):
+    """Name of an ISO language"""
+
+    # [1] Language name
+    name = models.CharField("Full language name", blank=True, max_length=MAX_STRING_LEN)
+    # [0-1] URL to a description of the language Name for the 3-letter code
+    url = models.URLField("Description", blank=True, null=True)
+    # [1] Obligatorily belongs to one particular ISO-code
+    code = models.ForeignKey(LanguageIso, on_delete=models.CASCADE, related_name="code_languagenames")
+
+    # [1] Obligatory time of creation
+    created = models.DateTimeField(default=get_current_datetime)
+
+    def __str__(self):
+        sBack = "[{}] {}".format(self.code.code, self.name)
+        return sBack
+
+    def get_created(self):
+        sBack = self.created.strftime("%d/%b/%Y %H:%M")
+        return sBack
+
+
 class DocumentationLanguage(Language):
 
     # [1]     Each documentation object can have [0-n] languages associated with it
@@ -1370,7 +1423,6 @@ class PID(models.Model):
 
     def get_view(self):
         return self.code
-
 
 
 class Organization(models.Model):

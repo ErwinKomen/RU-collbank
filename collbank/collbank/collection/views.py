@@ -30,6 +30,7 @@ from collbank.settings import APP_PREFIX, WSGI_FILE, STATIC_ROOT, WRITABLE_DIR, 
 # Not used anymore: OUTPUT_XML
 from collbank.collection.admin import CollectionAdmin
 from collbank.collection.forms import *
+from collbank.collection.adaptations import listview_adaptations
 
 # Local variables
 XSI_CMD = "http://www.clarin.eu/cmd/"
@@ -839,6 +840,9 @@ class CollectionListView(ListView):
     def get_context_data(self, **kwargs):
         # Get the base implementation first of the context
         context = super(CollectionListView, self).get_context_data(**kwargs)
+
+        # ======== One-time adaptations ==============
+        listview_adaptations("collection_list")
 
         # Add permissions
         context = get_application_context(self.request, context)
