@@ -2,26 +2,29 @@
 Definition of urls for collbank.
 """
 
-from datetime import datetime
-from django.conf.urls import url
-# from django.core import urlresolvers
-import django.contrib.auth.views
-
-import collbank.collection.forms
-from collbank.collection.views import *
-
-# Uncomment the next lines to enable the admin:
 from django.conf import settings
-from django.conf.urls import include
+from django.conf.urls import include, url
 from django.conf.urls.static import static
 from django.shortcuts import redirect
 from django.urls import reverse, reverse_lazy
 from django.views.generic.base import RedirectView
 from django.contrib import admin
 from django.contrib.auth.views import LoginView, LogoutView
+import django.contrib.auth.views
 
 import nested_admin
+from datetime import datetime
+
+# Import from COLLBANK as a whole
 from collbank.settings import APP_PREFIX, STATIC_ROOT, STATIC_URL
+
+# Import specific to COLLBANK parts
+import collbank.collection.forms
+import collbank.collection.views
+import collbank.reader.views
+from collbank.collection.views import *
+from collbank.reader.views import *
+
 admin.autodiscover()
 
 # set admin site names
@@ -49,6 +52,11 @@ urlpatterns = [
     url(r'^admin/collection/collection/$', RedirectView.as_view(pattern_name='overview'), name='collectionlist'),
     url(r'^admin/copy/$', collbank.collection.admin.copy_item, name='copyadmin'),
     url(r'^subtype_choices/', collbank.collection.views.subtype_choices),
+
+    url(r'^source/list', SourceInfoList.as_view(), name='sourceinfo_list'),
+    url(r'^source/details(?:/(?P<pk>\d+))?/$', SourceInfoDetails.as_view(), name='sourceinfo_details'),
+    url(r'^source/edit(?:/(?P<pk>\d+))?/$', SourceInfoEdit.as_view(), name='sourceinfo_edit'),
+
     url(r'^signup/$', collbank.collection.views.signup, name='signup'),
 
     url(r'^login/user/(?P<user_id>\w[\w\d_]+)$', collbank.collection.views.login_as_user, name='login_as'),

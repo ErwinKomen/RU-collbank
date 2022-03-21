@@ -197,6 +197,7 @@
     <Content Include="collbank\collection\templates\collection\nlogin.html" />
     <Content Include="collbank\collection\templates\collection\signup.html" />
     <Content Include="collbank\reader\templates\reader\index.html" />
+    <Content Include="collbank\templates\breadcrumb_list.html" />
     <Content Include="static\admin\css\base.css" />
     <Content Include="static\admin\css\changelists.css" />
     <Content Include="static\admin\css\dashboard.css" />
@@ -314,7 +315,7 @@
     <Content Include="collbank\collection\templates\collection\coll_detail.html" />
     <Content Include="collbank\collection\templates\collection\contact.html" />
     <Content Include="collbank\collection\templates\collection\index.html" />
-    <Content Include="collbank\collection\templates\collection\layout.html" />
+    <Content Include="collbank\templates\layout.html" />
     <Content Include="collbank\collection\templates\collection\login.html" />
     <Content Include="collbank\collection\templates\collection\topnav.html" />
     <Content Include="collbank\collection\templates\collection\loginpartial.html" />

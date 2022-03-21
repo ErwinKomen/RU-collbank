@@ -74,17 +74,167 @@ LINGUALITY_VARIANT = "linguality.lingualityvariant"
 LINGUALITY_MULTI = "linguality.multilingualitytype"
 CLARIN_CENTRE = "clarincentre.name"
 
-#settings_choices = [
-#    {'name': "language.name",
-#     'list': LANGUAGE_CODE_LIST,
-#     'colCode': 0,
-#     'colText': 2 },
-#    {'name': "country.name",
-#     'list': COUNTRY_CODES,
-#     'colCode': 0,
-#     'colText': 1 }
-#    ]
+# ============================ HELPER FUNCTIONS ===========================
 
+def build_choice_list(field, position=None, subcat=None):
+    """Create a list of choice-tuples"""
+
+    choice_list = [];
+    unique_list = [];   # Check for uniqueness
+
+    try:
+        # check if there are any options at all
+        if FieldChoice.objects == None:
+            # Take a default list
+            choice_list = [('0','-'),('1','N/A')]
+        else:
+            ## Force a real choice to be made
+            #choice_list = [('-1','-')]
+            for choice in FieldChoice.objects.filter(field__iexact=field):
+                # Default
+                sEngName = ""
+                # Any special position??
+                if position==None:
+                    sEngName = choice.english_name
+                elif position=='before':
+                    # We only need to take into account anything before a ":" sign
+                    sEngName = choice.english_name.split(':',1)[0]
+                elif position=='after':
+                    if subcat!=None:
+                        arName = choice.english_name.partition(':')
+                        if len(arName)>1 and arName[0]==subcat:
+                            sEngName = arName[2]
+
+                # Sanity check
+                if sEngName != "" and not sEngName in unique_list:
+                    # Add it to the REAL list
+                    choice_list.append((str(choice.machine_value),sEngName));
+                    # Add it to the list that checks for uniqueness
+                    unique_list.append(sEngName)
+
+            choice_list = sorted(choice_list,key=lambda x: x[1]);
+    except:
+        print("Unexpected error:", sys.exc_info()[0])
+        choice_list = [('0','-'),('1','N/A')];
+
+    # Signbank returns: [('0','-'),('1','N/A')] + choice_list
+    # We do not use defaults
+    return choice_list;
+
+def choice_english(field, num):
+    """Get the english name of the field with the indicated machine_number"""
+
+    try:
+        result_list = FieldChoice.objects.filter(field__iexact=field).filter(machine_value=num)
+        if (result_list == None):
+            return "(No results for "+field+" with number="+num
+        return result_list[0].english_name
+    except:
+        return "(empty)"
+
+def m2m_combi(items):
+    try:
+        if items == None:
+            sBack = ''
+        else:
+            qs = items.all()
+            sBack = '-'.join([str(thing) for thing in qs])
+        return sBack
+    except:
+        return "(exception: {})".format(sys.exc_info()[0])
+
+def m2m_namelist(items):
+    if items == None:
+        sBack = ''
+    else:
+        qs = items.all()
+        sBack = ' || '.join([thing.name for thing in qs])
+    return sBack
+
+def m2m_identifier(items):
+    if items == None:
+        sBack = ''
+    else:
+        qs = items.all()
+        sBack = "-".join([thing.identifier for thing in qs])
+    return sBack
+
+def get_instance_copy(item):
+    new_copy = copy.copy(item)
+    new_copy.id = None          # Reset the id
+    new_copy.save()             # Save it preliminarily
+    return new_copy
+
+def copy_m2m(inst_src, inst_dst, field, lst_m2m = None):
+    # Copy M2M relationship: conversationalType    
+    for item in getattr(inst_src, field).all():
+        # newItem = get_instance_copy(item)
+        newItem = item.get_copy()
+        # Possibly copy more m2m
+        if lst_m2m != None:
+            for deeper in lst_m2m:
+                copy_m2m(item, newItem, deeper)
+        getattr(inst_dst, field).add(newItem)
+
+def copy_fk(inst_src, inst_dst, field):
+    # Copy foreign-key relationship
+    instSource = getattr(inst_src, field)
+    if instSource != None:
+        # instCopy = get_instance_copy(instSource)
+        instCopy = instSource.get_copy()
+        setattr(inst_dst, field, instCopy)
+
+def get_ident(qs):
+    if qs == None:
+        idt = ""
+    else:
+        lst = qs.all()
+        if len(lst) == 0:
+            idt = "(empty)"
+        else:
+            qs = lst[0].collection_set
+            idt = m2m_identifier(qs)
+    return idt
+
+def get_tuple_value(lstTuples, iId):
+    if lstTuples == None:
+        sBack = ""
+    else:
+        lstFound = [item for item in lstTuples if item[0] == iId]
+        if len(lstFound) == 0:
+            sBack = ""
+        else:
+            sBack = lstFound[0][1]
+    return sBack
+
+def get_tuple_index(lstTuples, sValue):
+    if lstTuples == None:
+        iBack = -1
+    else:
+        lstFound = [item for item in lstTuples if item[1] == sValue]
+        if len(lstFound) == 0:
+            iBack = -1
+        else:
+            iBack = lstFound[0][0]
+    return iBack
+  
+def get_help(field):
+    """Create the 'help_text' for this element"""
+
+    # find the correct instance in the database
+    help_text = ""
+    try:
+        entry_list = HelpChoice.objects.filter(field__iexact=field)
+        entry = entry_list[0]
+        # Note: only take the first actual instance!!
+        help_text = entry.Text()
+    except:
+        help_text = "Sorry, no help available for " + field
+
+    return help_text
+
+
+# ========================= HELPER MODELS ==============================
 
 class PidService(models.Model):
     name = models.CharField("The name of this ePIC service", max_length=MAX_NAME_LEN)
@@ -236,7 +386,6 @@ class PidService(models.Model):
         return oBack
 
 
-
 class FieldChoice(models.Model):
 
     field = models.CharField(max_length=50)
@@ -251,184 +400,6 @@ class FieldChoice(models.Model):
     class Meta:
         ordering = ['field','machine_value']
 
-
-#def build_choice_settings(field):
-#    """Create a list of choice-tuples using settings_choices."""
-
-#    choice_list = [];
-#    unique_list = [];   # Check for uniqueness
-
-#    try:
-#        # Try find [field] in [settings_choices]
-#        idx = next((obj for obj in settings_choices if object.name == field), -1)
-#        # Are we positive?
-#        if idx >=0:
-#            # Get all elements
-#            lstSettings = settings_choices[idx]['list']
-#            colCode = settings_choices[idx]['colCode']
-#            colText = settings_choices[idx]['colText']
-#            # More validation
-#            if lstSettings != None:
-#                # Copy all elements
-#                for choice in lstSettings:
-#                    # Copy this choice
-#                    choice_list.append(lstSettings[colCode], lstSettings[colText])
-#                # Sort the result
-#                choice_list = sorted(choice_list,key=lambda x: x[1]);
-#        else:
-#            # Take a default list
-#            choice_list = [('0','-'),('1','N/A')]
-
-#    except:
-#        print("Unexpected error:", sys.exc_info()[0])
-#        choice_list = [('0','-'),('1','N/A')];
-
-#    # Signbank returns: [('0','-'),('1','N/A')] + choice_list
-#    # We do not use defaults
-#    return choice_list;
-
-def build_choice_list(field, position=None, subcat=None):
-    """Create a list of choice-tuples"""
-
-    choice_list = [];
-    unique_list = [];   # Check for uniqueness
-
-    try:
-        # check if there are any options at all
-        if FieldChoice.objects == None:
-            # Take a default list
-            choice_list = [('0','-'),('1','N/A')]
-        else:
-            ## Force a real choice to be made
-            #choice_list = [('-1','-')]
-            for choice in FieldChoice.objects.filter(field__iexact=field):
-                # Default
-                sEngName = ""
-                # Any special position??
-                if position==None:
-                    sEngName = choice.english_name
-                elif position=='before':
-                    # We only need to take into account anything before a ":" sign
-                    sEngName = choice.english_name.split(':',1)[0]
-                elif position=='after':
-                    if subcat!=None:
-                        arName = choice.english_name.partition(':')
-                        if len(arName)>1 and arName[0]==subcat:
-                            sEngName = arName[2]
-
-                # Sanity check
-                if sEngName != "" and not sEngName in unique_list:
-                    # Add it to the REAL list
-                    choice_list.append((str(choice.machine_value),sEngName));
-                    # Add it to the list that checks for uniqueness
-                    unique_list.append(sEngName)
-
-            choice_list = sorted(choice_list,key=lambda x: x[1]);
-    except:
-        print("Unexpected error:", sys.exc_info()[0])
-        choice_list = [('0','-'),('1','N/A')];
-
-    # Signbank returns: [('0','-'),('1','N/A')] + choice_list
-    # We do not use defaults
-    return choice_list;
-
-def choice_english(field, num):
-    """Get the english name of the field with the indicated machine_number"""
-
-    try:
-        result_list = FieldChoice.objects.filter(field__iexact=field).filter(machine_value=num)
-        if (result_list == None):
-            return "(No results for "+field+" with number="+num
-        return result_list[0].english_name
-    except:
-        return "(empty)"
-
-def m2m_combi(items):
-    try:
-        if items == None:
-            sBack = ''
-        else:
-            qs = items.all()
-            sBack = '-'.join([str(thing) for thing in qs])
-        return sBack
-    except:
-        return "(exception: {})".format(sys.exc_info()[0])
-
-def m2m_namelist(items):
-    if items == None:
-        sBack = ''
-    else:
-        qs = items.all()
-        sBack = ' || '.join([thing.name for thing in qs])
-    return sBack
-
-def m2m_identifier(items):
-    if items == None:
-        sBack = ''
-    else:
-        qs = items.all()
-        sBack = "-".join([thing.identifier for thing in qs])
-    return sBack
-
-def get_instance_copy(item):
-    new_copy = copy.copy(item)
-    new_copy.id = None          # Reset the id
-    new_copy.save()             # Save it preliminarily
-    return new_copy
-
-def copy_m2m(inst_src, inst_dst, field, lst_m2m = None):
-    # Copy M2M relationship: conversationalType    
-    for item in getattr(inst_src, field).all():
-        # newItem = get_instance_copy(item)
-        newItem = item.get_copy()
-        # Possibly copy more m2m
-        if lst_m2m != None:
-            for deeper in lst_m2m:
-                copy_m2m(item, newItem, deeper)
-        getattr(inst_dst, field).add(newItem)
-
-def copy_fk(inst_src, inst_dst, field):
-    # Copy foreign-key relationship
-    instSource = getattr(inst_src, field)
-    if instSource != None:
-        # instCopy = get_instance_copy(instSource)
-        instCopy = instSource.get_copy()
-        setattr(inst_dst, field, instCopy)
-
-def get_ident(qs):
-    if qs == None:
-        idt = ""
-    else:
-        lst = qs.all()
-        if len(lst) == 0:
-            idt = "(empty)"
-        else:
-            qs = lst[0].collection_set
-            idt = m2m_identifier(qs)
-    return idt
-
-def get_tuple_value(lstTuples, iId):
-    if lstTuples == None:
-        sBack = ""
-    else:
-        lstFound = [item for item in lstTuples if item[0] == iId]
-        if len(lstFound) == 0:
-            sBack = ""
-        else:
-            sBack = lstFound[0][1]
-    return sBack
-
-def get_tuple_index(lstTuples, sValue):
-    if lstTuples == None:
-        iBack = -1
-    else:
-        lstFound = [item for item in lstTuples if item[1] == sValue]
-        if len(lstFound) == 0:
-            iBack = -1
-        else:
-            iBack = lstFound[0][0]
-    return iBack
-  
 
 class HelpChoice(models.Model):
     """Define the URL to link to for the help-text"""
@@ -455,21 +426,7 @@ class HelpChoice(models.Model):
         return help_text
 
 
-def get_help(field):
-    """Create the 'help_text' for this element"""
-
-    # find the correct instance in the database
-    help_text = ""
-    try:
-        entry_list = HelpChoice.objects.filter(field__iexact=field)
-        entry = entry_list[0]
-        # Note: only take the first actual instance!!
-        help_text = entry.Text()
-    except:
-        help_text = "Sorry, no help available for " + field
-
-    return help_text
-
+# ========================= COLLECTION MODELS ==========================
 
 class Title(models.Model):
     """Title of this collection"""
@@ -997,7 +954,7 @@ class LanguageIso(models.Model):
 
     # [1] Three letter code
     code = models.CharField("Three letter code", max_length=3)
-    # [0-1] URL to a description of the 3-letter code
+    # [0-1] URL to an ISO description of the 3-letter code
     url = models.URLField("Description", blank=True, null=True)
 
     # [1] Obligatory time of creation
@@ -1028,7 +985,7 @@ class LanguageName(models.Model):
     # [0-1] URL to a description of the language Name for the 3-letter code
     url = models.URLField("Description", blank=True, null=True)
     # [1] Obligatorily belongs to one particular ISO-code
-    code = models.ForeignKey(LanguageIso, on_delete=models.CASCADE, related_name="code_languagenames")
+    iso = models.ForeignKey(LanguageIso, on_delete=models.CASCADE, related_name="iso_languagenames")
 
     # [1] Obligatory time of creation
     created = models.DateTimeField(default=get_current_datetime)

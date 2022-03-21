@@ -8,12 +8,27 @@ from django.db.models.functions import Lower
 from django.db.models.query import QuerySet 
 
 import json
+import pytz
 
 # provide error handling
 from .utils import ErrHandle
 
 LONG_STRING=255
 MAX_TEXT_LEN = 200
+
+def get_crpp_date(dtThis, readable=False):
+    """Convert datetime to string"""
+
+    if readable:
+        # Convert the computer-stored timezone...
+        dtThis = dtThis.astimezone(pytz.timezone(TIME_ZONE))
+        # Model: yyyy-MM-dd'T'HH:mm:ss
+        sDate = dtThis.strftime("%d/%B/%Y (%H:%M)")
+    else:
+        # Model: yyyy-MM-dd'T'HH:mm:ss
+        sDate = dtThis.strftime("%Y-%m-%dT%H:%M:%S")
+    return sDate
+
 
 
 # Create your models here.

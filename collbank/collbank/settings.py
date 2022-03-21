@@ -28,6 +28,7 @@ elif "/applejack" in BASE_DIR:
 
 REGISTRY_DIR = os.path.abspath(os.path.join(WRITABLE_DIR, "../registry/"))
 PUBLISH_DIR = os.path.abspath(os.path.join(WRITABLE_DIR, "../joai/"))
+MEDIA_DIR = os.path.abspath(os.path.join(WRITABLE_DIR, "../media/"))
 
 print("writable dir: {}".format(WRITABLE_DIR), file=sys.stderr)
 # print("output xml: {}".format(OUTPUT_XML), file=sys.stderr)

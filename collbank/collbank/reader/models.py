@@ -59,6 +59,22 @@ class SourceInfo(models.Model):
             sBack = "<pre>{}</pre>".format(sCode)
         return sBack
 
+    def get_file(self):
+        """If file has been filled in, get the file name"""
+
+        sBack = "-"
+        if not self.file is None:
+            sBack = self.file
+        return sBack
+
+    def get_url(self):
+        """If URL has been filled in, get the URL"""
+
+        sBack = "-"
+        if not self.url is None:
+            sBack = self.url
+        return sBack
+
     def get_username(self):
         sBack = "(unknown)"
         if self.user != None:

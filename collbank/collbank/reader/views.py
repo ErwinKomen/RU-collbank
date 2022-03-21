@@ -48,9 +48,11 @@ import xml.etree.ElementTree as ElementTree
  
 # ======= imports from my own application ======
 from collbank.settings import APP_PREFIX, MEDIA_DIR, WRITABLE_DIR
-from collbank.utils import ErrHandle
-from collbank.reader.forms import UploadFileForm, UploadFilesForm
-from collbank.reader.models import get_current_datetime
+from collbank.basic.utils import ErrHandle
+from collbank.basic.views import BasicDetails, BasicList
+from collbank.basic.models import get_crpp_date
+from collbank.reader.forms import UploadFileForm, UploadFilesForm, SourceInfoForm
+from collbank.reader.models import get_current_datetime, SourceInfo
 
 # =================== This is imported by seeker/views.py ===============
 reader_uploads = [
@@ -350,32 +352,73 @@ class ReaderImport(View):
         else:
             return True
 
-    def add_manu(self, lst_manual, lst_read, status="", msg="", user="", name="", url="", yearstart="", yearfinish="",
-                    library="", idno="", filename=""):
-        oInfo = {}
-        oInfo['status'] = status
-        oInfo['msg'] = msg
-        oInfo['user'] = user
-        oInfo['name'] = name
-        oInfo['url'] = url
-        oInfo['yearstart'] = yearstart
-        oInfo['yearfinish'] = yearfinish
-        oInfo['library'] = library
-        oInfo['idno'] = idno
-        oInfo['filename'] = filename
-        if status == "error":
-            lst_manual.append(oInfo)
-        else:
-            lst_read.append(oInfo)
-        return True
-
     def process_files(self, request, source, lResults, lHeader):
         bOkay = True
         code = ""
         return bOkay, code
 
 
+class SourceInfoList(BasicList):
+    """List all source info objects"""
 
+    model = SourceInfo
+    listform = SourceInfoForm
+    prefix = "srci"
+    order_cols = ['code', 'user__username', 'created']
+    order_default = order_cols
+    order_heads = [
+        {'name': 'Code',    'order': 'o=1', 'type': 'str', 'custom': 'code'},
+        {'name': 'User',    'order': 'o=2', 'type': 'str', 'custom': 'user'},
+        {'name': 'Created', 'order': 'o=3', 'type': 'str', 'custom': 'created'},
+    ]
+
+    def get_field_value(self, instance, custom):
+        sBack = ""
+        sTitle = ""
+        if custom == "code":
+            sBack = instance.code
+        elif custom == "user":
+            sBack = instance.user.username
+        elif custom == "created":
+            sBack = get_crpp_date(instance.created, True)
+        return sBack, sTitle
+
+
+class SourceInfoEdit(BasicDetails):
+    """The details of one SourceInfo object"""
+
+    model = SourceInfo
+    mForm = SourceInfoForm
+    prefix = 'srci'
+    new_button = True
+    mainitems = []
+
+    def add_to_context(self, context, instance):
+        """Add to the existing context"""
+
+        oErr = ErrHandle()
+        try:
+            # Define the main items to show and edit
+            context['mainitems'] = [
+                {'type': 'safe',  'label': "Code:",         'value': instance.get_code_html(),  },
+                {'type': 'plain', 'label': "User name:",    'value': instance.get_username(),   },
+                {'type': 'plain', 'label': "URL:",          'value': instance.get_url(),        },
+                {'type': 'plain', 'label': "File:",         'value': instance.get_file(),       },
+                {'type': 'plain', 'label': "Created:",      'value': instance.get_created()},
+                ]
+
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("SourceInfoEdit/add_to_context")
+
+        # Return the context we have made
+        return context
+    
+
+class SourceInfoDetails(SourceInfoEdit):
+    """Like SourceInfo Edit, but then html output"""
+    rtype = "html"
+    
 
 
 
