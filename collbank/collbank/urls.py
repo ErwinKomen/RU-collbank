@@ -56,6 +56,8 @@ urlpatterns = [
     url(r'^source/list', SourceInfoList.as_view(), name='sourceinfo_list'),
     url(r'^source/details(?:/(?P<pk>\d+))?/$', SourceInfoDetails.as_view(), name='sourceinfo_details'),
     url(r'^source/edit(?:/(?P<pk>\d+))?/$', SourceInfoEdit.as_view(), name='sourceinfo_edit'),
+    url(r'^source/load(?:/(?P<pk>\d+))?/$', SourceInfoLoadXml.as_view(), name='sourceinfo_load'),
+
 
     url(r'^signup/$', collbank.collection.views.signup, name='signup'),
 

@@ -1,0 +1,23 @@
+<div class="row">
+  <div class="col-md-12">
+
+    <div>&nbsp;</div>
+
+    <form id="file_upload_form" action="{% url 'sourceinfo_load' object.id %}" method="post">
+      {% csrf_token %}
+      <div class="hidden"><input name="sourceinfo_id" value="{{object.id}}" /></div>
+
+      <a class="btn btn-xs jumbo-3" role="button" 
+         onclick="ru.basic.submitform('file_upload_form', disable=false)" >
+        <span>Import</span>
+
+      </a>
+
+      <div class="hidden waiting">
+        <span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span>
+      </div>
+
+    </form>
+  </div>
+</div>
+

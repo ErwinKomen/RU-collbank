@@ -30,7 +30,6 @@ class SourceInfoForm(forms.ModelForm):
         model = SourceInfo
         fields = ['code', 'user', 'created', 'file', 'url']
         widgets={'code':    forms.TextInput(attrs={'style': 'width: 100%;', 'class': 'searching'}),
-                 'user':    forms.TextInput(attrs={'style': 'width: 100%;', 'class': 'searching'}),
                  'created': forms.TextInput(attrs={'style': 'width: 100%;'}),
                  'url':     forms.TextInput(attrs={'style': 'width: 100%;', 'class': 'searching'}),
                  'file':    forms.FileInput(attrs={'style': 'width: 100%;'})
@@ -45,3 +44,11 @@ class SourceInfoForm(forms.ModelForm):
         self.fields['created'].required = False
         self.fields['file'].required = False
         self.fields['url'].required = False
+
+        # Get the instance
+        if 'instance' in kwargs:
+            instance = kwargs['instance']
+            self.fields['user'].initial = instance.user
+            self.fields['user'].queryset = User.objects.filter(id=instance.user.id)
+
+

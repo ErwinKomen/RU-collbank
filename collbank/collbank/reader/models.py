@@ -7,6 +7,7 @@ from django.db import models, transaction
 from django.utils import timezone
 
 from collbank.basic.models import LONG_STRING
+from collbank.basic.utils import ErrHandle
 
 def get_current_datetime():
     """Get the current time"""
@@ -95,5 +96,7 @@ class SourceInfo(models.Model):
                 html.append(sManu)
             sBack = "<br />".join(html)
         return sBack
+
+
 
 
