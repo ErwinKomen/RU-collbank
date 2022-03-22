@@ -5,21 +5,25 @@ Adaptations of the database that are called up from the (list)views in the SEEKE
 from django.db import transaction
 from django.db.models import Q
 import re
+import os
 import json
+import csv
 
 # ======= imports from my own application ======
 from collbank.basic.utils import ErrHandle
+from collbank.settings import MEDIA_DIR
 from collbank.collection.models import Collection, Resource, \
     Media, Annotation, TotalSize, Modality, RecordingEnvironment, Channel, RecordingCondition, \
     SocialContext, PlanningType, Interactivity, Involvement, Audience, City, GeographicProvenance, \
     TotalSize, Genre, Title, Owner, TotalCollectionSize, Provenance, CollectionLanguage, \
     LanguageDisorder, Relation, Domain, PID, ResourceCreator, Project, ProjectFunder, \
     Linguality, LingualityType, LingualityNativeness, LingualityAgeGroup, LingualityStatus, \
-    LingualityVariant, MultilingualityType, MediaFormat, Organization, Person
+    LingualityVariant, MultilingualityType, MediaFormat, Organization, Person, \
+    LanguageIso, LanguageName
 
 
 adaptation_list = {
-    "collection_list": ["resource_empty"]
+    "collection_list": ["resource_empty", "language_renew"]
     }
 
 def listview_adaptations(lv):
@@ -135,4 +139,41 @@ def adapt_resource_empty():
         oErr.DoError("adapt_resource_empty")
     return bResult, msg
 
+def adapt_language_renew():
+    """Read languages into [LanguageIso] and [LanguageName]"""
+    oErr = ErrHandle()
+    bResult = True
+    msg = ""
+
+    try:
+        # Determine what file to take
+        code_file = os.path.abspath(os.path.join(MEDIA_DIR, "collbank", "newcodes.csv"))
+        if os.path.exists(code_file):
+            # Read the CSV
+            with open(code_file, "r", encoding="utf-8") as f:
+                csvreader = csv.reader(f, delimiter="\t")
+                line = 0
+                for row in csvreader:
+                    line += 1
+                    if line > 1:
+                        code = row[0]
+                        lngname = row[1]
+                        url = row[2]
+                        # Show where we are
+                        oErr.Status("{}: {} ({})".format(line, code, lngname))
+                        # See if we can process the code
+                        iso = LanguageIso.objects.filter(code=code).first()
+                        if iso is None:
+                            iso = LanguageIso.objects.create(code=code, url=url)
+                        # Do we already have the language name?
+                        obj = LanguageName.objects.filter(iso=iso, name=lngname).first()
+                        if obj is None:
+                            # Add the name
+                            obj = LanguageName.objects.create(iso=iso, name=lngname)
+        
+    except:
+        bResult = False
+        msg = oErr.get_error_message()
+        oErr.DoError("adapt_language_renew")
+    return bResult, msg
 
