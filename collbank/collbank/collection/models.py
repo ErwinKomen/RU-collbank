@@ -441,6 +441,48 @@ class Title(models.Model):
         idt = self.collection.identifier
         return "[{}] {}".format(idt,self.name[:50])
 
+    def custom_add(oColl, oParams, **kwargs):
+        """Add an object according to the specifications provided"""
+
+        oErr = ErrHandle()
+        coll = None
+        bOverwriting = False
+        bSkip = False
+        lst_msg = []
+        try:
+            profile = kwargs.get("profile")
+            username = kwargs.get("username")
+            team_group = kwargs.get("team_group")
+            source = kwargs.get("source")
+            keyfield = kwargs.get("keyfield", "name")
+
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Title/custom_add")
+        return obj
+
+    def custom_set(self, path, value, **kwargs):
+        """Set related items"""
+
+        bResult = True
+        oErr = ErrHandle()
+        try:
+            profile = kwargs.get("profile")
+            username = kwargs.get("username")
+            team_group = kwargs.get("team_group")
+            value_lst = []
+            if isinstance(value, str) and value[0] != '[':
+                value_lst = value.split(",")
+                for idx, item in enumerate(value_lst):
+                    value_lst[idx] = value_lst[idx].strip()
+            elif isinstance(value, list):
+                value_lst = value
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Title/custom_set")
+            bResult = False
+        return bResult
+
     def get_copy(self):
         # Make a clean copy
         new_copy = get_instance_copy(self)
@@ -463,6 +505,48 @@ class Owner(models.Model):
         # idt = m2m_identifier(self.collection_set)
         idt = self.collection.identifier
         return "[{}] {}".format(idt,self.name[:50])
+
+    def custom_add(oColl, oParams, **kwargs):
+        """Add an object according to the specifications provided"""
+
+        oErr = ErrHandle()
+        coll = None
+        bOverwriting = False
+        bSkip = False
+        lst_msg = []
+        try:
+            profile = kwargs.get("profile")
+            username = kwargs.get("username")
+            team_group = kwargs.get("team_group")
+            source = kwargs.get("source")
+            keyfield = kwargs.get("keyfield", "name")
+
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Owner/custom_add")
+        return obj
+
+    def custom_set(self, path, value, **kwargs):
+        """Set related items"""
+
+        bResult = True
+        oErr = ErrHandle()
+        try:
+            profile = kwargs.get("profile")
+            username = kwargs.get("username")
+            team_group = kwargs.get("team_group")
+            value_lst = []
+            if isinstance(value, str) and value[0] != '[':
+                value_lst = value.split(",")
+                for idx, item in enumerate(value_lst):
+                    value_lst[idx] = value_lst[idx].strip()
+            elif isinstance(value, list):
+                value_lst = value
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Owner/custom_set")
+            bResult = False
+        return bResult
 
     def get_copy(self):
         # Make a clean copy
@@ -509,6 +593,26 @@ class MediaFormat(models.Model):
     def __str__(self):
         return choice_english(MEDIA_FORMAT, self.name)
 
+    def custom_add(oColl, oParams, **kwargs):
+        """Add an object according to the specifications provided"""
+
+        oErr = ErrHandle()
+        coll = None
+        bOverwriting = False
+        bSkip = False
+        lst_msg = []
+        try:
+            profile = kwargs.get("profile")
+            username = kwargs.get("username")
+            team_group = kwargs.get("team_group")
+            source = kwargs.get("source")
+            keyfield = kwargs.get("keyfield", "name")
+
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("MediaFormat/custom_add")
+        return obj
+
     def get_copy(self):
         # Make a clean copy
         new_copy = get_instance_copy(self)
@@ -528,6 +632,26 @@ class AnnotationFormat(models.Model):
 
     def __str__(self):
         return choice_english(ANNOTATION_FORMAT, self.name)
+
+    def custom_add(oColl, oParams, **kwargs):
+        """Add an object according to the specifications provided"""
+
+        oErr = ErrHandle()
+        coll = None
+        bOverwriting = False
+        bSkip = False
+        lst_msg = []
+        try:
+            profile = kwargs.get("profile")
+            username = kwargs.get("username")
+            team_group = kwargs.get("team_group")
+            source = kwargs.get("source")
+            keyfield = kwargs.get("keyfield", "name")
+
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("AnnotationFormat/custom_add")
+        return obj
 
     def get_copy(self):
         # Make a clean copy
@@ -567,6 +691,48 @@ class Annotation(models.Model):
         except:
             return "(exception)"
 
+    def custom_add(oColl, oParams, **kwargs):
+        """Add an object according to the specifications provided"""
+
+        oErr = ErrHandle()
+        coll = None
+        bOverwriting = False
+        bSkip = False
+        lst_msg = []
+        try:
+            profile = kwargs.get("profile")
+            username = kwargs.get("username")
+            team_group = kwargs.get("team_group")
+            source = kwargs.get("source")
+            keyfield = kwargs.get("keyfield", "name")
+
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Annotation/custom_add")
+        return obj
+
+    def custom_set(self, path, value, **kwargs):
+        """Set related items"""
+
+        bResult = True
+        oErr = ErrHandle()
+        try:
+            profile = kwargs.get("profile")
+            username = kwargs.get("username")
+            team_group = kwargs.get("team_group")
+            value_lst = []
+            if isinstance(value, str) and value[0] != '[':
+                value_lst = value.split(",")
+                for idx, item in enumerate(value_lst):
+                    value_lst[idx] = value_lst[idx].strip()
+            elif isinstance(value, list):
+                value_lst = value
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Annotation/custom_set")
+            bResult = False
+        return bResult
+
     def get_copy(self):
         # Make a clean copy
         new_copy = get_instance_copy(self)
@@ -598,6 +764,26 @@ class TotalSize(models.Model):
             idt = "EMPTY"
         return "[{}] {} {}".format(idt,self.size,self.sizeUnit)
 
+    def custom_add(oColl, oParams, **kwargs):
+        """Add an object according to the specifications provided"""
+
+        oErr = ErrHandle()
+        coll = None
+        bOverwriting = False
+        bSkip = False
+        lst_msg = []
+        try:
+            profile = kwargs.get("profile")
+            username = kwargs.get("username")
+            team_group = kwargs.get("team_group")
+            source = kwargs.get("source")
+            keyfield = kwargs.get("keyfield", "name")
+
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("TotalSize/custom_add")
+        return obj
+
     def get_copy(self):
         # Make a clean copy
         new_copy = get_instance_copy(self)
@@ -617,6 +803,26 @@ class TotalCollectionSize(models.Model):
 
     def __str__(self):
         return "[{}] {} {}".format(self.collection.identifier,self.size,self.sizeUnit)
+
+    def custom_add(oColl, oParams, **kwargs):
+        """Add an object according to the specifications provided"""
+
+        oErr = ErrHandle()
+        coll = None
+        bOverwriting = False
+        bSkip = False
+        lst_msg = []
+        try:
+            profile = kwargs.get("profile")
+            username = kwargs.get("username")
+            team_group = kwargs.get("team_group")
+            source = kwargs.get("source")
+            keyfield = kwargs.get("keyfield", "name")
+
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("TotalCollectionSize/custom_add")
+        return obj
 
     def get_copy(self):
         # Make a clean copy
@@ -1336,9 +1542,139 @@ class Access(models.Model):
     # ISLRN (0-1;f)
     ISLRN = models.TextField("ISLRN of collection", help_text=get_help('access.ISLRN'), blank=True)
 
+    # Scheme for downloading and uploading
+    specification = [
+        {'name': 'Registry identifier', 'type': 'field', 'path': 'pidname',     'readonly': True},
+        {'name': 'Url',                 'type': 'field', 'path': 'url',         'readonly': True},  # project/url
+        {'name': 'Landing page',        'type': 'field', 'path': 'landingPage', 'readonly': True},  # ResourceProxy
+        {'name': 'Search page',         'type': 'field', 'path': 'searchPage',  'readonly': True},  # ResourceProxy
+
+        {'name': 'Description',         'type': 'field', 'path': 'description'},
+        {'name': 'Clarin centre',       'type': 'field', 'path': 'clarinCentre'},
+        {'name': 'Version',             'type': 'field', 'path': 'version'},
+
+        {'name': 'Linguality',          'type': 'fkob',  'path': 'linguality'},
+        {'name': 'Access',              'type': 'fkob',  'path': 'access'},
+        {'name': 'Documentation',       'type': 'fkob',  'path': 'documentation'},
+        {'name': 'Validation',          'type': 'fkob',  'path': 'validation'},
+
+        {'name': 'Medium types',        'type': 'm2o',   'path': 'format', 'fkfield': 'access', 'model': 'AccessMedium'},
+        {'name': 'Websites',            'type': 'm2o',   'path': 'name',   'fkfield': 'access', 'model': 'AccessWebsite'},
+        {'name': 'Availabilities',      'type': 'm2o',   'path': 'name',   'fkfield': 'access', 'model': 'AccessAvailability'},
+        {'name': 'License names',       'type': 'm2o',   'path': 'name',   'fkfield': 'access', 'model': 'LicenseName'},
+        {'name': 'License URLs',        'type': 'm2o',   'path': 'name',   'fkfield': 'access', 'model': 'LicenseUrl'},
+        {'name': 'Access contacts',     'type': 'func',  'path': 'code', 'fkfield': 'access', 'model': 'AccessContact'},
+
+        ]
+
     def __str__(self):
         sName = self.name
         return sName[:50]
+
+    def custom_add(oItem, oParams, **kwargs):
+        """Add an object according to the specifications provided"""
+
+        oErr = ErrHandle()
+        coll = None
+        bOverwriting = False
+        bSkip = False
+        params = {}
+        lst_msg = []
+
+        # ============= DEBUGGING ===========
+        bAllowOverwriting = True
+
+        try:
+            profile = kwargs.get("profile")
+            username = kwargs.get("username")
+            team_group = kwargs.get("team_group")
+            source = kwargs.get("source")
+            keyfield = kwargs.get("keyfield", "name")
+
+            # Get to the identifier, which is the shortest title
+            identifier = get_shortest(oItem.get("title"))
+            if identifier is None or identifier == "":
+                oErr.DoError("Collection/custom_add: no [identifier] provided")
+            else:
+                # Retrieve the object
+                obj = Collection.objects.filter(identifier=identifier).first()
+                if obj is None:
+                    # This object doesn't yet exist: create it
+                    obj = Collection.objects.create(identifier=identifier)
+                else:
+                    bOverWriting = True
+                if not bOverwriting or bAllowOverwriting and bOverwriting:
+                    # Yes, we may continue! Process all fields in the specification
+                    for oField in Collection.specification:
+                        # Get the parameters of this entry
+                        field = oField.get(keyfield).lower()
+                        if keyfield == "path" and oField.get("type") == "fk_id":
+                            field = "{}_id".format(field)
+                        value = oCodico.get(field)
+                        readonly = oField.get('readonly', False)
+
+                        # Can we process this entry?
+                        if value != None and value != "" and not readonly:
+                            # Get some more parameters of the entry, which are for processing
+                            path = oField.get("path")
+                            type = oField.get("type")
+
+                            # Processing depends on the [type]
+                            if type == "field":
+                                # Note overwriting
+                                old_value = getattr(obj, path)
+                                if value != old_value:
+                                    # Set the correct field's value
+                                    setattr(obj, path, value)
+                            elif type == "fk":
+                                fkfield = oField.get("fkfield")
+                                model = oField.get("model")
+                                if fkfield != None and model != None:
+                                    # Find an item with the name for the particular model
+                                    cls = apps.app_configs['collection'].get_model(model)
+                                    # Find this particular instance
+                                    instance = cls.objects.filter(**{"{}".format(fkfield): value}).first()
+                                    if instance is None:
+                                        # There is no such instance (yet): NOW WHAT??
+                                        pass
+                                    else:
+                                        old_value = getattr(obj,path)
+                                        if instance != old_value:
+                                            setattr(obj, path, instance)
+                            elif type == "fkob":
+                                if not value is None:
+                                    model = oField.get("model")
+                                    # Find an item with the name for the particular model
+                                    cls = apps.app_configs['collection'].get_model(model)
+                                    # Use the custom_set of that model
+                                    cls.custom_add(value, params, **kwargs)
+
+                            elif type == "m2o":
+                                fkfield = oField.get("fkfield")
+                                model = oField.get("model")
+                                if not fkfield is None and not model is None:
+                                    # Find an item with the name for the particular model
+                                    cls = apps.app_configs['collection'].get_model(model)
+                                    # Divide the values
+                                    lst_val = [ value ] if isinstance(value, str) or isinstance(value, int) else value
+                                    for oneval in lst_val:
+                                        # See if there already is an instance
+                                        oDict = {"{}".format(fkfield): obj, "{}".format(path): oneval}
+                                        instance = cls.objects.filter(**oDict).first()
+                                        if instance is None:
+                                            # Create this entry
+                                            cls.objects.create(**oDict)
+                            elif type == "func":
+                                # Set the KV in a special way
+                                obj.custom_set(path, value, **kwargs)
+
+                    # Make sure to save changes
+                    obj.save()
+
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Access/custom_adds")
+        return obj
 
     def get_copy(self):
         # Make a clean copy
@@ -1705,11 +2041,38 @@ class WrittenCorpus(models.Model):
     # authorDemographics: (0-1;f)
     authorDemographics = models.TextField("Author demographics", blank=True, help_text=get_help(WRITTENCORPUS_AUTHORDEMOGRAPHICS), default='-')
 
+    # Scheme for downloading and uploading
+    specification = [
+        {'name': 'Number of authors',   'type': 'field', 'path': 'numberOfAuthors'},
+        {'name': 'Author demographics', 'type': 'field', 'path': 'authorDemographics'},
+
+        ]
+
     def __str__(self):
         # idt = m2m_identifier(self.collection_set)
         idt = "TODO"
         sEnc = m2m_combi(self.charenc_writtencorpora) # m2m_combi(self.characterEncoding)
         return "[{}]: {}".format(idt, sEnc)
+
+    def custom_add(oColl, oParams, **kwargs):
+        """Add an object according to the specifications provided"""
+
+        oErr = ErrHandle()
+        coll = None
+        bOverwriting = False
+        bSkip = False
+        lst_msg = []
+        try:
+            profile = kwargs.get("profile")
+            username = kwargs.get("username")
+            team_group = kwargs.get("team_group")
+            source = kwargs.get("source")
+            keyfield = kwargs.get("keyfield", "name")
+
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("WrittenCorpus/custom_add")
+        return obj
 
     def get_copy(self):
         # Make a clean copy
@@ -1950,6 +2313,16 @@ class SpeechCorpus(models.Model):
     # speakerDemographics (0-1; f)
     speakerDemographics = models.TextField("Speaker demographics",blank=True, help_text=get_help('speechcorpus.speakerDemographics'), default='-')
 
+    # Scheme for downloading and uploading
+    specification = [
+        {'name': 'Duration eff. speech',    'type': 'field', 'path': 'durationOfEffectiveSpeech'},
+        {'name': 'Duration full dbase',     'type': 'field', 'path': 'durationOfFullDatabase'},
+        {'name': 'Number of speakers',      'type': 'field', 'path': 'numberOfSpeakers'},
+        {'name': 'Number of speakers',      'type': 'field', 'path': 'additional'},
+        {'name': 'Speaker demographics',    'type': 'field', 'path': 'speakerDemographics'},
+
+        ]
+
     def __str__(self):
         # idt = m2m_identifier(self.collection_set)
         idt = "MOVED"
@@ -1991,6 +2364,18 @@ class Resource(models.Model):
     # speechCorpus (0-1)
     speechCorpus = models.ForeignKey(SpeechCorpus, blank=True, null=True, on_delete=models.SET_NULL)
 
+    # Scheme for downloading and uploading
+    specification = [
+        {'name': 'Description',         'type': 'field', 'path': 'description'},
+        {'name': 'Resource type',       'type': 'field', 'path': 'type'},
+        {'name': 'DC type',             'type': 'field', 'path': 'DCtype'},
+        {'name': 'Subtype',             'type': 'field', 'path': 'subtype'},
+
+        {'name': 'Written corpus',      'type': 'func',  'path': 'writtenCorpus'},
+        {'name': 'Speech corpus',       'type': 'func',  'path': 'speechCorpus'},
+
+        ]
+
     def __str__(self):
         # idt = m2m_identifier(self.collection_set)
         idt = self.collection.identifier
@@ -2003,6 +2388,51 @@ class Resource(models.Model):
             idt,
             choice_english(RESOURCE_TYPE, iType),
             sAnn)
+
+    def custom_add(oItem, oParams, **kwargs):
+        """Add an object according to the specifications provided"""
+
+        oErr = ErrHandle()
+        coll = None
+        bOverwriting = False
+        bSkip = False
+        lst_msg = []
+        try:
+            profile = kwargs.get("profile")
+            username = kwargs.get("username")
+            team_group = kwargs.get("team_group")
+            source = kwargs.get("source")
+            keyfield = kwargs.get("keyfield", "name")
+
+            # First get to the collection
+            coll = oItem.get("collection")
+
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Resource/custom_add")
+        return obj
+
+    def custom_set(self, path, value, **kwargs):
+        """Set related items"""
+
+        bResult = True
+        oErr = ErrHandle()
+        try:
+            profile = kwargs.get("profile")
+            username = kwargs.get("username")
+            team_group = kwargs.get("team_group")
+            value_lst = []
+            if isinstance(value, str) and value[0] != '[':
+                value_lst = value.split(",")
+                for idx, item in enumerate(value_lst):
+                    value_lst[idx] = value_lst[idx].strip()
+            elif isinstance(value, list):
+                value_lst = value
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Resource/custom_set")
+            bResult = False
+        return bResult
 
     def get_copy(self):
         # Make a clean copy
@@ -2079,11 +2509,27 @@ class Collection(models.Model):
     updated_at = models.DateTimeField(auto_now=True, blank=True, null=True)
 
 
-    # ============ OTHER FIELDS ===================================
-    # title (1-n;f)             [many-to-one]
-    title = models.ManyToManyField(Title, blank=False, related_name="collectionm2m_title")
+    # ============ OTHER TEXT FIELDS ===================================================================================
     # == description (0-1;f) 
     description = models.TextField("Describes the collection as a whole", blank=True, help_text=get_help('description'))
+    # == clarinCentre (0-1; f)
+    clarinCentre = models.TextField("Clarin centre in charge", blank=True, help_text=get_help('clarincentre.name'))
+    # == version (0-1; f)
+    version = models.TextField("Version of the collection", blank=True, help_text=get_help('version'))
+
+    # ============ OTHER FK FIELDS =====================================================================================
+    # linguality (0-1)
+    linguality = models.ForeignKey(Linguality, blank=True, null=True, on_delete=models.SET_NULL)   # , related_name="collectionm2m_linguality")
+    # == access (0-1)
+    access = models.ForeignKey(Access, blank=True, null=True, on_delete=models.SET_NULL)
+    # == documentation (0-1)
+    documentation = models.ForeignKey(Documentation, blank=True, null=True, on_delete=models.SET_NULL)
+    # == validation (0-1)
+    validation = models.ForeignKey(Validation, blank=True, null=True, on_delete=models.SET_NULL)
+
+    # ============ TO BE DELETED: m2m fields that have been converted to Many-to-One fields ============================
+    # title (1-n;f)             [many-to-one]
+    title = models.ManyToManyField(Title, blank=False, related_name="collectionm2m_title")
     # == owner (0-n;f)          [many-to-one]
     owner = models.ManyToManyField( Owner, blank=True, related_name="collectionm2m_owner")
     # resource (1-n)            [many-to-one]
@@ -2092,8 +2538,6 @@ class Collection(models.Model):
     genre = models.ManyToManyField(Genre, blank=True, related_name="collectionm2m_genre")
     # provenance (0-n)          [many-to-one]
     provenance = models.ManyToManyField(Provenance, blank=True, related_name="collectionm2m_provenance")
-    # linguality (0-1)
-    linguality = models.ForeignKey(Linguality, blank=True, null=True, on_delete=models.SET_NULL)   # , related_name="collectionm2m_linguality")
     # language (1-n; c)   Many-to-Many!!
     language = models.ManyToManyField(Language, blank=False)
     # languageDisorder (0-n;f)  [many-to-one]
@@ -2102,64 +2546,51 @@ class Collection(models.Model):
     relation = models.ManyToManyField(Relation, blank=True, related_name="collectionm2m_relation")
     # == domain (0-n;f)         [many-to-one]
     domain = models.ManyToManyField(Domain, blank=True, related_name="collectionm2m_domain")
-    # == clarinCentre (0-1; f)
-    clarinCentre = models.TextField("Clarin centre in charge", blank=True, help_text=get_help('clarincentre.name'))
-    # == access (0-1)
-    access = models.ForeignKey(Access, blank=True, null=True, on_delete=models.SET_NULL)
     # == totalSize (0-n)        [many-to-one] - verander in 'TotalCollectionSize'
     totalSize = models.ManyToManyField(TotalSize, blank=True, related_name="collectionm2m_totalsize")
     # == PID (0-n)              [many-to-one]
     pid = models.ManyToManyField(PID, blank=True, related_name="collectionm2m_pid")
-    # == version (0-1; f)
-    version = models.TextField("Version of the collection", blank=True, help_text=get_help('version'))
     # == resourceCreator (0-n)  [many-to-one]
     resourceCreator = models.ManyToManyField(ResourceCreator, blank=True, related_name="collectionm2m_resourcecreator")
-    # == documentation (0-1)
-    documentation = models.ForeignKey(Documentation, blank=True, null=True, on_delete=models.SET_NULL)
-    # == validation (0-1)
-    validation = models.ForeignKey(Validation, blank=True, null=True, on_delete=models.SET_NULL)
     # == project (0-n)          [many-to-one]
     project = models.ManyToManyField(Project, blank=True, related_name="collectionm2m_project")
-
-
+    
     class Meta:
         # This defines (amongst others) the default ordering in the admin listview of Collections
         ordering = ['identifier']
 
-    def get_identifier(self):
-        return self.identifier.value_to_string()
+    # Scheme for downloading and uploading
+    specification = [
+        {'name': 'Registry identifier', 'type': 'field', 'path': 'pidname',     'readonly': True},
+        {'name': 'Url',                 'type': 'field', 'path': 'url',         'readonly': True},  # project/url
+        {'name': 'Landing page',        'type': 'field', 'path': 'landingPage', 'readonly': True},  # ResourceProxy
+        {'name': 'Search page',         'type': 'field', 'path': 'searchPage',  'readonly': True},  # ResourceProxy
 
-    def do_identifier(self):
-        # This function is used in [CollectionAdmin] in list_display
-        return str(self.identifier)
-    do_identifier.short_description = "Identifier"
-    do_identifier.admin_order_field = 'identifier'
+        {'name': 'Description',         'type': 'field', 'path': 'description'},
+        {'name': 'Clarin centre',       'type': 'field', 'path': 'clarinCentre'},
+        {'name': 'Version',             'type': 'field', 'path': 'version'},
 
-    def get_pidname(self, pidservice = None):
-        """Get the persistent identifier and create it if it is not there"""
-        bNeedSaving = False
+        {'name': 'Linguality',          'type': 'fkob',  'path': 'linguality'},
+        {'name': 'Access',              'type': 'fkob',  'path': 'access'},
+        {'name': 'Documentation',       'type': 'fkob',  'path': 'documentation'},
+        {'name': 'Validation',          'type': 'fkob',  'path': 'validation'},
 
-        try:
-            sPidName = self.pidname
-            if sPidName == "" or sPidName.startswith("empty") or sPidName.startswith("cbmetadata"):
-                # register the PID
-                self.register_pid()
-                sPidName = self.pidname
-            # Return the PID name we have
-            # (should be 21.11114/COLL-0000-000x-yyyy-z)
+        {'name': 'Titles',              'type': 'm2o',   'path': 'name', 'fkfield': 'collection', 'model': 'Title'},
+        {'name': 'Owners',              'type': 'm2o',   'path': 'name', 'fkfield': 'collection', 'model': 'Owner'},
+        {'name': 'Genres',              'type': 'm2o',   'path': 'name', 'fkfield': 'collection', 'model': 'Genre'},
+        {'name': 'Language Disorder',   'type': 'm2o',   'path': 'name', 'fkfield': 'collection', 'model': 'LanguageDisorder'},
+        {'name': 'Domains',             'type': 'm2o',   'path': 'name', 'fkfield': 'collection', 'model': 'Domain'},
+        {'name': 'PIDs',                'type': 'm2o',   'path': 'code', 'fkfield': 'collection', 'model': 'PID'},
 
-            # Check stuff
-            if pidservice == None:
-                pidservice = PidService.objects.filter(name=PIDSERVICE_NAME).first()
-            if not self.check_pid(pidservice, sPidName):
-                # Some error
-                print("get_pidname doesn't get the pidservice:", sys.exc_info()[0])
-                return ""
-            # Return whatever the PID is now
-            return self.pidname
-        except:
-            print("get_pidname error:", sys.exc_info()[0])
-            return ""
+        # Tables that are actually [many-to-one] with an FK to [collection]:
+        #   Title, Owner, Genre, LanguageDisorder, Domain, PID, 
+        #   Resource, Provenance, Language, Relation, TotalSize, ResourceCreator, Project
+
+        ]
+
+    def __str__(self):
+        # We are known by our identifier
+        return self.identifier
 
     def check_pid(self, pidservice, sPidName):
         """Check the PID against [sPidName] and brush up .url and .handledomain too"""
@@ -2194,11 +2625,224 @@ class Collection(models.Model):
         # Return positively
         return True
 
-    def get_xmlfilename(self):
-        """Create the filename for the XML file for this item"""
+    def custom_add(oItem, oParams, **kwargs):
+        """Add an object according to the specifications provided"""
 
-        sFileName = "cbmetadata_{0:05d}".format(self.id)
-        return sFileName
+        def get_shortest(lst_value):
+            shortest = None
+            for onevalue in lst_value:
+                # Keep track of what the shortest is (for title)
+                if shortest is None:
+                    shortest = onevalue
+                elif len(onevalue) < len(shortest):
+                    shortest = onevalue
+            return shortest
+
+        oErr = ErrHandle()
+        coll = None
+        bOverwriting = False
+        bSkip = False
+        params = {}
+        lst_msg = []
+
+        # ============= DEBUGGING ===========
+        bAllowOverwriting = True
+
+        try:
+            profile = kwargs.get("profile")
+            username = kwargs.get("username")
+            team_group = kwargs.get("team_group")
+            source = kwargs.get("source")
+            keyfield = kwargs.get("keyfield", "name")
+
+            # Get to the identifier, which is the shortest title
+            identifier = get_shortest(oItem.get("title"))
+            if identifier is None or identifier == "":
+                oErr.DoError("Collection/custom_add: no [identifier] provided")
+            else:
+                # Retrieve the object
+                obj = Collection.objects.filter(identifier=identifier).first()
+                if obj is None:
+                    # This object doesn't yet exist: create it
+                    obj = Collection.objects.create(identifier=identifier)
+                else:
+                    bOverWriting = True
+                if not bOverwriting or bAllowOverwriting and bOverwriting:
+                    # Yes, we may continue! Process all fields in the specification
+                    for oField in Collection.specification:
+                        # Get the parameters of this entry
+                        field = oField.get(keyfield).lower()
+                        if keyfield == "path" and oField.get("type") == "fk_id":
+                            field = "{}_id".format(field)
+                        value = oCodico.get(field)
+                        readonly = oField.get('readonly', False)
+
+                        # Can we process this entry?
+                        if value != None and value != "" and not readonly:
+                            # Get some more parameters of the entry, which are for processing
+                            path = oField.get("path")
+                            type = oField.get("type")
+
+                            # Processing depends on the [type]
+                            if type == "field":
+                                # Note overwriting
+                                old_value = getattr(obj, path)
+                                if value != old_value:
+                                    # Set the correct field's value
+                                    setattr(obj, path, value)
+                            elif type == "fk":
+                                fkfield = oField.get("fkfield")
+                                model = oField.get("model")
+                                if fkfield != None and model != None:
+                                    # Find an item with the name for the particular model
+                                    cls = apps.app_configs['collection'].get_model(model)
+                                    # Find this particular instance
+                                    instance = cls.objects.filter(**{"{}".format(fkfield): value}).first()
+                                    if instance is None:
+                                        # There is no such instance (yet): NOW WHAT??
+                                        pass
+                                    else:
+                                        old_value = getattr(obj,path)
+                                        if instance != old_value:
+                                            setattr(obj, path, instance)
+                            elif type == "fkob":
+                                if not value is None:
+                                    model = oField.get("model")
+                                    # Find an item with the name for the particular model
+                                    cls = apps.app_configs['collection'].get_model(model)
+                                    # Use the custom_set of that model
+                                    cls.custom_add(value, params, **kwargs)
+
+                            elif type == "m2o":
+                                fkfield = oField.get("fkfield")
+                                model = oField.get("model")
+                                if not fkfield is None and not model is None:
+                                    # Find an item with the name for the particular model
+                                    cls = apps.app_configs['collection'].get_model(model)
+                                    # Divide the values
+                                    lst_val = [ value ] if isinstance(value, str) or isinstance(value, int) else value
+                                    for oneval in lst_val:
+                                        # See if there already is an instance
+                                        oDict = {"{}".format(fkfield): obj, "{}".format(path): oneval}
+                                        instance = cls.objects.filter(**oDict).first()
+                                        if instance is None:
+                                            # Create this entry
+                                            cls.objects.create(**oDict)
+                            elif type == "func":
+                                # Set the KV in a special way
+                                obj.custom_set(path, value, **kwargs)
+
+                    # Make sure to save changes
+                    obj.save()
+
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Collection/custom_adds")
+        return obj
+
+    #def custom_set(self, path, value, **kwargs):
+    #    """Set related items"""
+
+    #    bResult = True
+    #    params = {}
+    #    oErr = ErrHandle()
+    #    try:
+    #        profile = kwargs.get("profile")
+    #        username = kwargs.get("username")
+    #        team_group = kwargs.get("team_group")
+
+    #        # Get the list of values
+    #        value_lst = []
+    #        if isinstance(value, str) and value[0] != '[':
+    #            value_lst = value.split(",")
+    #            for idx, item in enumerate(value_lst):
+    #                value_lst[idx] = value_lst[idx].strip()
+    #        elif isinstance(value, list):
+    #            value_lst = value
+
+    #        if not value is None:
+    #            # Action depends on the path
+    #            if path == "linguality":
+    #                obj.linguality = Linguality.custom_add(oItem, params, **kwargs)
+    #            elif path == "access":
+    #                obj.access = Access.custom_add(oItem, params, **kwargs)
+    #            elif path == "documentation":
+    #                obj.documentation = Documentation.custom_add(oItem, params, **kwargs)
+    #            elif path == "validation":
+    #                obj.validation = Validation.custom_add(oItem, params, **kwargs)
+    #    except:
+    #        msg = oErr.get_error_message()
+    #        oErr.DoError("Collection/custom_set")
+    #        bResult = False
+    #    return bResult
+
+    def do_identifier(self):
+        # This function is used in [CollectionAdmin] in list_display
+        return str(self.identifier)
+    do_identifier.short_description = "Identifier"
+    do_identifier.admin_order_field = 'identifier'
+
+    def get_copy(self):
+        # Make a clean copy
+        # new_copy = get_instance_copy(self)
+        new_copy = Collection(url=self.url, handledomain=self.handledomain, landingPage = self.landingPage,
+                              searchPage = self.searchPage, description=self.description, clarinCentre=self.clarinCentre)
+        new_copy.save()
+        # Reset the PIDFIELD 
+        new_copy.pidname = "empty_{0:05d}".format(self.id)
+        # Create a unique identifier
+        new_copy.identifier = "{}_{}".format(self.identifier[:25],new_copy.id)
+        # Copy the one-to-many fields
+        copy_m2m(self, new_copy, "collection12m_title")             # Title               +
+        copy_m2m(self, new_copy, "collection12m_owner")             # Owner               +
+        copy_m2m(self, new_copy, "collection12m_resource")          # Resource
+        copy_m2m(self, new_copy, "collection12m_genre")             # Genre
+        copy_m2m(self, new_copy, "collection12m_provenance")        # Provenance
+        copy_m2m(self, new_copy, "coll_languages")                  # CollectionLanguage
+        copy_m2m(self, new_copy, "collection12m_languagedisorder")  # LanguageDisorder
+        copy_m2m(self, new_copy, "collection12m_relation")          # Relation
+        copy_m2m(self, new_copy, "collection12m_domain")            # Domain
+        copy_m2m(self, new_copy, "collection12m_totalsize")         # TotalCollectionSize
+        copy_m2m(self, new_copy, "collection12m_pid")               # PID
+        copy_m2m(self, new_copy, "collection12m_resourcecreator")   # ResourceCreator
+        copy_m2m(self, new_copy, "collection12m_project")           # Project
+        # Check and copy FK fields
+        copy_fk(self, new_copy, "linguality")
+        copy_fk(self, new_copy, "access")
+        copy_fk(self, new_copy, "documentation")
+        copy_fk(self, new_copy, "validation")
+        # Return the new copy
+        return new_copy
+
+    def get_identifier(self):
+        """Get a proper copy of the identifier as string"""
+        return self.identifier.value_to_string()
+
+    def get_pidname(self, pidservice = None):
+        """Get the persistent identifier and create it if it is not there"""
+        bNeedSaving = False
+
+        try:
+            sPidName = self.pidname
+            if sPidName == "" or sPidName.startswith("empty") or sPidName.startswith("cbmetadata"):
+                # register the PID
+                self.register_pid()
+                sPidName = self.pidname
+            # Return the PID name we have
+            # (should be 21.11114/COLL-0000-000x-yyyy-z)
+
+            # Check stuff
+            if pidservice == None:
+                pidservice = PidService.objects.filter(name=PIDSERVICE_NAME).first()
+            if not self.check_pid(pidservice, sPidName):
+                # Some error
+                print("get_pidname doesn't get the pidservice:", sys.exc_info()[0])
+                return ""
+            # Return whatever the PID is now
+            return self.pidname
+        except:
+            print("get_pidname error:", sys.exc_info()[0])
+            return ""
 
     def get_publisfilename(self, sType=""):
         # Get the correct pidname
@@ -2210,21 +2854,63 @@ class Collection(models.Model):
             sPublish = os.path.abspath(os.path.join(REGISTRY_DIR, sFileName))
         return sPublish
 
+    def publishdate(self):
+
+        sPublishPath = self.get_publisfilename()
+        if os.path.isfile(sPublishPath):
+            fDate = os.path.getmtime(sPublishPath)
+            oDate = datetime.fromtimestamp( fDate)
+            sDate = oDate.strftime("%d/%b/%Y %H:%M:%S")
+        else:
+            sDate = 'unpublished'
+        return sDate
+
+    def get_status(self):
+        """Get the status of this colletion: has it been published or not?"""
+
+        sPublishPath = self.get_publisfilename()
+        sStatusP = 'p' if os.path.isfile(sPublishPath) else 'u'
+        # If it is published, get its publication date and compare it to 
+        sStatusD = 'n'
+        # Has it been published?
+        if sStatusP == 'p':
+            if self.updated_at == None:
+                # If it is published, but no 'updated_at' yet, it is 'up to date'
+                sStatusD = 'd' 
+            else:
+                # It is published: get the file date
+                saved_at = os.path.getmtime(sPublishPath)
+                updated_at = datetime.timestamp( self.updated_at)
+                sStatusD = 's' if saved_at < updated_at else 'd'
+        # Combine states
+        if sStatusP == 'u':
+            sStatus = 'not-published'
+        else:
+            if sStatusD == 'n':
+                sStatus = 'unknown'
+            elif sStatusD == 'd':
+                sStatus = 'published'
+            else:
+                sStatus = 'stale' 
+        # Return the combined status
+        return sStatus
+
     def get_targeturl(self):
         """Get the URL where the XML data should be made available"""
         sUrl = "{}{}".format(REGISTRY_URL,self.get_xmlfilename())
         return sUrl
 
-    def save_relations(self):
-        """Look for all of my collection relations and store them in separate txt files"""
+    def get_title(self):
+        return m2m_namelist(self.collection12m_title)
+    get_title.short_description = 'Titles (not sortable)'
+    # This works, but sorting on a non-f
+    # get_title.admin_order_field = 'identifier'
 
-        iSaved = 0
-        for rel_this in self.collection12m_relation.all():
-            # Save this relation
-            rel_this.save_relation_file()
-            iSaved +=1
-        # Return the number of relations saved
-        return iSaved
+    def get_xmlfilename(self):
+        """Create the filename for the XML file for this item"""
+
+        sFileName = "cbmetadata_{0:05d}".format(self.id)
+        return sFileName
 
     def register_pid(self):
         """Make sure this record has a registered persistant identifier
@@ -2266,12 +2952,6 @@ class Collection(models.Model):
         # Return positively
         return True
 
-    def get_title(self):
-        return m2m_namelist(self.collection12m_title)
-    get_title.short_description = 'Titles (not sortable)'
-    # This works, but sorting on a non-f
-    # get_title.admin_order_field = 'identifier'
-
     def save(self, **kwargs):
         try:
             result = super(Collection,self).save(**kwargs)
@@ -2280,80 +2960,14 @@ class Collection(models.Model):
             print("Unexpected error:", sys.exc_info()[0])
             return None
 
-    def get_copy(self):
-        # Make a clean copy
-        # new_copy = get_instance_copy(self)
-        new_copy = Collection(url=self.url, handledomain=self.handledomain, landingPage = self.landingPage,
-                              searchPage = self.searchPage, description=self.description, clarinCentre=self.clarinCentre)
-        new_copy.save()
-        # Reset the PIDFIELD 
-        new_copy.pidname = "empty_{0:05d}".format(self.id)
-        # Create a unique identifier
-        new_copy.identifier = "{}_{}".format(self.identifier[:25],new_copy.id)
-        # Copy the one-to-many fields
-        copy_m2m(self, new_copy, "collection12m_title")             # Title               +
-        copy_m2m(self, new_copy, "collection12m_owner")             # Owner               +
-        copy_m2m(self, new_copy, "collection12m_resource")          # Resource
-        copy_m2m(self, new_copy, "collection12m_genre")             # Genre
-        copy_m2m(self, new_copy, "collection12m_provenance")        # Provenance
-        copy_m2m(self, new_copy, "coll_languages")                  # CollectionLanguage
-        copy_m2m(self, new_copy, "collection12m_languagedisorder")  # LanguageDisorder
-        copy_m2m(self, new_copy, "collection12m_relation")          # Relation
-        copy_m2m(self, new_copy, "collection12m_domain")            # Domain
-        copy_m2m(self, new_copy, "collection12m_totalsize")         # TotalCollectionSize
-        copy_m2m(self, new_copy, "collection12m_pid")               # PID
-        copy_m2m(self, new_copy, "collection12m_resourcecreator")   # ResourceCreator
-        copy_m2m(self, new_copy, "collection12m_project")           # Project
-        # Check and copy FK fields
-        copy_fk(self, new_copy, "linguality")
-        copy_fk(self, new_copy, "access")
-        copy_fk(self, new_copy, "documentation")
-        copy_fk(self, new_copy, "validation")
-        # Return the new copy
-        return new_copy
+    def save_relations(self):
+        """Look for all of my collection relations and store them in separate txt files"""
 
-    def get_status(self):
-        """Get the status of this colletion: has it been published or not?"""
-
-        sPublishPath = self.get_publisfilename()
-        sStatusP = 'p' if os.path.isfile(sPublishPath) else 'u'
-        # If it is published, get its publication date and compare it to 
-        sStatusD = 'n'
-        # Has it been published?
-        if sStatusP == 'p':
-            if self.updated_at == None:
-                # If it is published, but no 'updated_at' yet, it is 'up to date'
-                sStatusD = 'd' 
-            else:
-                # It is published: get the file date
-                saved_at = os.path.getmtime(sPublishPath)
-                updated_at = datetime.timestamp( self.updated_at)
-                sStatusD = 's' if saved_at < updated_at else 'd'
-        # Combine states
-        if sStatusP == 'u':
-            sStatus = 'not-published'
-        else:
-            if sStatusD == 'n':
-                sStatus = 'unknown'
-            elif sStatusD == 'd':
-                sStatus = 'published'
-            else:
-                sStatus = 'stale' 
-        # Return the combined status
-        return sStatus
-
-    def publishdate(self):
-
-        sPublishPath = self.get_publisfilename()
-        if os.path.isfile(sPublishPath):
-            fDate = os.path.getmtime(sPublishPath)
-            oDate = datetime.fromtimestamp( fDate)
-            sDate = oDate.strftime("%d/%b/%Y %H:%M:%S")
-        else:
-            sDate = 'unpublished'
-        return sDate
-
-    def __str__(self):
-        # We are known by our identifier
-        return self.identifier
+        iSaved = 0
+        for rel_this in self.collection12m_relation.all():
+            # Save this relation
+            rel_this.save_relation_file()
+            iSaved +=1
+        # Return the number of relations saved
+        return iSaved
 

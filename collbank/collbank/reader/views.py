@@ -464,6 +464,9 @@ class SourceInfoLoadXml(SourceInfoDetails):
             doc = xmltodict.parse(data_file)
             oCollection = doc.get("CMD")
             if not oCollection is None:
+                # For debugging: get a string of the object
+                sCMD = json.dumps(oCollection, indent=2)
+
                 # get the header 
                 oHeader = oCollection.get('Header')
                 # Process the header information
