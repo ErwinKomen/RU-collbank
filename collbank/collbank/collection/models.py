@@ -5,6 +5,7 @@ The collection has a number of characteristics.
 Each resource in the collection is characterised by its own annotations.
 
 """
+from django.apps import apps
 from django.db import models
 from django.contrib.auth.models import User
 from datetime import datetime
@@ -17,6 +18,7 @@ import sys
 import os, time
 
 from collbank.settings import REGISTRY_URL, REGISTRY_DIR, PUBLISH_DIR
+from collbank.basic.utils import ErrHandle
 from collbank.basic.views import get_current_datetime
 
 
@@ -445,7 +447,7 @@ class Title(models.Model):
         """Add an object according to the specifications provided"""
 
         oErr = ErrHandle()
-        coll = None
+        obj = None
         bOverwriting = False
         bSkip = False
         lst_msg = []
@@ -510,7 +512,7 @@ class Owner(models.Model):
         """Add an object according to the specifications provided"""
 
         oErr = ErrHandle()
-        coll = None
+        obj = None
         bOverwriting = False
         bSkip = False
         lst_msg = []
@@ -597,7 +599,7 @@ class MediaFormat(models.Model):
         """Add an object according to the specifications provided"""
 
         oErr = ErrHandle()
-        coll = None
+        obj = None
         bOverwriting = False
         bSkip = False
         lst_msg = []
@@ -637,7 +639,7 @@ class AnnotationFormat(models.Model):
         """Add an object according to the specifications provided"""
 
         oErr = ErrHandle()
-        coll = None
+        obj = None
         bOverwriting = False
         bSkip = False
         lst_msg = []
@@ -695,7 +697,7 @@ class Annotation(models.Model):
         """Add an object according to the specifications provided"""
 
         oErr = ErrHandle()
-        coll = None
+        obj = None
         bOverwriting = False
         bSkip = False
         lst_msg = []
@@ -768,7 +770,7 @@ class TotalSize(models.Model):
         """Add an object according to the specifications provided"""
 
         oErr = ErrHandle()
-        coll = None
+        obj = None
         bOverwriting = False
         bSkip = False
         lst_msg = []
@@ -808,7 +810,7 @@ class TotalCollectionSize(models.Model):
         """Add an object according to the specifications provided"""
 
         oErr = ErrHandle()
-        coll = None
+        obj = None
         bOverwriting = False
         bSkip = False
         lst_msg = []
@@ -1136,25 +1138,6 @@ class Linguality(models.Model):
         return new_copy
 
 
-class Language(models.Model):
-    """Language that is used in this collection"""
-
-    name = models.CharField("Language in collection", choices=build_choice_list("language.name"),
-                            max_length=5, help_text=get_help("language.name"), default='0')
-
-    def __str__(self):
-        idt = m2m_identifier(self.collection_set)
-        # idt = m2m_identifier(self.collectionm2m_resource)
-        if idt == "" or idt == "-":
-            sBack = "[DOC] " + choice_english("language.name", self.name)
-        else:
-            sBack = "[{}] {}".format(idt,choice_english("language.name", self.name))
-        return sBack
-
-    def get_view(self):
-        return self.get_name_display()
-
-
 class LanguageIso(models.Model):
     """Language and ISO-639-3 letter code"""
 
@@ -1189,7 +1172,7 @@ class LanguageName(models.Model):
     # [1] Language name
     name = models.CharField("Full language name", blank=True, max_length=MAX_STRING_LEN)
     # [0-1] URL to a description of the language Name for the 3-letter code
-    url = models.URLField("Description", blank=True, null=True)
+    url = models.URLField("URL", blank=True, null=True)
     # [1] Obligatorily belongs to one particular ISO-code
     iso = models.ForeignKey(LanguageIso, on_delete=models.CASCADE, related_name="iso_languagenames")
 
@@ -1197,11 +1180,42 @@ class LanguageName(models.Model):
     created = models.DateTimeField(default=get_current_datetime)
 
     def __str__(self):
-        sBack = "[{}] {}".format(self.code.code, self.name)
+        sBack = "[{}] {}".format(self.iso.code, self.name)
         return sBack
 
     def get_created(self):
         sBack = self.created.strftime("%d/%b/%Y %H:%M")
+        return sBack
+
+
+class Language(models.Model):
+    """Language that is used in this collection"""
+
+    # [1] Obligatory link to this language's entry inside the table FieldChoice
+    name = models.CharField("Language in collection", choices=build_choice_list("language.name"),
+                            max_length=5, help_text=get_help("language.name"), default='0')
+    # [0-1] To be constructed: link to correct entry in [LanguageName]
+    langname = models.ForeignKey(LanguageName, blank=True, null=True, on_delete=models.CASCADE, related_name = "langname_languages")
+
+    def __str__(self):
+        idt = m2m_identifier(self.collection_set)
+        if idt == "" or idt == "-":
+            # OLD:
+            # sBack = "[DOC] " + choice_english("language.name", self.name)
+            sBack = "[DOC] {}".format(self.langname)
+        else:
+            # OLD:
+            # sBack = "[{}] {}".format(idt,choice_english("language.name", self.name))
+            sBack = "[{}] {}".format(idt,self.langname)
+        return sBack
+
+    def get_view(self):
+        sBack = ""
+        if self.langname is None:
+            sBack = self.get_name_display()
+        else:
+            sBack = self.langname.name
+        # return self.get_name_display()
         return sBack
 
 
@@ -1218,13 +1232,9 @@ class DocumentationLanguage(Language):
             col = Collection.objects.filter(documentation=doc).first()
             if col != None:
                 idt = col.identifier
-                sBack = "[{}] {}".format(idt,choice_english("language.name", self.name))
+                # OLD: sBack = "[{}] {}".format(idt,choice_english("language.name", self.name))
+                sBack = "[{}] {}".format(idt,self.langname)
 
-        #arColl = self.documentationParent.collection_set.all()
-        ## arColl = Collection.objects.filter(documentation=self.documentationParent)
-        #idt = arColl[0].identifier
-        ## idt = self.documentationParent.collection.identifier
-        #sBack = "[{}] {}".format(idt,choice_english("language.name", self.name))
         return sBack
 
     def get_copy(self):
@@ -1241,7 +1251,8 @@ class CollectionLanguage(Language):
 
     def __str__(self):
         idt = self.collectionParent.identifier
-        sBack = "[{}] {}".format(idt,choice_english("language.name", self.name))
+        # OLD: sBack = "[{}] {}".format(idt,choice_english("language.name", self.name))
+        sBack = "[{}] {}".format(idt,self.langname)
         return sBack
 
     def get_copy(self):
@@ -1575,7 +1586,7 @@ class Access(models.Model):
         """Add an object according to the specifications provided"""
 
         oErr = ErrHandle()
-        coll = None
+        obj = None
         bOverwriting = False
         bSkip = False
         params = {}
@@ -1591,85 +1602,85 @@ class Access(models.Model):
             source = kwargs.get("source")
             keyfield = kwargs.get("keyfield", "name")
 
-            # Get to the identifier, which is the shortest title
-            identifier = get_shortest(oItem.get("title"))
-            if identifier is None or identifier == "":
-                oErr.DoError("Collection/custom_add: no [identifier] provided")
-            else:
-                # Retrieve the object
-                obj = Collection.objects.filter(identifier=identifier).first()
-                if obj is None:
-                    # This object doesn't yet exist: create it
-                    obj = Collection.objects.create(identifier=identifier)
-                else:
-                    bOverWriting = True
-                if not bOverwriting or bAllowOverwriting and bOverwriting:
-                    # Yes, we may continue! Process all fields in the specification
-                    for oField in Collection.specification:
-                        # Get the parameters of this entry
-                        field = oField.get(keyfield).lower()
-                        if keyfield == "path" and oField.get("type") == "fk_id":
-                            field = "{}_id".format(field)
-                        value = oCodico.get(field)
-                        readonly = oField.get('readonly', False)
+            ## Get to the identifier, which is the shortest title
+            #identifier = get_shortest(oItem.get("title"))
+            #if identifier is None or identifier == "":
+            #    oErr.DoError("Collection/custom_add: no [identifier] provided")
+            #else:
+            #    # Retrieve the object
+            #    obj = Collection.objects.filter(identifier=identifier).first()
+            #    if obj is None:
+            #        # This object doesn't yet exist: create it
+            #        obj = Collection.objects.create(identifier=identifier)
+            #    else:
+            #        bOverWriting = True
+            #    if not bOverwriting or bAllowOverwriting and bOverwriting:
+            #        # Yes, we may continue! Process all fields in the specification
+            #        for oField in Collection.specification:
+            #            # Get the parameters of this entry
+            #            field = oField.get(keyfield).lower()
+            #            if keyfield == "path" and oField.get("type") == "fk_id":
+            #                field = "{}_id".format(field)
+            #            value = oCodico.get(field)
+            #            readonly = oField.get('readonly', False)
 
-                        # Can we process this entry?
-                        if value != None and value != "" and not readonly:
-                            # Get some more parameters of the entry, which are for processing
-                            path = oField.get("path")
-                            type = oField.get("type")
+            #            # Can we process this entry?
+            #            if value != None and value != "" and not readonly:
+            #                # Get some more parameters of the entry, which are for processing
+            #                path = oField.get("path")
+            #                type = oField.get("type")
 
-                            # Processing depends on the [type]
-                            if type == "field":
-                                # Note overwriting
-                                old_value = getattr(obj, path)
-                                if value != old_value:
-                                    # Set the correct field's value
-                                    setattr(obj, path, value)
-                            elif type == "fk":
-                                fkfield = oField.get("fkfield")
-                                model = oField.get("model")
-                                if fkfield != None and model != None:
-                                    # Find an item with the name for the particular model
-                                    cls = apps.app_configs['collection'].get_model(model)
-                                    # Find this particular instance
-                                    instance = cls.objects.filter(**{"{}".format(fkfield): value}).first()
-                                    if instance is None:
-                                        # There is no such instance (yet): NOW WHAT??
-                                        pass
-                                    else:
-                                        old_value = getattr(obj,path)
-                                        if instance != old_value:
-                                            setattr(obj, path, instance)
-                            elif type == "fkob":
-                                if not value is None:
-                                    model = oField.get("model")
-                                    # Find an item with the name for the particular model
-                                    cls = apps.app_configs['collection'].get_model(model)
-                                    # Use the custom_set of that model
-                                    cls.custom_add(value, params, **kwargs)
+            #                # Processing depends on the [type]
+            #                if type == "field":
+            #                    # Note overwriting
+            #                    old_value = getattr(obj, path)
+            #                    if value != old_value:
+            #                        # Set the correct field's value
+            #                        setattr(obj, path, value)
+            #                elif type == "fk":
+            #                    fkfield = oField.get("fkfield")
+            #                    model = oField.get("model")
+            #                    if fkfield != None and model != None:
+            #                        # Find an item with the name for the particular model
+            #                        cls = apps.app_configs['collection'].get_model(model)
+            #                        # Find this particular instance
+            #                        instance = cls.objects.filter(**{"{}".format(fkfield): value}).first()
+            #                        if instance is None:
+            #                            # There is no such instance (yet): NOW WHAT??
+            #                            pass
+            #                        else:
+            #                            old_value = getattr(obj,path)
+            #                            if instance != old_value:
+            #                                setattr(obj, path, instance)
+            #                elif type == "fkob":
+            #                    if not value is None:
+            #                        model = oField.get("model")
+            #                        # Find an item with the name for the particular model
+            #                        cls = apps.app_configs['collection'].get_model(model)
+            #                        # Use the custom_set of that model
+            #                        cls.custom_add(value, params, **kwargs)
 
-                            elif type == "m2o":
-                                fkfield = oField.get("fkfield")
-                                model = oField.get("model")
-                                if not fkfield is None and not model is None:
-                                    # Find an item with the name for the particular model
-                                    cls = apps.app_configs['collection'].get_model(model)
-                                    # Divide the values
-                                    lst_val = [ value ] if isinstance(value, str) or isinstance(value, int) else value
-                                    for oneval in lst_val:
-                                        # See if there already is an instance
-                                        oDict = {"{}".format(fkfield): obj, "{}".format(path): oneval}
-                                        instance = cls.objects.filter(**oDict).first()
-                                        if instance is None:
-                                            # Create this entry
-                                            cls.objects.create(**oDict)
-                            elif type == "func":
-                                # Set the KV in a special way
-                                obj.custom_set(path, value, **kwargs)
+            #                elif type == "m2o":
+            #                    fkfield = oField.get("fkfield")
+            #                    model = oField.get("model")
+            #                    if not fkfield is None and not model is None:
+            #                        # Find an item with the name for the particular model
+            #                        cls = apps.app_configs['collection'].get_model(model)
+            #                        # Divide the values
+            #                        lst_val = [ value ] if isinstance(value, str) or isinstance(value, int) else value
+            #                        for oneval in lst_val:
+            #                            # See if there already is an instance
+            #                            oDict = {"{}".format(fkfield): obj, "{}".format(path): oneval}
+            #                            instance = cls.objects.filter(**oDict).first()
+            #                            if instance is None:
+            #                                # Create this entry
+            #                                cls.objects.create(**oDict)
+            #                elif type == "func":
+            #                    # Set the KV in a special way
+            #                    obj.custom_set(path, value, **kwargs)
 
-                    # Make sure to save changes
-                    obj.save()
+            #        # Make sure to save changes
+            #        obj.save()
 
         except:
             msg = oErr.get_error_message()
@@ -2058,7 +2069,7 @@ class WrittenCorpus(models.Model):
         """Add an object according to the specifications provided"""
 
         oErr = ErrHandle()
-        coll = None
+        obj = None
         bOverwriting = False
         bSkip = False
         lst_msg = []
@@ -2393,7 +2404,7 @@ class Resource(models.Model):
         """Add an object according to the specifications provided"""
 
         oErr = ErrHandle()
-        coll = None
+        obj = None
         bOverwriting = False
         bSkip = False
         lst_msg = []
@@ -2639,7 +2650,7 @@ class Collection(models.Model):
             return shortest
 
         oErr = ErrHandle()
-        coll = None
+        obj = None
         bOverwriting = False
         bSkip = False
         params = {}
@@ -2674,7 +2685,7 @@ class Collection(models.Model):
                         field = oField.get(keyfield).lower()
                         if keyfield == "path" and oField.get("type") == "fk_id":
                             field = "{}_id".format(field)
-                        value = oCodico.get(field)
+                        value = oItem.get(field)
                         readonly = oField.get('readonly', False)
 
                         # Can we process this entry?

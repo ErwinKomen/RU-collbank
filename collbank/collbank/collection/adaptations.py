@@ -12,18 +12,19 @@ import csv
 # ======= imports from my own application ======
 from collbank.basic.utils import ErrHandle
 from collbank.settings import MEDIA_DIR
-from collbank.collection.models import Collection, Resource, \
+from collbank.basic.models import Information
+from collbank.collection.models import FieldChoice, Collection, Resource, \
     Media, Annotation, TotalSize, Modality, RecordingEnvironment, Channel, RecordingCondition, \
     SocialContext, PlanningType, Interactivity, Involvement, Audience, City, GeographicProvenance, \
     TotalSize, Genre, Title, Owner, TotalCollectionSize, Provenance, CollectionLanguage, \
     LanguageDisorder, Relation, Domain, PID, ResourceCreator, Project, ProjectFunder, \
     Linguality, LingualityType, LingualityNativeness, LingualityAgeGroup, LingualityStatus, \
     LingualityVariant, MultilingualityType, MediaFormat, Organization, Person, \
-    LanguageIso, LanguageName
+    LanguageIso, LanguageName, Language
 
 
 adaptation_list = {
-    "collection_list": ["resource_empty", "language_renew"]
+    "collection_list": ["resource_empty", "language_renew", "langname_add"]
     }
 
 def listview_adaptations(lv):
@@ -33,16 +34,16 @@ def listview_adaptations(lv):
     try:
         if lv in adaptation_list:
             for adapt in adaptation_list.get(lv):
-                # sh_done  = Information.get_kvalue(adapt)
-                sh_done = False
+                sh_done  = Information.get_kvalue(adapt)
+                # sh_done = False
                 if sh_done == None or sh_done != "done":
                     # Do the adaptation, depending on what it is
                     method_to_call = "adapt_{}".format(adapt)
                     bResult, msg = globals()[method_to_call]()
                     if bResult:
                         # Success
-                        # Information.set_kvalue(adapt, "done")
-                        pass
+                        Information.set_kvalue(adapt, "done")
+                        # pass
     except:
         msg = oErr.get_error_message()
         oErr.DoError("listview_adaptations")
@@ -177,3 +178,51 @@ def adapt_language_renew():
         oErr.DoError("adapt_language_renew")
     return bResult, msg
 
+def adapt_langname_add():
+    """Add the [langname] field contents to table [Language]"""
+
+    oErr = ErrHandle()
+    bResult = True
+    msg = ""
+    ptr_dict = {}
+
+    try:
+        qs = Language.objects.filter(langname__isnull=True)
+        for obj in qs:
+            # Figure out what the Language pointer is
+            language_ptr = obj.name
+            if not language_ptr in ptr_dict:
+                # Find this entry in FieldChoice
+                fchoice = FieldChoice.objects.filter(field="language.name", machine_value=language_ptr).first()
+                if fchoice is None:
+                    # Going wrong
+                    oErr.Status("adapt_langname_add: cannot find machine_value {} for Language id {}".format(
+                        language_ptr, obj.id))
+                    bResult = False
+                else:
+                    # Get the value of the language
+                    english_name = fchoice.english_name
+                    if "Flemish" in english_name:
+                        english_name = "Flemish"
+                    elif "official aramaic" in english_name.lower():
+                        english_name = "Official Aramaic (700-300 BCE)"
+                    # Look for this language in [LanguageName]
+                    langname = LanguageName.objects.filter(name__iexact=english_name).first()
+                    if langname is None:
+                        # Problem
+                        oErr.Status("adapt_langname_add: cannot find language called [{}] for Language id {}".format(
+                            english_name, obj.id))
+                        bResult = False
+                    else:
+                        ptr_dict[language_ptr] = langname
+        for obj in qs:
+            language_ptr = obj.name
+            if language_ptr in ptr_dict:
+                obj.langname = ptr_dict[language_ptr] 
+                obj.save()
+        
+    except:
+        bResult = False
+        msg = oErr.get_error_message()
+        oErr.DoError("adapt_langname_add")
+    return bResult, msg

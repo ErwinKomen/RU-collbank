@@ -19,12 +19,15 @@ import json
 from datetime import datetime
 from xml.dom import minidom
 import xml.etree.ElementTree as ET
+import lxml
 from lxml import etree
 import os
 import tarfile
 import zipfile
 import tempfile
 import io
+from requests import request
+
 from collbank.collection.models import *
 from collbank.settings import APP_PREFIX, WSGI_FILE, STATIC_ROOT, WRITABLE_DIR, COUNTRY_CODES, LANGUAGE_CODE_LIST
 # Not used anymore: OUTPUT_XML
@@ -203,9 +206,10 @@ def add_collection_xml(col_this, crp):
         add_element("0-n", linguality_this, "multilingualityType", ling, field_name="multilinguality_types", foreign="name", fieldchoice=LINGUALITY_MULTI)
     # language (1-n)
     for lng_this in col_this.coll_languages.all():    #  col_this.language.all():
-        (sLngName, sLngCode) = get_language(lng_this.name)
+        # (sLngName, sLngCode) = get_language(lng_this.name)
+        (sLngName, sLngCode) = get_language_code_name(lng_this)
         # Validation
-        if sLngCode == "" or sLngCode == None:
+        if sLngCode == "" or sLngCode is None:
             bStop = True
         else:
             lngMain = ET.SubElement(crp, "Language")
@@ -270,13 +274,18 @@ def add_collection_xml(col_this, crp):
         add_element("0-n", doc_this, "url", doc, field_name="doc_urls", foreign="name")
         # add_element("1-n", doc_this, "language", doc, foreign="name", fieldchoice="language.name")
         for lng_this in doc_this.doc_languages.all():   #  doc_this.language.all():
-            (sLngName, sLngCode) = get_language(lng_this.name)
-            lngMain = ET.SubElement(doc, "Language")
-            lngMainName = ET.SubElement(lngMain, "LanguageName")
-            lngMainName.text = sLngName
-            lngMainCode = ET.SubElement(lngMain, "ISO639")
-            lngMainCodeVal = ET.SubElement(lngMainCode, "iso-639-3-code")
-            lngMainCodeVal.text = sLngCode
+            # (sLngName, sLngCode) = get_language(lng_this.name)
+            (sLngName, sLngCode) = get_language_code_name(lng_this)
+            # Validation
+            if sLngCode == "" or sLngCode is None:
+                bStop = True
+            else:
+                lngMain = ET.SubElement(doc, "Language")
+                lngMainName = ET.SubElement(lngMain, "LanguageName")
+                lngMainName.text = sLngName
+                lngMainCode = ET.SubElement(lngMain, "ISO639")
+                lngMainCodeVal = ET.SubElement(lngMainCode, "iso-639-3-code")
+                lngMainCodeVal.text = sLngCode
     # validation (0-1)
     val_this = col_this.validation
     if val_this != None:
@@ -397,19 +406,30 @@ def get_country(cntryCode):
     # Empty
     return (None, None)
 
-def get_language(lngCode):
-    if str(lngCode) == "493": 
-        x = 1
-    # Get the language string according to the field choice
-    sLanguage = choice_english("language.name", lngCode).lower()
-    # Walk all language codes
-    for tplLang in LANGUAGE_CODE_LIST:
-        # Check in column #2 for the language name (must be complete match)
-        if sLanguage == tplLang[2].lower():
-            # Return the language code from column #0
-            return (sLanguage, tplLang[0])
-    # Empty
-    return (None, None)
+#def get_language(lngCode):
+#    if str(lngCode) == "493": 
+#        x = 1
+#    # Get the language string according to the field choice
+#    sLanguage = choice_english("language.name", lngCode).lower()
+#    # NEW: sLanguage = "[{}] {}".format(idt,self.langname)
+#    # Walk all language codes
+#    for tplLang in LANGUAGE_CODE_LIST:
+#        # Check in column #2 for the language name (must be complete match)
+#        if sLanguage == tplLang[2].lower():
+#            # Return the language code from column #0
+#            return (sLanguage, tplLang[0])
+#    # Empty
+#    return (None, None)
+
+def get_language_code_name(lng_obj):
+    """Given the LanguageName object, provide the 3-letter code and the name"""
+
+    sLanguage = None
+    code = None
+    if not lng_obj is None:
+        sLanguage = lng_obj.name
+        code = lng_obj.iso.code
+    return (sLanguage, code)
 
 def getSchema():
     # Get the XSD file into an LXML structure
@@ -422,7 +442,7 @@ def getSchema():
     
     # Load the schema
     try:                                                                        
-        schema = etree.XMLSchema(doc)                                           
+        schema = etree.XMLSchema(doc)       
         return schema
     except lxml.etree.XMLSchemaParseError as e:                                 
         print(e)                                                              
@@ -662,20 +682,11 @@ def contact(request):
     """Renders the contact page."""
     assert isinstance(request, HttpRequest)
     context = dict(title="Contact",
-                   message='Henk van den Heuvel (H.vandenHeuvel@Let.ru.nl)',
+                   message='Henk van den Heuvel (Henk.vandenHeuvel@ru.nl)',
                    year=datetime.now().year)
     context = get_application_context(request, context)
 
     response = render(request, 'collection/contact.html', context)
-    #return render(
-    #    request,
-    #    'collection/contact.html',
-    #    {
-    #        'title':'Contact',
-    #        'message':'Henk van den Heuvel (H.vandenHeuvel@Let.ru.nl)',
-    #        'year':datetime.now().year,
-    #    }
-    #)
     return response
 
 def about(request):
@@ -686,16 +697,7 @@ def about(request):
                    year=datetime.now().year)
     context = get_application_context(request, context)
 
-    response = render(request, 'collection/contact.html', context)
-    #return render(
-    #    request,
-    #    'collection/about.html',
-    #    {
-    #        'title':'About',
-    #        'message':'Radboud University Collection Bank utility.',
-    #        'year':datetime.now().year,
-    #    }
-    #)
+    response = render(request, 'collection/about.html', context)
     return response
 
 def nlogin(request):

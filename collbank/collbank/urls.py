@@ -72,6 +72,8 @@ urlpatterns = [
         name='login'),
     url(r'^logout$',  LogoutView.as_view(next_page=reverse_lazy('home')), name='logout'),
 
+    url(r"^select2/", include("django_select2.urls")),
+
     # Uncomment the admin/doc line below to enable admin documentation:
     url(r'^admin/doc/', include('django.contrib.admindocs.urls')),
 

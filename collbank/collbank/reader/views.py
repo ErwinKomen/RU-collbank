@@ -51,7 +51,7 @@ import xml.etree.ElementTree as ElementTree
 from collbank.settings import APP_PREFIX, MEDIA_DIR, WRITABLE_DIR
 from collbank.basic.utils import ErrHandle
 from collbank.basic.views import BasicDetails, BasicList, BasicPart
-from collbank.basic.models import get_crpp_date
+from collbank.basic.models import get_crpp_date, Status
 from collbank.reader.forms import UploadFileForm, UploadFilesForm, SourceInfoForm
 from collbank.reader.models import get_current_datetime, SourceInfo
 from collbank.collection.models import Collection, Title, Genre, Owner, Resource, Linguality
@@ -514,7 +514,7 @@ class SourceInfoLoadXml(SourceInfoDetails):
 
         except:
             msg = oErr.get_error_message()
-            oBack['filename'] = filename
+            # oBack['filename'] = filename
             oBack['status'] = 'error'
             oBack['msg'] = msg
     

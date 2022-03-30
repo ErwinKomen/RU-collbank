@@ -9,6 +9,7 @@ from django.db.models.query import QuerySet
 
 import json
 import pytz
+from collbank.settings import TIME_ZONE
 
 # provide error handling
 from .utils import ErrHandle
@@ -31,7 +32,36 @@ def get_crpp_date(dtThis, readable=False):
 
 
 
-# Create your models here.
+# =============== HELPER models ==================================
+class Status(models.Model):
+    """Intermediate loading of sync information and status of processing it"""
+
+    # [1] Status of the process
+    status = models.CharField("Status of synchronization", max_length=50)
+    # [1] Counts (as stringified JSON object)
+    count = models.TextField("Count details", default="{}")
+    # [0-1] Synchronisation type
+    type = models.CharField("Type", max_length=255, default="")
+    # [0-1] User
+    user = models.CharField("User", max_length=255, default="")
+    # [0-1] Error message (if any)
+    msg = models.TextField("Error message", blank=True, null=True)
+
+    def __str__(self):
+        # Refresh the DB connection
+        self.refresh_from_db()
+        # Only now provide the status
+        return self.status
+
+    def set(self, sStatus, oCount = None, msg = None):
+        self.status = sStatus
+        if oCount != None:
+            self.count = json.dumps(oCount)
+        if msg != None:
+            self.msg = msg
+        self.save()
+
+
 class UserSearch(models.Model):
     """User's searches"""
     
@@ -117,3 +147,37 @@ class UserSearch(models.Model):
             oErr.DoError("UserSearch/load_parameters")
         # Return what we found
         return qd
+
+
+class Information(models.Model):
+    """Specific information that needs to be kept in the database"""
+
+    # [1] The key under which this piece of information resides
+    name = models.CharField("Key name", max_length=255)
+    # [0-1] The value for this piece of information
+    kvalue = models.TextField("Key value", default = "", null=True, blank=True)
+
+    class Meta:
+        verbose_name_plural = "Information Items"
+
+    def __str__(self):
+        return self.name
+
+    def get_kvalue(name):
+        info = Information.objects.filter(name=name).first()
+        if info == None:
+            return ''
+        else:
+            return info.kvalue
+
+    def set_kvalue(name, value):
+        info = Information.objects.filter(name=name).first()
+        if info == None:
+            info = Information(name=name)
+            info.save()
+        info.kvalue = value
+        info.save()
+        return True
+
+
+

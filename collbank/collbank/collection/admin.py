@@ -7,12 +7,14 @@ from django.db.models.functions import Lower
 from django.forms import Textarea
 from django.shortcuts import redirect
 from django.urls import reverse, resolve
-from collbank.collection.models import *
-from collbank.settings import APP_PREFIX
 from functools import partial
 import nested_admin
 import copy  # (1) use python copy
 import logging
+
+from collbank.collection.models import *
+from collbank.settings import APP_PREFIX
+
 
 MAX_IDENTIFIER_LEN = 10
 logger = logging.getLogger(__name__)
@@ -268,6 +270,8 @@ class ProvenanceInline(nested_admin.NestedTabularInline):
 class CollectionLanguageInline(nested_admin.NestedTabularInline):
     model = CollectionLanguage
     extra = 0
+    fields = ['langname']
+    autocomplete_fields = ['langname']
 
 class LanguageInline(nested_admin.NestedTabularInline):
     model = Collection.language.through
@@ -299,6 +303,23 @@ class LanguageDisorderInline(nested_admin.NestedTabularInline):
     verbose_name = "Collection - language disorder"
     verbose_name_plural = "Collection - language disorders"
     extra = 0
+
+
+class LanguageNameForm(forms.ModelForm):
+
+    class Meta:
+        model = LanguageName
+        fields = ['name', 'url', 'iso'] # '__all__' # ['name', 'url', 'created', 'iso_id']
+
+    def __init__(self, *args, **kwargs):
+        super(LanguageNameForm, self).__init__(*args, **kwargs)
+
+
+class LanguageNameAdmin(admin.ModelAdmin):
+    # form = LanguageNameForm
+    fields = ['name', 'url', 'iso']
+    ordering = ['iso__code', 'name']
+    search_fields = ['name', 'iso__code']
 
 
 class CollectionRelationForm(forms.ModelForm):
@@ -1314,19 +1335,19 @@ class MediaAdmin(admin.ModelAdmin):
                 )
 
 
-class LanguageForm(forms.ModelForm):
+#class LanguageForm(forms.ModelForm):
 
-    class Meta:
-        model = Language
-        fields = ['name']
+#    class Meta:
+#        model = Language
+#        fields = ['name']
 
-    def __init__(self, *args, **kwargs):
-        super(LanguageForm, self).__init__(*args, **kwargs)
-        init_choices(self, 'name', "language.name")
+#    def __init__(self, *args, **kwargs):
+#        super(LanguageForm, self).__init__(*args, **kwargs)
+#        init_choices(self, 'name', "language.name")
 
 
-class LanguageAdmin(admin.ModelAdmin):
-    form = LanguageForm
+#class LanguageAdmin(admin.ModelAdmin):
+#    form = LanguageForm
     
 
 class AccessAvailabilityForm(forms.ModelForm):
@@ -1664,6 +1685,8 @@ class DocumentationUrlInline(nested_admin.NestedTabularInline):
 class DocumentationLanguageInline(nested_admin.NestedTabularInline):
     model = DocumentationLanguage   # Documentation.language.through
     extra = 0
+    fields = ['langname']
+    autocomplete_fields = ['langname']
 
 
 #class SubtypeInline(nested_admin.NestedTabularInline):
@@ -1885,7 +1908,7 @@ class CollectionAdmin(nested_admin.NestedModelAdmin):
         models.TextField: {'widget': Textarea(attrs={'rows': 1, 'cols': 80})},
         }
 
-    def get_ordering_field_columns():
+    def get_ordering_field_columns(self):
         return self.ordering
 
     def get_object(self, request, object_id, from_field=None):
@@ -1954,7 +1977,7 @@ class CollectionAdmin(nested_admin.NestedModelAdmin):
             sFullPath = out.name
             xml_serializer.serialize(queryset, stream=out)
         # TODO: make the file available for download and provide a link to it
-        export_xml.short_description = "Export in XML format"
+    export_xml.short_description = "Export in XML format"
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         collThis = self.instance
@@ -2031,7 +2054,8 @@ admin.site.register(LingualityVariant, LingualityVariantAdmin)
 admin.site.register(MultilingualityType, MultilingualityTypeAdmin)
 admin.site.register(Linguality, LingualityAdmin)
 # -- language
-admin.site.register(Language, LanguageAdmin)
+# admin.site.register(Language, LanguageAdmin)
+admin.site.register(LanguageName, LanguageNameAdmin)
 # -- languageDisorder
 admin.site.register(LanguageDisorder)
 # -- relation

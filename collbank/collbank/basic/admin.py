@@ -18,8 +18,17 @@ class UserSearchAdmin(admin.ModelAdmin):
         }
 
 
+class InformationAdmin(admin.ModelAdmin):
+    """Information k/v pairs"""
+
+    list_display = ['name', 'kvalue']
+    fields = ['name', 'kvalue']
+
+
+
 
 
 # Register your models here.
 admin.site.register(UserSearch, UserSearchAdmin)
+admin.site.register(Information, InformationAdmin)
 
