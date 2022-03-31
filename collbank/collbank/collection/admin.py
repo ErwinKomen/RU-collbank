@@ -273,6 +273,7 @@ class CollectionLanguageInline(nested_admin.NestedTabularInline):
     fields = ['langname']
     autocomplete_fields = ['langname']
 
+
 class LanguageInline(nested_admin.NestedTabularInline):
     model = Collection.language.through
     extra = 0
@@ -427,6 +428,7 @@ class ResourceOrganizationInline(nested_admin.NestedTabularInline):
     verbose_name_plural = "Resource creator: organizations"
     extra = 0
 
+
 class PersonForm(forms.ModelForm):
 
     class Meta:
@@ -519,7 +521,6 @@ class ModalityAdmin(admin.ModelAdmin):
     form = ModalityForm
 
 
-# class ModalityInline(admin.TabularInline):
 class ModalityInline(nested_admin.NestedTabularInline):
     model = Modality #   Resource.modality.through
     form = ModalityForm
@@ -535,6 +536,7 @@ class RecordingEnvironmentForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(RecordingEnvironmentForm, self).__init__(*args, **kwargs)
         init_choices(self, 'name', SPEECHCORPUS_RECORDINGENVIRONMENT)
+
 
 class RecordingEnvironmentAdmin(admin.ModelAdmin):
     form = RecordingEnvironmentForm
@@ -574,34 +576,6 @@ class TemporalProvenanceAdmin(nested_admin.NestedModelAdmin):
     fieldsets = ( ('Searchable', {'fields': ()}),
                   ('Other',      {'fields': ('startYear', 'endYear',)}),
                 )
-
-
-#class PlaceInline(nested_admin.NestedTabularInline):
-#    model = GeographicProvenance.place.through
-#    extra = 0
-
-#    def get_formset(self, request, obj = None, **kwargs):
-#        # Get the currently selected Collection object's identifier
-#        self.instance = obj
-#        return super(PlaceInline, self).get_formset(request, obj, **kwargs)
-
-#    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-#        formfield = super(PlaceInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
-#        # Look for the field's name as it is used in the Collection model
-#        if db_field.name == "place":
-#            formfield.queryset = get_formfield_qs(City, self.instance, "geographicprovenance")
-#        return formfield
-
-
-#class GeographicProvenanceForm(forms.ModelForm):
-
-#    class Meta:
-#        model = GeographicProvenance
-#        fields = ['country', 'place']
-
-#    def __init__(self, *args, **kwargs):
-#        super(GeographicProvenanceForm, self).__init__(*args, **kwargs)
-#        init_choices(self, 'country', PROVENANCE_GEOGRAPHIC_COUNTRY)
 
 
 class GeographicProvenanceAdmin(admin.ModelAdmin):
@@ -678,8 +652,7 @@ class AnnotationInline(nested_admin.NestedTabularInline):
     #    if db_field.name == "annotation":
     #        formfield.queryset = get_formfield_qs(Annotation, self.instance, "resource")
     #    return formfield
-
-
+    
 
 class AnnotationFormatAdmin(nested_admin.NestedModelAdmin):
     form = AnnotationFormatForm
@@ -910,8 +883,7 @@ class ResourceForm(forms.ModelForm):
         self.instance.type = self.chosen_type
         # Perform the actual saving
         return super(ResourceForm, self).save(*args, **kwargs)
-
-
+    
 
 class AudienceForm(forms.ModelForm):
 
@@ -1335,21 +1307,6 @@ class MediaAdmin(admin.ModelAdmin):
                 )
 
 
-#class LanguageForm(forms.ModelForm):
-
-#    class Meta:
-#        model = Language
-#        fields = ['name']
-
-#    def __init__(self, *args, **kwargs):
-#        super(LanguageForm, self).__init__(*args, **kwargs)
-#        init_choices(self, 'name', "language.name")
-
-
-#class LanguageAdmin(admin.ModelAdmin):
-#    form = LanguageForm
-    
-
 class AccessAvailabilityForm(forms.ModelForm):
 
     class Meta:
@@ -1597,7 +1554,6 @@ class AccessAdmin(nested_admin.NestedModelAdmin):
                AccessLicenseUrlInline, AccessContactInline,
                AccessWebsiteInline, AccessMediumInline]
     fieldsets = ( ('Searchable', {'fields': ()}),
-#                 ('Other',      {'fields': ('name', 'availability', 'licenseName', 'licenseUrl', 'nonCommercialUsageOnly', 'contact', 'website', 'ISBN', 'ISLRN', 'medium',)}),
                   ('Other',      {'fields': ('name', 'nonCommercialUsageOnly', 'ISBN', 'ISLRN', )}),
                 )
 
@@ -1629,8 +1585,6 @@ class TotalSizeAdmin(admin.ModelAdmin):
     fieldsets = ( ('Searchable', {'fields': ()}),
                   ('Other',      {'fields': ('size', 'sizeUnit',)}),
                 )
-
-
 
 
 class ResourceCreatorAdmin(admin.ModelAdmin):
@@ -1687,16 +1641,6 @@ class DocumentationLanguageInline(nested_admin.NestedTabularInline):
     extra = 0
     fields = ['langname']
     autocomplete_fields = ['langname']
-
-
-#class SubtypeInline(nested_admin.NestedTabularInline):
-#    model = SubType
-#    extra = 0
-#    min_num = 0
-#    max_num = 1
-
-#class DcTypeAdmin(nested_admin.NestedModelAdmin):
-#    inlines = [SubtypeInline]
 
 
 class DocumentationAdmin(nested_admin.NestedModelAdmin):
@@ -1769,9 +1713,7 @@ class ProjectAdmin(admin.ModelAdmin):
             formfield.queryset = get_formfield_qs(ProjectUrl, self.instance, "project")
         return formfield
 
-
-
-
+    
 class SpeechCorpusConvTypeInline(nested_admin.NestedTabularInline):
     model = ConversationalType
     extra = 0
@@ -1865,6 +1807,7 @@ class ExtCollAdmin(admin.ModelAdmin):
     formfield_overrides = {
         models.TextField: {'widget': Textarea(attrs={'rows': 1, 'cols': 80})},
         }
+
 
 class CollectionForm(forms.ModelForm):
 
@@ -1996,6 +1939,12 @@ class CollectionAdmin(nested_admin.NestedModelAdmin):
         elif db_field.name == "speechCorpus":                                # ForeignKey
             formfield.queryset = get_formfield_qs(SpeechCorpus, collThis, "collection")
         return formfield
+
+    def response_change(self, request, obj):
+        # Figure out where to return to
+        url = reverse('coll_detail', kwargs={'pk': obj.id})
+        # Return there
+        return redirect(url)
 
 
 class FieldChoiceAdmin(admin.ModelAdmin):

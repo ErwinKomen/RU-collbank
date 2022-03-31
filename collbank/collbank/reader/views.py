@@ -437,6 +437,29 @@ class SourceInfoLoadXml(SourceInfoDetails):
             else:
                 pass
 
+        def get_instance(oItem):
+            """kkk"""
+
+            bOverwriting = False
+            instance = None
+            try:
+                # Get to the identifier, which is the shortest title
+                identifier = get_shortest(oItem.get("title"))
+                if identifier is None or identifier == "":
+                    oErr.DoError("Collection/get_instance: no [identifier] provided")
+                else:
+                    # Retrieve the object
+                    instance = Collection.objects.filter(identifier=identifier).first()
+                    if instance is None:
+                        # This object doesn't yet exist: create it
+                        instance = Collection.objects.create(identifier=identifier)
+                    else:
+                        bOverWriting = True
+
+            except:
+                msg = oErr.get_error_message()
+                oErr.DoError("read_xml/get_instance")
+            return bOverwriting, instance
 
         oErr = ErrHandle()
         oBack = dict(status="ok", msg="", filename="")
@@ -457,6 +480,12 @@ class SourceInfoLoadXml(SourceInfoDetails):
             ]
 
         try:
+            # Get some standard information
+            user = self.request.user
+            username = user.username
+            kwargs = {'user': user, 'username': username}
+
+
             # Get the file and read it
             data_file = instance.file
 
@@ -482,35 +511,63 @@ class SourceInfoLoadXml(SourceInfoDetails):
                 # Get the titles and see if any of them match an existing identifier
                 titles = coll_info.get("title")
                 if not titles is None:
-                    if isinstance(titles, str): titles = [ titles ]
-                    # Walk all titles and see if there is any existing identifier
-                    qs = Collection.objects.filter(identifier__in=titles)
-                    if qs.count() == 0:
-                        # We don't have this one yet: add it
-                        identifier = get_shortest(titles)
+                    # Make sure that 'title' is a list of strings
+                    if isinstance(titles, str): 
+                        titles = [ titles ]
+                        coll_info['title'] = titles
 
-                        # Process the necessary fields
-                        for oField in field_coll:
-                            fieldname = oField["name"]
-                            fieldvalue = coll_info.get(fieldname)
-                            optionality = oField['optionality']
-                            if "-n" in optionality:
-                                # Should get a list
-                                if fieldvalue is None:
-                                    lst_value = []
-                                elif isinstance(fieldvalue,list):
-                                    lst_value = fieldvalue
-                                else:
-                                    lst_value = [ fieldvalue ]
-                                # Add the list of values
-                                for onevalue in lst_value:
-                                    pass
+                    params = {}
+                    params['get_instance'] = get_instance
+                    # Add the collection in a standard way
+                    collection = Collection.custom_add(coll_info, params, **kwargs)
 
-                        # Create the new collection
-                        collection = Collection.objects.create(identifier=identifier)
-                        # Add all fields appropriately
-                        add_field_values(collection, titles, "1-n", Title, "collection", "name")
- 
+
+                    #titles_lower = r'{}'.format( "|".join(titles))
+                    ## See if there is any existing identifier based on *ALL* titles (if there are more)
+                    ## qs = Collection.objects.filter(identifier__in=titles)
+                    #qs = Collection.objects.filter(identifier__iregex=titles_lower)
+                    #if qs.count() == 0:
+                    #    # We don't have this one yet: add it
+                    #    identifier = get_shortest(titles)
+                    #    coll_info['identifier'] = identifier
+
+                    #    params = {}
+                    #    # Add the collection in a standard way
+                    #    collection = Collection.custom_add(coll_info, params, **kwargs)
+
+                        ## Process the necessary fields
+                        #for oField in field_coll:
+                        #    fieldname = oField["name"]
+                        #    fieldvalue = coll_info.get(fieldname)
+                        #    optionality = oField['optionality']
+                        #    if "-n" in optionality:
+                        #        # Should get a list
+                        #        if fieldvalue is None:
+                        #            lst_value = []
+                        #        elif isinstance(fieldvalue,list):
+                        #            lst_value = fieldvalue
+                        #        else:
+                        #            lst_value = [ fieldvalue ]
+                        #        # Add the list of values
+                        #        for onevalue in lst_value:
+                        #            pass
+
+                        ## Create the new collection
+                        #collection = Collection.objects.create(identifier=identifier)
+
+                        ## Use the standard method to import values into Collection
+
+                        ## Add all fields appropriately
+                        #add_field_values(collection, titles, "1-n", Title, "collection", "name")
+                    #else:
+                    #    # We are *NOT* planning to overwrite existing data!
+                    #    oErr.Status("read_xml: NOT importing [{}], since that would overwrite the existing one".format(
+                    #        get_shortest(titles)))
+                else:
+                    # Without a title, we cannot import
+                    oErr.Status("read_xml: unable to import the XML, since there is no [title] specified")
+            else:
+                oErr.Status("read_xml: unable to import the XML, since there is no <CMD>")
 
         except:
             msg = oErr.get_error_message()
