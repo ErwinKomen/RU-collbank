@@ -427,8 +427,8 @@ def get_language_code_name(lng_obj):
     sLanguage = None
     code = None
     if not lng_obj is None:
-        sLanguage = lng_obj.name
-        code = lng_obj.iso.code
+        sLanguage = lng_obj.langname.name
+        code = lng_obj.langname.iso.code
     return (sLanguage, code)
 
 def getSchema():
@@ -664,7 +664,7 @@ def xsd_error_as_simple_string(error):
 
 
 
-# ============= Standard Views ==================================
+# ============= Standard Views ==============================================
 
 def home(request):
     """Renders the home page."""
@@ -807,6 +807,8 @@ def subtype_choices(request):
         sOut = "{}"
     return HttpResponse(sOut)
 
+
+# ============= Application specific Views ==================================
 
 class CollectionListView(ListView):
     """Listview of collections"""

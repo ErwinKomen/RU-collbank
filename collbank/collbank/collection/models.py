@@ -280,10 +280,13 @@ class PidService(models.Model):
         sName = collection.get_xmlfilename()
         # Try to find a persistent identifier for this collection:
         #   the real URL of this collection should end with / + sName
-        sUrl = "{}/?URL=*/{}".format(self.url, sName)
+        basic_url = self.url
+        if basic_url[-1] == "/":
+            basic_url = basic_url[0:-1]
+        sUrl = "{}/?URL=*/{}".format(basic_url, sName)
         headers = {'Accept': 'application/json'}
         # Issue the request
-        r = requests.get(sUrl, auth=(self.user, self.passwd), headers=headers)
+        r = requests.get(sUrl, auth=(self.user, self.passwd), headers=headers, timeout=10)
         if r.status_code == 200:
             # Got it: process the response
             if r.text == "":
@@ -426,6 +429,118 @@ class HelpChoice(models.Model):
                 help_text = "{} ({})".format(
                     self.display_name, self.help_url)
         return help_text
+
+
+class CollbankModel(object):
+    """This is the regular [models.Model], but then with processing functions"""
+
+    specification = []
+
+    #def get_instance(instance, oItem):
+    #    bOverwriting = False
+    #    return bOverwriting, instance
+
+    def custom_add(oItem, oParams, **kwargs):
+        """Add an object according to the specifications provided"""
+
+        oErr = ErrHandle()
+        obj = None
+        bOverwriting = False
+        bSkip = False
+        params = {}
+        lst_msg = []
+
+        # ============= DEBUGGING ===========
+        bAllowOverwriting = True
+
+        try:
+            user = kwargs.get("user")
+            username = kwargs.get("username")
+            keyfield = kwargs.get("keyfield", "name")
+
+            # There might be an instance passed along in [oParams]
+            obj = oParams.get("instance")
+            if obj is None:
+                get_instance = oParams.get("get_instance")
+                if not get_instance is None:
+                    bOverwriting, obj = get_instance(oItem)
+
+            if not bOverwriting or bAllowOverwriting and bOverwriting:
+                # Yes, we may continue! Process all fields in the specification
+                for oField in CollbankModel.specification:
+                    # Get the parameters of this entry
+                    field = oField.get(keyfield).lower()
+                    if keyfield == "path" and oField.get("type") == "fk_id":
+                        field = "{}_id".format(field)
+                    value = oItem.get(field)
+                    readonly = oField.get('readonly', False)
+
+                    # Can we process this entry?
+                    if value != None and value != "" and not readonly:
+                        # Get some more parameters of the entry, which are for processing
+                        path = oField.get("path")
+                        type = oField.get("type")
+
+                        # Processing depends on the [type]
+                        if type == "field":
+                            # Note overwriting
+                            old_value = getattr(obj, path)
+                            if value != old_value:
+                                # Set the correct field's value
+                                setattr(obj, path, value)
+                        elif type == "fk":
+                            fkfield = oField.get("fkfield")
+                            model = oField.get("model")
+                            if fkfield != None and model != None:
+                                # Find an item with the name for the particular model
+                                cls = apps.app_configs['collection'].get_model(model)
+                                # Find this particular instance
+                                instance = cls.objects.filter(**{"{}".format(fkfield): value}).first()
+                                if instance is None:
+                                    # There is no such instance (yet): NOW WHAT??
+                                    pass
+                                else:
+                                    old_value = getattr(obj,path)
+                                    if instance != old_value:
+                                        setattr(obj, path, instance)
+                        elif type == "fkob":
+                            if not value is None:
+                                model = oField.get("model")
+                                # Find an item with the name for the particular model
+                                cls = apps.app_configs['collection'].get_model(model)
+
+                                # Use the custom_set of that model
+                                fkob = cls.custom_add(value, params, **kwargs)
+                                # Make sure this is added to collection
+                                setattr(obj, path, fkob)
+
+                        elif type == "m2o":
+                            fkfield = oField.get("fkfield")
+                            model = oField.get("model")
+                            if not fkfield is None and not model is None:
+                                # Find an item with the name for the particular model
+                                cls = apps.app_configs['collection'].get_model(model)
+                                # Divide the values
+                                lst_val = [ value ] if isinstance(value, str) or isinstance(value, int) else value
+                                for oneval in lst_val:
+                                    # See if there already is an instance
+                                    oDict = {"{}".format(fkfield): obj, "{}".format(path): oneval}
+                                    instance = cls.objects.filter(**oDict).first()
+                                    if instance is None:
+                                        # Create this entry
+                                        cls.objects.create(**oDict)
+                        elif type == "func":
+                            # Set the KV in a special way
+                            obj.custom_set(path, value, **kwargs)
+
+                # Make sure to save changes
+                obj.save()
+
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("CollbankModel/custom_adds")
+        return obj
+
 
 
 # ========================= COLLECTION MODELS ==========================
@@ -1596,10 +1711,8 @@ class Access(models.Model):
         bAllowOverwriting = True
 
         try:
-            profile = kwargs.get("profile")
+            user = kwargs.get("user")
             username = kwargs.get("username")
-            team_group = kwargs.get("team_group")
-            source = kwargs.get("source")
             keyfield = kwargs.get("keyfield", "name")
 
             ## Get to the identifier, which is the shortest title
@@ -2495,7 +2608,7 @@ class ExtColl(models.Model):
         return self.identifier
 
 
-class Collection(models.Model):
+class Collection(models.Model, CollbankModel):
     """Characteristics of the collection as a whole"""
 
     # ============ INTERNAL FIELDS ================================
@@ -2581,22 +2694,30 @@ class Collection(models.Model):
         {'name': 'Clarin centre',       'type': 'field', 'path': 'clarinCentre'},
         {'name': 'Version',             'type': 'field', 'path': 'version'},
 
-        {'name': 'Linguality',          'type': 'fkob',  'path': 'linguality'},
-        {'name': 'Access',              'type': 'fkob',  'path': 'access'},
-        {'name': 'Documentation',       'type': 'fkob',  'path': 'documentation'},
-        {'name': 'Validation',          'type': 'fkob',  'path': 'validation'},
+        # Tables that are linked to [collection] by a FK
 
-        {'name': 'Titles',              'type': 'm2o',   'path': 'name', 'fkfield': 'collection', 'model': 'Title'},
-        {'name': 'Owners',              'type': 'm2o',   'path': 'name', 'fkfield': 'collection', 'model': 'Owner'},
-        {'name': 'Genres',              'type': 'm2o',   'path': 'name', 'fkfield': 'collection', 'model': 'Genre'},
-        {'name': 'Language Disorder',   'type': 'm2o',   'path': 'name', 'fkfield': 'collection', 'model': 'LanguageDisorder'},
-        {'name': 'Domains',             'type': 'm2o',   'path': 'name', 'fkfield': 'collection', 'model': 'Domain'},
-        {'name': 'PIDs',                'type': 'm2o',   'path': 'code', 'fkfield': 'collection', 'model': 'PID'},
+        {'name': 'Access',              'type': 'fkob',  'path': 'access',          'model': 'Access'},
+        {'name': 'Linguality',          'type': 'fkob',  'path': 'linguality',      'model': 'Linguality'},
+        {'name': 'Documentation',       'type': 'fkob',  'path': 'documentation',   'model': 'Documentation'},
+        {'name': 'Validation',          'type': 'fkob',  'path': 'validation',      'model': 'Validation'},
 
         # Tables that are actually [many-to-one] with an FK to [collection]:
         #   Title, Owner, Genre, LanguageDisorder, Domain, PID, 
         #   Resource, Provenance, Language, Relation, TotalSize, ResourceCreator, Project
 
+        {'name': 'Titles',              'type': 'm2o',  'path': 'title',        'fkfield': 'collection', 'model': 'Title'},
+        {'name': 'Owners',              'type': 'm2o',  'path': 'owner',        'fkfield': 'collection', 'model': 'Owner'},
+        {'name': 'Genres',              'type': 'm2o',  'path': 'genre',        'fkfield': 'collection', 'model': 'Genre'},
+        {'name': 'Domains',             'type': 'm2o',  'path': 'domain',       'fkfield': 'collection', 'model': 'Domain'},
+        {'name': 'PIDs',                'type': 'm2o',  'path': 'code',         'fkfield': 'collection', 'model': 'PID'},
+        {'name': 'Language Disorder',   'type': 'm2o',  'path': 'languageDisorder', 'fkfield': 'collection', 'model': 'LanguageDisorder'},
+        {'name': 'Resource',            'type': 'm2o',  'path': 'resource',        'fkfield': 'collection', 'model': 'Resource'},
+        {'name': 'Provenance',          'type': 'm2o',  'path': 'provenance',      'fkfield': 'collection', 'model': 'Provenance'},
+        {'name': 'Language',            'type': 'm2o',  'path': 'Language',        'fkfield': 'collection', 'model': 'CollectionLanguage'},
+        {'name': 'Relation',            'type': 'm2o',  'path': 'dc-relation',     'fkfield': 'collection', 'model': 'Relation'},
+        {'name': 'TotalSize',           'type': 'm2o',  'path': 'totalSize',       'fkfield': 'collection', 'model': 'TotalSize'},
+        {'name': 'Resource Creator',    'type': 'm2o',  'path': 'resourceCreator', 'fkfield': 'collection', 'model': 'ResourceCreator'},
+        {'name': 'Project',             'type': 'm2o',  'path': 'project',         'fkfield': 'collection', 'model': 'Project'},
         ]
 
     def __str__(self):
@@ -2636,7 +2757,40 @@ class Collection(models.Model):
         # Return positively
         return True
 
-    def custom_add(oItem, oParams, **kwargs):
+    def get_instance(instance, oItem):
+        """kkk"""
+
+        def get_shortest(lst_value):
+            shortest = None
+            for onevalue in lst_value:
+                # Keep track of what the shortest is (for title)
+                if shortest is None:
+                    shortest = onevalue
+                elif len(onevalue) < len(shortest):
+                    shortest = onevalue
+            return shortest
+
+        bOverwriting = False
+        try:
+            # Get to the identifier, which is the shortest title
+            identifier = get_shortest(oItem.get("title"))
+            if identifier is None or identifier == "":
+                oErr.DoError("Collection/get_instance: no [identifier] provided")
+            else:
+                # Retrieve the object
+                instance = Collection.objects.filter(identifier=identifier).first()
+                if instance is None:
+                    # This object doesn't yet exist: create it
+                    instance = Collection.objects.create(identifier=identifier)
+                else:
+                    bOverWriting = True
+
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Collection/get_instance")
+        return bOverwriting, instance
+
+    def custom_add_org(oItem, oParams, **kwargs):
         """Add an object according to the specifications provided"""
 
         def get_shortest(lst_value):
@@ -2660,10 +2814,11 @@ class Collection(models.Model):
         bAllowOverwriting = True
 
         try:
-            profile = kwargs.get("profile")
+            user = kwargs.get("user")
             username = kwargs.get("username")
-            team_group = kwargs.get("team_group")
-            source = kwargs.get("source")
+            # team_group = kwargs.get("team_group")
+            # source = kwargs.get("source")
+
             keyfield = kwargs.get("keyfield", "name")
 
             # Get to the identifier, which is the shortest title
@@ -2721,8 +2876,11 @@ class Collection(models.Model):
                                     model = oField.get("model")
                                     # Find an item with the name for the particular model
                                     cls = apps.app_configs['collection'].get_model(model)
+
                                     # Use the custom_set of that model
-                                    cls.custom_add(value, params, **kwargs)
+                                    fkob = cls.custom_add(value, params, **kwargs)
+                                    # Make sure this is added to collection
+                                    setattr(obj, path, fkob)
 
                             elif type == "m2o":
                                 fkfield = oField.get("fkfield")
