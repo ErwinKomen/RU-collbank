@@ -9,6 +9,7 @@ from django.apps import apps
 from django.db import models
 from django.contrib.auth.models import User
 from datetime import datetime
+from django.db.models.fields import Field
 import requests
 from requests.auth import HTTPBasicAuth
 
@@ -133,6 +134,32 @@ def choice_english(field, num):
         return result_list[0].english_name
     except:
         return "(empty)"
+
+def choice_value(field, term):
+    """Get the numerical value of the field with the indicated English name"""
+
+    try:
+        result_list = FieldChoice.objects.filter(field__iexact=field).filter(english_name__iexact=term)
+        if result_list == None or result_list.count() == 0:
+            # Try looking at abbreviation
+            result_list = FieldChoice.objects.filter(field__iexact=field).filter(abbr__iexact=term)
+        if result_list == None:
+            return -1
+        else:
+            return result_list[0].machine_value
+    except:
+        return -1
+
+def choice_abbreviation(field, num):
+    """Get the abbreviation of the field with the indicated machine_number"""
+
+    try:
+        result_list = FieldChoice.objects.filter(field__iexact=field).filter(machine_value=num)
+        if (result_list == None):
+            return "{}_{}".format(field, num)
+        return result_list[0].abbr
+    except:
+        return "-"
 
 def m2m_combi(items):
     try:
@@ -460,10 +487,11 @@ class CollbankModel(object):
                 # Yes, we may continue! Process all fields in the specification
                 for oField in self.specification:
                     # Get the parameters of this entry
-                    field = oField.get(keyfield).lower()
+                    field_org = oField.get(keyfield)
+                    field = field_org.lower()
                     if keyfield == "path" and oField.get("type") == "fk_id":
                         field = "{}_id".format(field)
-                    value = oItem.get(field)
+                    value = oItem.get(field) if field in oItem else oItem.get(field_org)
                     readonly = oField.get('readonly', False)
 
                     # Can we process this entry?
@@ -482,11 +510,16 @@ class CollbankModel(object):
                         elif type == "fk":
                             fkfield = oField.get("fkfield")
                             model = oField.get("model")
+                            vfield = oField.get("vfield")
                             if fkfield != None and model != None:
                                 # Find an item with the name for the particular model
                                 cls = apps.app_configs[app_name].get_model(model)
-                                # Find this particular instance
-                                instance = cls.objects.filter(**{"{}".format(fkfield): value}).first()
+                                if vfield is None:
+                                    # Find this particular instance
+                                    instance = cls.objects.filter(**{"{}".format(fkfield): value}).first()
+                                else:
+                                    # Find this particular instance
+                                    instance = cls.objects.filter(**{"{}".format(vfield): value}).first()
                                 if instance is None:
                                     # There is no such instance (yet): NOW WHAT??
                                     pass
@@ -510,24 +543,28 @@ class CollbankModel(object):
                         elif type == "m2o":
                             fkfield = oField.get("fkfield")
                             model = oField.get("model")
+                            vfield = oField.get("vfield")
                             if not fkfield is None and not model is None:
                                 # Find an item with the name for the particular model
                                 cls = apps.app_configs[app_name].get_model(model)
-                                # Divide the values
-                                lst_val = [ value ] if isinstance(value, str) or isinstance(value, int) else value
-                                for oneval in lst_val:
-                                    # Create a new instance
-                                    instance = cls.get_instance(value, params, **kwargs)
+                                if vfield is None:
+                                    if False:
+                                        # Divide the values
+                                        lst_val = [ value ] if isinstance(value, str) or isinstance(value, int) else value
+                                        for oneval in lst_val:
+                                            # Create a new instance
+                                            instance = cls.get_instance(oneval, params, **kwargs)
 
-                                    # Make sure the FK is set correctly
-                                    setattr(instance, fkfield, obj)
+                                            # Make sure the FK is set correctly
+                                            setattr(instance, fkfield, obj)
+                                    else:
+                                        # Create a new instance
+                                        params[fkfield] = obj
+                                        instance = cls.get_instance(value, params, **kwargs)
+                                else:
+                                    # A vfield has been specified
+                                    instance = cls.objects.create(**{'{}'.format(fkfield): obj, '{}'.format(vfield): value})
 
-                                    ## See if there already is an instance
-                                    #oDict = {"{}".format(fkfield): obj, "{}".format(path): oneval}
-                                    #instance = cls.objects.filter(**oDict).first()
-                                    #if instance is None:
-                                    #    # Create this entry
-                                    #    cls.objects.create(**oDict)
                         elif type == "func":
                             # Set the KV in a special way
                             obj.custom_set(path, value, **kwargs)
@@ -1310,6 +1347,12 @@ class Language(models.Model):
                             max_length=5, help_text=get_help("language.name"), default='0')
     # [0-1] To be constructed: link to correct entry in [LanguageName]
     langname = models.ForeignKey(LanguageName, blank=True, null=True, on_delete=models.CASCADE, related_name = "langname_languages")
+    
+    # Scheme for downloading and uploading
+    specification = [
+        {'name': 'Language',    'type': 'fk', 'path': 'Language',
+         'fkfield': 'langname', 'model': 'LanguageName'},
+        ]
 
     def __str__(self):
         idt = m2m_identifier(self.collection_set)
@@ -1323,6 +1366,22 @@ class Language(models.Model):
             sBack = "[{}] {}".format(idt,self.langname)
         return sBack
 
+    def get_instance(oItem, oParams, **kwargs):
+        """Add an object according to the specifications provided"""
+
+        oErr = ErrHandle()
+        obj = None
+        try:
+            # We should create a new instance
+            obj = Language.objects.create()
+
+            # And now call the standard custom_add() method
+            obj.custom_add(oItem, oParams, **kwargs)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Language/get_instance")
+        return obj
+
     def get_view(self):
         sBack = ""
         if self.langname is None:
@@ -1333,11 +1392,17 @@ class Language(models.Model):
         return sBack
 
 
-class DocumentationLanguage(Language):
+class DocumentationLanguage(CollbankModel, Language):
 
     # [1]     Each documentation object can have [0-n] languages associated with it
     documentationParent = models.ForeignKey("Documentation", blank=False, null=False, default=1, on_delete=models.CASCADE, related_name="doc_languages")
     
+    # Scheme for downloading and uploading
+    specification = [
+        {'name': 'Language',    'type': 'fk', 'path': 'Language',
+         'fkfield': 'langname', 'model': 'LanguageName'},
+        ]
+
     def __str__(self):
         sBack = "[unclear]"
         # There is only ONE collection parent
@@ -1350,6 +1415,25 @@ class DocumentationLanguage(Language):
                 sBack = "[{}] {}".format(idt,self.langname)
 
         return sBack
+
+    def get_instance(oItem, oParams, **kwargs):
+        """Add an object according to the specifications provided"""
+
+        oErr = ErrHandle()
+        obj = None
+        try:
+            # We should create a new instance
+            documentation = oParams.get("documentation")
+            obj = DocumentationLanguage.objects.create(documentationParent=documentation)
+
+            # TODO: dit customiseren!!!
+
+            # And now call the standard custom_add() method
+            obj.custom_add(oItem, oParams, **kwargs)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("DocumentationLanguage/get_instance")
+        return obj
 
     def get_copy(self):
         # Make a clean copy
@@ -1609,6 +1693,27 @@ class AccessContact(models.Model):
         # Return the new copy
         return new_copy
 
+    def get_instance(oItem, oParams, **kwargs):
+        """Add an object according to the specifications provided"""
+
+        oErr = ErrHandle()
+        obj = None
+        try:
+            # We should create a new instance
+            person = oItem.get("person", "-")
+            address = oItem.get("address", "-")
+            email = oItem.get("email", "-")
+            access = oParams.get("access")
+            if access is None:
+                oErr.Status("WARNING: AccessContact doesn't get a valid [access] FK")
+            else:
+                obj = AccessContact.objects.create(person=person, address=address, email=email, access=access)
+
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("AccessContact/get_instance")
+        return obj
+
     def get_view(self):
         return self.__str__()
 
@@ -1671,14 +1776,13 @@ class Access(CollbankModel, models.Model):
     specification = [
         {'name': 'Collection ISBN',     'type': 'field', 'path': 'ISBN'},
         {'name': 'Collection ISLRN',    'type': 'field', 'path': 'ISLRN'},
-        {'name': 'Non-commercial only', 'type': 'fk',    'path': 'nonCommercialUsageOnly', 
-         'fkfield': 'nonCommercialUsageOnly', 'model': 'NonCommercialUsageOnly' },
+        {'name': 'Non-commercial only', 'type': 'func',  'path': 'nonCommercialUsageOnly' },
 
-        {'name': 'Medium types',        'type': 'm2o',   'path': 'medium',      'fkfield': 'access', 'model': 'AccessMedium'},
-        {'name': 'Websites',            'type': 'm2o',   'path': 'website',     'fkfield': 'access', 'model': 'AccessWebsite'},
-        {'name': 'Availabilities',      'type': 'm2o',   'path': 'availibility','fkfield': 'access', 'model': 'AccessAvailability'},
-        {'name': 'License names',       'type': 'm2o',   'path': 'licenseName', 'fkfield': 'access', 'model': 'LicenseName'},
-        {'name': 'License URLs',        'type': 'm2o',   'path': 'licenseURL',  'fkfield': 'access', 'model': 'LicenseUrl'},
+        {'name': 'Medium types',        'type': 'm2o',   'path': 'medium',      'fkfield': 'access', 'model': 'AccessMedium',       'vfield': 'format'},
+        {'name': 'Websites',            'type': 'm2o',   'path': 'website',     'fkfield': 'access', 'model': 'AccessWebsite',      'vfield': 'name'},
+        {'name': 'Availabilities',      'type': 'm2o',   'path': 'availibility','fkfield': 'access', 'model': 'AccessAvailability', 'vfield': 'name'},
+        {'name': 'License names',       'type': 'm2o',   'path': 'licenseName', 'fkfield': 'access', 'model': 'LicenseName',        'vfield': 'name'},
+        {'name': 'License URLs',        'type': 'm2o',   'path': 'licenseURL',  'fkfield': 'access', 'model': 'LicenseUrl',         'vfield': 'name'},
         {'name': 'Access contacts',     'type': 'm2o',   'path': 'contact',     'fkfield': 'access', 'model': 'AccessContact'},
 
         ]
@@ -1686,6 +1790,42 @@ class Access(CollbankModel, models.Model):
     def __str__(self):
         sName = self.name
         return sName[:50]
+
+    def custom_set(self, path, value, **kwargs):
+        """Set related items"""
+
+        bResult = True
+        oErr = ErrHandle()
+        try:
+            profile = kwargs.get("profile")
+            username = kwargs.get("username")
+            team_group = kwargs.get("team_group")
+            value_lst = []
+            if isinstance(value, str) and value[0] != '[':
+                value_lst = value.split(",")
+                for idx, item in enumerate(value_lst):
+                    value_lst[idx] = value_lst[idx].strip()
+            elif isinstance(value, list):
+                value_lst = value
+
+            # See what this one is
+            if path == "nonCommercialUsageOnly":
+                # Find out what the index in FieldChoice is
+                cvalue = choice_value(ACCESS_NONCOMMERCIAL, value)
+                if cvalue < 0:
+                    # Cannot find this FC
+                    oErr.Status("Access nonCommercialUsageOnly: cannot find value [{}]".format(value))
+                else:
+                    # Create a unique object in [NonCommercialUsageOnly]
+                    obj = NonCommercialUsageOnly.objects.create(name=cvalue)
+                    # Set the FK to this unique object
+                    self.nonCommercialUsageOnly = obj
+
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Access/custom_set")
+            bResult = False
+        return bResult
 
     def get_instance(oItem, oParams, **kwargs):
         """Add an object according to the specifications provided"""
@@ -1703,7 +1843,6 @@ class Access(CollbankModel, models.Model):
             msg = oErr.get_error_message()
             oErr.DoError("Access/get_instance")
         return obj
-
 
     def get_copy(self):
         # Make a clean copy
@@ -1858,6 +1997,7 @@ class DocumentationFile(models.Model):
 class DocumentationUrl(models.Model):
     """URL of documentation"""
 
+    # [1] Obligatory name
     name = models.URLField("URL of documentation", help_text=get_help('documentation.url'))
     # [1]
     documentation = models.ForeignKey("Documentation", blank=False, null=False, default=1, on_delete=models.CASCADE, related_name="doc_urls")
@@ -1875,7 +2015,7 @@ class DocumentationUrl(models.Model):
         return self.name
 
 
-class Documentation(models.Model):
+class Documentation(CollbankModel, models.Model):
     """Creator of this resource"""
 
     # Many-to-one relations:
@@ -1883,6 +2023,15 @@ class Documentation(models.Model):
     #   DocumentationFile (0-n; f)
     #   DocumentationUrl (0-n; f)
     #   DocumentationLanguage (1-n; c)
+
+    # Scheme for downloading and uploading
+    specification = [
+        {'name': 'Documentation type',      'type': 'm2o',  'path': 'documentationType','fkfield': 'documentation', 'model': 'DocumentationType',   'vfield': 'format'},
+        {'name': 'Documentation File',      'type': 'm2o',  'path': 'fileName',         'fkfield': 'documentation', 'model': 'DocumentationFile',   'vfield': 'name'},
+        {'name': 'Documentation URL',       'type': 'm2o',  'path': 'url',              'fkfield': 'documentation', 'model': 'DocumentationUrl',    'vfield': 'name'},
+        {'name': 'Documentation language',  'type': 'm2o',  'path': 'Language',         'fkfield': 'documentation', 'model': 'DocumentationLanguage'},
+
+        ]
 
     def __str__(self):
         fld_tp = m2m_combi(self.doc_types)
@@ -1899,6 +2048,23 @@ class Documentation(models.Model):
         else:
             sBack = "(empty)"
         return sBack
+
+    def get_instance(oItem, oParams, **kwargs):
+        """Add an object according to the specifications provided"""
+
+        oErr = ErrHandle()
+        obj = None
+        try:
+            # We should create a new instance
+            obj = Documentation.objects.create()
+
+            oParams['documentation'] = obj
+            # And now call the standard custom_add() method
+            obj.custom_add(oItem, oParams, **kwargs)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Documentation/get_instance")
+        return obj
 
     def get_copy(self):
         # Make a clean copy
