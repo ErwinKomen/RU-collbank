@@ -563,7 +563,11 @@ class CollbankModel(object):
                                         instance = cls.get_instance(value, params, **kwargs)
                                 else:
                                     # A vfield has been specified
-                                    instance = cls.objects.create(**{'{}'.format(fkfield): obj, '{}'.format(vfield): value})
+                                    if isinstance(value, list):
+                                        for onevalue in value:
+                                            instance = cls.objects.create(**{'{}'.format(fkfield): obj, '{}'.format(vfield): onevalue})
+                                    else:
+                                        instance = cls.objects.create(**{'{}'.format(fkfield): obj, '{}'.format(vfield): value})
 
                         elif type == "func":
                             # Set the KV in a special way
@@ -943,6 +947,31 @@ class TotalSize(models.Model):
         # Return the new copy
         return new_copy
 
+    def get_instance(oItem, oParams, **kwargs):
+        """Get a new instance based on the parameters"""
+
+        obj = None
+        try:
+            # Get the parameters
+            size = oItem.get("size")
+            unit_english = oItem.get("sizeUnit")
+            sizeUnit = choice_value(SIZEUNIT, unit_english)
+
+            # Must have the resource
+            resource = oParams.get("resource")
+
+            if resource is None or size is None or sizeUnit is None:
+                # Cannot process this
+                pass
+            else:
+                # Create a new instance
+                obj = TotalSize.objects.create(size=size, sizeUnit=sizeUnit, resource=resource)
+
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("TotalSize/get_instance")
+        return obj
+    
 
 class TotalCollectionSize(models.Model):
     """Total size of the collection"""
@@ -982,6 +1011,31 @@ class TotalCollectionSize(models.Model):
         new_copy = get_instance_copy(self)
         # Return the new copy
         return new_copy
+
+    def get_instance(oItem, oParams, **kwargs):
+        """Get a new instance based on the parameters"""
+
+        obj = None
+        try:
+            # Get the parameters
+            size = oItem.get("size")
+            unit_english = oItem.get("sizeUnit")
+            sizeUnit = choice_value(SIZEUNIT, unit_english)
+
+            # Must have the collection
+            collection = oParams.get("collection")
+
+            if collection is None or size is None or sizeUnit is None:
+                # Cannot process this
+                pass
+            else:
+                # Create a new instance
+                obj = TotalCollectionSize.objects.create(size=size, sizeUnit=sizeUnit, collection=collection)
+
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("TotalCollectionSize/get_instance")
+        return obj
 
     def get_view(self):
         return "{} {}".format(self.size, self.sizeUnit)
@@ -1038,6 +1092,25 @@ class TemporalProvenance(models.Model):
         return "{}-{}".format(self.startYear, self.endYear)
 
 
+class CountryIso(models.Model):
+    """Country according to the ISO-3166 codes"""
+
+    # [1] Two-letter code
+    alpha2 = models.CharField("Two letter code", max_length=2)
+    # [1] Three-letter code
+    alpha3 = models.CharField("Three letter code", max_length=3)
+    # [1] Numerical code
+    numeric = models.IntegerField("Numeric code")
+    # [1] Short name English
+    english = models.CharField("English short name", max_length=MAX_STRING_LEN)
+    # [1] Short name French
+    french = models.CharField("French short name", max_length=MAX_STRING_LEN)
+
+    def __str__(self) -> str:
+        sBack = "[{}] {}".format(self.alpha2, self.english)
+        return sBack
+
+
 class City(models.Model):
     """Name of a city"""
 
@@ -1067,6 +1140,8 @@ class GeographicProvenance(models.Model):
     # == country (0-1;c) (name+ISO-3166 code)
     country = models.CharField("Country included in this geographic coverage", choices=build_choice_list(PROVENANCE_GEOGRAPHIC_COUNTRY), 
                                max_length=5, help_text=get_help(PROVENANCE_GEOGRAPHIC_COUNTRY), default='0')
+    # [0-1] New link to CountryIso
+    countryiso = models.ForeignKey(CountryIso, null=True, on_delete=models.SET_NULL, related_name="countryiso_gprovenances")
     # [1]     Each Provenance can have [0-n] geographic provenances
     provenance = models.ForeignKey("Provenance", blank=False, null=False, default=-1, on_delete=models.CASCADE, related_name="g_provenances")
 
@@ -1112,6 +1187,32 @@ class Provenance(models.Model):
         copy_m2m(self, new_copy, "g_provenances")
         # Return the new copy
         return new_copy
+
+    def get_instance(oItem, oParams, **kwargs):
+        """Add an object according to the specifications provided"""
+
+        oErr = ErrHandle()
+        obj = None
+        try:
+            # We should create a new instance
+            collection = oParams.get("collection")
+            if collection is None:
+                # Cannot process this
+                pass
+            else:
+                obj = Provenance.objects.create(collection=collection)
+
+                # Get the FK in a straight forward way
+                obj.temporalProvenance = TemporalProvenance.get_instance(oItem.get('temporalProvenance'))
+                obj.save()
+
+                oParams['provenance'] = obj
+                # And now call the standard custom_add() method
+                obj.custom_add(oItem.get("geographicProvenance"), oParams, **kwargs)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Provenance/get_instance")
+        return obj
 
 
 class Genre(models.Model):
@@ -1338,6 +1439,34 @@ class LanguageName(models.Model):
         sBack = self.created.strftime("%d/%b/%Y %H:%M")
         return sBack
 
+    def get_instance(oItem, oParams, **kwargs):
+        """Add an object according to the specifications provided"""
+
+        oErr = ErrHandle()
+        obj = None
+        try:
+            sLngName = oItem.get("LanguageName")
+            oIso = oItem.get("ISO639")
+            if not oIso is None:
+                # Try to get the language code
+                sCode = oIso.get("iso-639-3-code")
+
+                if sLngName is None or sLngName == "":
+                    # Only search for the code
+                    obj = LanguageName.objects.filter(iso__code=sCode).first()
+                else:
+                    # (1) Specific search: name + code
+                    obj = LanguageName.objects.filter(name__iexact=sLngName, iso__code=sCode).first()
+
+                    # (2) Less specific?
+                    if obj is None:
+                        obj = LanguageName.objects.filter(iso__code=sCode).first()
+
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Language/get_instance")
+        return obj
+    
 
 class Language(models.Model):
     """Language that is used in this collection"""
@@ -1366,22 +1495,6 @@ class Language(models.Model):
             sBack = "[{}] {}".format(idt,self.langname)
         return sBack
 
-    def get_instance(oItem, oParams, **kwargs):
-        """Add an object according to the specifications provided"""
-
-        oErr = ErrHandle()
-        obj = None
-        try:
-            # We should create a new instance
-            obj = Language.objects.create()
-
-            # And now call the standard custom_add() method
-            obj.custom_add(oItem, oParams, **kwargs)
-        except:
-            msg = oErr.get_error_message()
-            oErr.DoError("Language/get_instance")
-        return obj
-
     def get_view(self):
         sBack = ""
         if self.langname is None:
@@ -1409,9 +1522,10 @@ class DocumentationLanguage(CollbankModel, Language):
         doc = self.documentationParent
         if doc != None:
             col = Collection.objects.filter(documentation=doc).first()
-            if col != None:
+            if col is None:
+                sBack = "[col?] {}".format(self.langname)
+            else:
                 idt = col.identifier
-                # OLD: sBack = "[{}] {}".format(idt,choice_english("language.name", self.name))
                 sBack = "[{}] {}".format(idt,self.langname)
 
         return sBack
@@ -1426,10 +1540,12 @@ class DocumentationLanguage(CollbankModel, Language):
             documentation = oParams.get("documentation")
             obj = DocumentationLanguage.objects.create(documentationParent=documentation)
 
-            # TODO: dit customiseren!!!
+            # Get the LanguageName instance
+            obj.langname = LanguageName.get_instance(oItem, oParams, **kwargs)
+            obj.save()
 
-            # And now call the standard custom_add() method
-            obj.custom_add(oItem, oParams, **kwargs)
+            sCheck = "{}".format(obj)
+
         except:
             msg = oErr.get_error_message()
             oErr.DoError("DocumentationLanguage/get_instance")
@@ -1458,6 +1574,27 @@ class CollectionLanguage(Language):
         new_copy = get_instance_copy(self)
         # Return the new copy
         return new_copy
+
+    def get_instance(oItem, oParams, **kwargs):
+        """Add an object according to the specifications provided"""
+
+        oErr = ErrHandle()
+        obj = None
+        try:
+            # We should create a new instance
+            collection = oParams.get("collection")
+            obj = CollectionLanguage.objects.create(collectionParent=collection)
+
+            # Get the LanguageName instance
+            obj.langname = LanguageName.get_instance(oItem, oParams, **kwargs)
+            obj.save()
+
+            sCheck = "{}".format(obj)
+
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("CollectionLanguage/get_instance")
+        return obj
 
 
 class LanguageDisorder(models.Model):
@@ -1513,6 +1650,32 @@ class Relation(models.Model):
         else:
             withcoll = self.related.identifier
         return "[{}] {} [{}]".format(idt,type, withcoll)
+
+    def get_instance(oItem, oParams, **kwargs):
+        """Add an object according to the specifications provided"""
+
+        oErr = ErrHandle()
+        obj = None
+        try:
+            # We should create a new instance
+            name = oItem.get("name")
+            rtype_abbr = oItem.get("rtype")
+            rtype = choice_value(RELATION_TYPE, rtype_abbr)
+
+            # Make sure we have the right collection
+            collection = oParams.get("collection")
+
+            if name is None or rtype is None or collection is None:
+                # Cannot make it
+                pass
+            else:
+                obj = Relation.objects.create(name=name, rtype=rtype, collection=collection)
+                # Possibly add 'related' and 'extrel'
+                # NOTE: they are not used when importing...
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Relation/get_instance")
+        return obj
 
     def get_relation_fname(self):
         # Show that this is a tab-separated CSV
@@ -1923,10 +2086,23 @@ class Person(models.Model):
 class ResourceCreator(models.Model):
     """Creator of this resource"""
 
-    # [1] Organization that created the resource
-    organization = models.ManyToManyField(Organization, blank=False, related_name="resourcecreatorm2m_organization")
+    # FKs pointing to ResourceCreator: 
+    # - Organization
+    # - Person
+
     # [1]     Each collection can have [0-n] resource creators
     collection = models.ForeignKey("Collection", blank=False, null=False, default=1, on_delete=models.CASCADE, related_name="collection12m_resourcecreator")
+
+    # ============= Old, legacy, do not use ================
+    # [1] Organization that created the resource
+    organization = models.ManyToManyField(Organization, blank=False, related_name="resourcecreatorm2m_organization")
+
+    # Scheme for downloading and uploading
+    specification = [
+        {'name': 'Person',      'type': 'm2o',  'path': 'person',       'fkfield': 'resourceCreator', 'model': 'Person',        'vfield': 'name'},
+        {'name': 'Organization','type': 'm2o',  'path': 'organization', 'fkfield': 'resourceCreator', 'model': 'Organization',  'vfield': 'name'},
+
+        ]
 
     def __str__(self):
         # OLD: idt = self.collection.identifier
@@ -1944,6 +2120,28 @@ class ResourceCreator(models.Model):
         copy_m2m(self, new_copy, "persons")
         # Return the new copy
         return new_copy
+
+    def get_instance(oItem, oParams, **kwargs):
+        """Add an object according to the specifications provided"""
+
+        oErr = ErrHandle()
+        obj = None
+        try:
+            collection = oParams.get("collection")
+            if collection is None:
+                # Cannot process this
+                pass
+            else:
+                # We should create a new instance, based on this collection
+                obj = ResourceCreator.objects.create(collection=collection)
+
+                # And now call the standard custom_add() method to add persons and organizations
+                oParams['resourceCreator'] = obj
+                obj.custom_add(oItem, oParams, **kwargs)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Documentation/get_instance")
+        return obj
 
     def get_view(self):
         """The view for detail-view"""
@@ -2124,6 +2322,12 @@ class Validation(models.Model):
     # Many-to-one relations:
     # ValidationMethod (0-n; c)
 
+    # Scheme for downloading and uploading
+    specification = [
+        {'name': 'Validation type',   'type': 'fk',    'path': 'type',  'fkfield': 'validation', 'model': 'ValidationType',    'vfield': 'name'},
+        {'name': 'Validation method', 'type': 'm2o',    'path': 'method','fkfield': 'validation', 'model': 'ValidationMethod',  'vfield': 'name'},
+        ]
+
     def __str__(self):
         return "{}:{}".format(
             self.type,
@@ -2138,6 +2342,34 @@ class Validation(models.Model):
         copy_fk(self, new_copy, "type")
         # Return the new copy
         return new_copy
+
+    def get_instance(oItem, oParams, **kwargs):
+        """Add an object according to the specifications provided"""
+
+        oErr = ErrHandle()
+        obj = None
+        try:
+            # We should create a new instance
+            obj = Validation.objects.create()
+
+            # Extract possible parameters
+            validation_type = oItem.get("type")
+            validation_method = oItem.get("method")
+
+            # Process type
+            if not validation_type is None:
+                obj.type = ValidationType.objects.create(name=choice_value(VALIDATION_TYPE, validation_type))
+                obj.save()
+
+            # Process method
+            if not validation_method is None:
+                instance = ValidationMethod.objects.create(validation=validation, name=choice_value(VALIDATION_METHOD, validation_method))
+
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Validation/get_instance")
+        return obj
+
 
 
 class ProjectFunder(models.Model):
@@ -2179,12 +2411,22 @@ class Project(models.Model):
 
     # title (0-1; f)
     title = models.TextField("Project title", help_text=get_help('project.title'))
-    # funder (0-n; f)
-    funder = models.ManyToManyField(ProjectFunder, blank=True, related_name="projectm2m_funder")
     # url (0-1; f)
     URL = models.ForeignKey(ProjectUrl, blank=True, null=True, on_delete=models.SET_NULL)
+
     # [1]     Each collection can have [0-n] projects
     collection = models.ForeignKey("Collection", blank=False, null=False, default=1, on_delete=models.CASCADE, related_name="collection12m_project")
+
+    # ================= Many to many (stale??) ============
+    # funder (0-n; f)
+    funder = models.ManyToManyField(ProjectFunder, blank=True, related_name="projectm2m_funder")
+
+    # Scheme for downloading and uploading
+    specification = [
+        {'name': 'Title',   'type': 'field',    'path': 'title',    'vfield': 'name'},
+        {'name': 'URL',     'type': 'field',    'path': 'url',      'vfield': 'name'},
+        {'name': 'Funder',  'type': 'm2o',      'path': 'funder',   'fkfield': 'project', 'model': 'ProjectFunder',  'vfield': 'name'},
+        ]
 
     def __str__(self):
         idt = self.collection.identifier
@@ -2201,6 +2443,28 @@ class Project(models.Model):
         copy_fk(self, new_copy, "URL")
         # Return the new copy
         return new_copy
+
+    def get_instance(oItem, oParams, **kwargs):
+        """Add an object according to the specifications provided"""
+
+        oErr = ErrHandle()
+        obj = None
+        try:
+            # We should create a new instance, based on this collection
+            collection = oParams.get("collection")
+            if collection is None:
+                # Cannot process this
+                pass
+            else:
+                obj = Project.objects.create(collection=collection)
+
+                # And now call the standard custom_add() method to add persons and organizations
+                oParams['project'] = obj
+                obj.custom_add(oItem, oParams, **kwargs)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Project/get_instance")
+        return obj
 
     def get_view(self):
         """The view for detail-view"""
@@ -2776,17 +3040,17 @@ class Collection(models.Model, CollbankModel):
         #   Title, Owner, Genre, LanguageDisorder, Domain, PID, 
         #   Resource, Provenance, Language, Relation, TotalSize, ResourceCreator, Project
 
-        {'name': 'Titles',              'type': 'm2o',  'path': 'title',        'fkfield': 'collection', 'model': 'Title'},
-        {'name': 'Owners',              'type': 'm2o',  'path': 'owner',        'fkfield': 'collection', 'model': 'Owner'},
-        {'name': 'Genres',              'type': 'm2o',  'path': 'genre',        'fkfield': 'collection', 'model': 'Genre'},
-        {'name': 'Domains',             'type': 'm2o',  'path': 'domain',       'fkfield': 'collection', 'model': 'Domain'},
-        {'name': 'PIDs',                'type': 'm2o',  'path': 'code',         'fkfield': 'collection', 'model': 'PID'},
-        {'name': 'Language Disorder',   'type': 'm2o',  'path': 'languageDisorder', 'fkfield': 'collection', 'model': 'LanguageDisorder'},
+        {'name': 'Titles',              'type': 'm2o',  'path': 'title',        'fkfield': 'collection', 'model': 'Title',  'vfield': 'name'},
+        {'name': 'Owners',              'type': 'm2o',  'path': 'owner',        'fkfield': 'collection', 'model': 'Owner',  'vfield': 'name'},
+        {'name': 'Genres',              'type': 'm2o',  'path': 'genre',        'fkfield': 'collection', 'model': 'Genre',  'vfield': 'name'},
+        {'name': 'Domains',             'type': 'm2o',  'path': 'domain',       'fkfield': 'collection', 'model': 'Domain', 'vfield': 'name'},
+        {'name': 'PIDs',                'type': 'm2o',  'path': 'code',         'fkfield': 'collection', 'model': 'PID',    'vfield': 'code'},
+        {'name': 'Language Disorder',   'type': 'm2o',  'path': 'languageDisorder','fkfield': 'collection', 'model': 'LanguageDisorder', 'vfield': 'name'},
         {'name': 'Resource',            'type': 'm2o',  'path': 'resource',        'fkfield': 'collection', 'model': 'Resource'},
         {'name': 'Provenance',          'type': 'm2o',  'path': 'provenance',      'fkfield': 'collection', 'model': 'Provenance'},
         {'name': 'Language',            'type': 'm2o',  'path': 'Language',        'fkfield': 'collection', 'model': 'CollectionLanguage'},
         {'name': 'Relation',            'type': 'm2o',  'path': 'dc-relation',     'fkfield': 'collection', 'model': 'Relation'},
-        {'name': 'TotalSize',           'type': 'm2o',  'path': 'totalSize',       'fkfield': 'collection', 'model': 'TotalSize'},
+        {'name': 'TotalSize',           'type': 'm2o',  'path': 'totalSize',       'fkfield': 'collection', 'model': 'TotalCollectionSize'},
         {'name': 'Resource Creator',    'type': 'm2o',  'path': 'resourceCreator', 'fkfield': 'collection', 'model': 'ResourceCreator'},
         {'name': 'Project',             'type': 'm2o',  'path': 'project',         'fkfield': 'collection', 'model': 'Project'},
         ]

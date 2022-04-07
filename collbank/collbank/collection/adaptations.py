@@ -20,11 +20,11 @@ from collbank.collection.models import FieldChoice, Collection, Resource, \
     LanguageDisorder, Relation, Domain, PID, ResourceCreator, Project, ProjectFunder, \
     Linguality, LingualityType, LingualityNativeness, LingualityAgeGroup, LingualityStatus, \
     LingualityVariant, MultilingualityType, MediaFormat, Organization, Person, \
-    LanguageIso, LanguageName, Language
+    LanguageIso, LanguageName, Language, CountryIso
 
 
 adaptation_list = {
-    "collection_list": ["resource_empty", "language_renew", "langname_add"]
+    "collection_list": ["resource_empty", "language_renew", "langname_add", "country_renew"]
     }
 
 def listview_adaptations(lv):
@@ -178,6 +178,41 @@ def adapt_language_renew():
         oErr.DoError("adapt_language_renew")
     return bResult, msg
 
+def adapt_country_renew():
+    """Read countries into [CountryIso] """
+
+    oErr = ErrHandle()
+    bResult = True
+    msg = ""
+
+    try:
+        # Determine what file to take
+        code_file = os.path.abspath(os.path.join(MEDIA_DIR, "collbank", "CountryCodes.json"))
+        if os.path.exists(code_file):
+            # Read the JSON into a list
+            with open(code_file, "r", encoding="utf-8") as f:
+                lst_country = json.load(f)
+
+            # Process all the countries
+            for oCountry in lst_country:
+                # Get the parameters
+                alpha2 = oCountry.get("alpha2Code")
+                alpha3 = oCountry.get("alpha3Code")
+                numeric = oCountry.get("numeric")
+                english = oCountry.get("englishShortName")
+                french = oCountry.get("frenchShortName")
+
+                # Create a record if the alpha2 is not yet there
+                obj = CountryIso.objects.filter(alpha2=alpha2).first()
+                if obj is None:
+                    obj = CountryIso.objects.create(alpha2=alpha2, alpha3=alpha3, numeric=numeric, english=english, french=french)
+        
+    except:
+        bResult = False
+        msg = oErr.get_error_message()
+        oErr.DoError("adapt_country_renew")
+    return bResult, msg
+
 def adapt_langname_add():
     """Add the [langname] field contents to table [Language]"""
 
@@ -226,3 +261,54 @@ def adapt_langname_add():
         msg = oErr.get_error_message()
         oErr.DoError("adapt_langname_add")
     return bResult, msg
+
+def adapt_country_add():
+    """Add the [langname] field contents to table [Language]"""
+
+    oErr = ErrHandle()
+    bResult = True
+    msg = ""
+    ptr_dict = {}
+
+    try:
+        qs = Language.objects.filter(langname__isnull=True)
+        for obj in qs:
+            # Figure out what the Language pointer is
+            language_ptr = obj.name
+            if not language_ptr in ptr_dict:
+                # Find this entry in FieldChoice
+                fchoice = FieldChoice.objects.filter(field="language.name", machine_value=language_ptr).first()
+                if fchoice is None:
+                    # Going wrong
+                    oErr.Status("adapt_langname_add: cannot find machine_value {} for Language id {}".format(
+                        language_ptr, obj.id))
+                    bResult = False
+                else:
+                    # Get the value of the language
+                    english_name = fchoice.english_name
+                    if "Flemish" in english_name:
+                        english_name = "Flemish"
+                    elif "official aramaic" in english_name.lower():
+                        english_name = "Official Aramaic (700-300 BCE)"
+                    # Look for this language in [LanguageName]
+                    langname = LanguageName.objects.filter(name__iexact=english_name).first()
+                    if langname is None:
+                        # Problem
+                        oErr.Status("adapt_langname_add: cannot find language called [{}] for Language id {}".format(
+                            english_name, obj.id))
+                        bResult = False
+                    else:
+                        ptr_dict[language_ptr] = langname
+        for obj in qs:
+            language_ptr = obj.name
+            if language_ptr in ptr_dict:
+                obj.langname = ptr_dict[language_ptr] 
+                obj.save()
+        
+    except:
+        bResult = False
+        msg = oErr.get_error_message()
+        oErr.DoError("adapt_country_add")
+    return bResult, msg
+
+

@@ -218,12 +218,19 @@ class PlaceInline(nested_admin.NestedTabularInline):
     #    return formfield
 
 
+class CountryIsoAdmin(admin.ModelAdmin):
+    fields = ['alpha2', 'alpha3', 'numeric', 'english', 'french']
+    ordering = ['english']
+    search_fields = ['alpha2', 'alpha3', 'english']
+
+
 class GeographicProvenanceForm(forms.ModelForm):
 
     class Meta:
         model = GeographicProvenance
         # fields = "__all__"  # ['country', 'place']
-        fields = ['country']
+        fields = ['country', 'countryiso']
+        autocomplete_fields = ['countryiso']
 
     def __init__(self, *args, **kwargs):
         super(GeographicProvenanceForm, self).__init__(*args, **kwargs)
@@ -237,18 +244,8 @@ class GeographicProvenanceInline(nested_admin.NestedTabularInline):
     verbose_name_plural = "Provenance: geographic provenances"
     inlines = [PlaceInline]
     extra = 0
-
-    #def get_formset(self, request, obj = None, **kwargs):
-    #    # Get the currently selected Collection object's identifier
-    #    self.instance = obj
-    #    return super(GeographicProvenanceInline, self).get_formset(request, obj, **kwargs)
-
-    #def formfield_for_foreignkey(self, db_field, request, **kwargs):
-    #    formfield = super(GeographicProvenanceInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
-    #    # Look for the field's name as it is used in the Collection model
-    #    if db_field.name == "geographicprovenance":
-    #       formfield.queryset = get_formfield_qs(GeographicProvenance, self.instance, "provenance")
-    #    return formfield
+    #fields = ['country', 'countryiso']
+    #autocomplete_fields = ['countryiso']
 
 
 class ProvenanceForm(forms.ModelForm):
@@ -548,7 +545,7 @@ class ResourceRecEnvInline(nested_admin.NestedTabularInline):
     extra = 0
 
 
-class ProvenanceAdmin(admin.ModelAdmin):
+class ProvenanceAdmin(nested_admin.NestedModelAdmin): # admin.ModelAdmin):
     inlines = [GeographicProvenanceInline]
     fieldsets = ( ('Searchable', {'fields': ('temporalProvenance',)}),
                   ('Other',      {'fields': ()}),
@@ -1988,6 +1985,8 @@ admin.site.register(Media, MediaAdmin)
 admin.site.register(Modality, ModalityAdmin)
 # -- Genre
 admin.site.register(Genre, GenreAdmin)
+# -- country
+admin.site.register(CountryIso, CountryIsoAdmin)
 # -- provenance
 admin.site.register(Provenance, ProvenanceAdmin)
 admin.site.register(TemporalProvenance, TemporalProvenanceAdmin)
