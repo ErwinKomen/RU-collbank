@@ -7,6 +7,7 @@ from django.db.models.functions import Lower
 from django.forms import Textarea
 from django.shortcuts import redirect
 from django.urls import reverse, resolve
+from django_select2.forms import ModelSelect2Widget, ModelSelect2MultipleWidget
 from functools import partial
 import nested_admin
 import copy  # (1) use python copy
@@ -138,6 +139,23 @@ def copy_item(request=None):
     # Now redirect to the 'current' URL
     return redirect(sCurrent)
 
+# ================= WIDGETS =====================================
+
+class CountryIsoOneWidget(ModelSelect2Widget):
+    model = CountryIso
+    search_fields = [ 'english__icontains', 'alpha2__icontains', 'alpha3__icontains']
+
+    def label_from_instance(self, obj):
+        sBack = "[{}] {}".format(obj.alpha2, obj.english)
+        return sBack
+
+    def get_queryset(self):
+        return CountryIso.objects.all().order_by('english')
+
+
+
+
+# ================= ADMIN FORMS =================================
 
 class TitleAdminForm(forms.ModelForm):
     
@@ -229,12 +247,15 @@ class GeographicProvenanceForm(forms.ModelForm):
     class Meta:
         model = GeographicProvenance
         # fields = "__all__"  # ['country', 'place']
-        fields = ['country', 'countryiso']
+        fields = ['countryiso']     # ['country', 'countryiso']
         autocomplete_fields = ['countryiso']
+        #widgets = {
+        #    'countryiso': CountryIsoOneWidget(attrs={'data-placeholder': 'Select one country...', 'style': 'width: 100%;', 'class': 'searching'})
+        #    }
 
     def __init__(self, *args, **kwargs):
         super(GeographicProvenanceForm, self).__init__(*args, **kwargs)
-        init_choices(self, 'country', PROVENANCE_GEOGRAPHIC_COUNTRY)
+        # init_choices(self, 'country', PROVENANCE_GEOGRAPHIC_COUNTRY)
 
 
 class GeographicProvenanceInline(nested_admin.NestedTabularInline):
@@ -578,7 +599,7 @@ class TemporalProvenanceAdmin(nested_admin.NestedModelAdmin):
 class GeographicProvenanceAdmin(admin.ModelAdmin):
     inlines = [PlaceInline]
     fieldsets = ( ('Searchable', {'fields': ()}),
-                  ('Other',      {'fields': ('country', )}),
+                  ('Other',      {'fields': ('countryiso', )}),
                 )
     form = GeographicProvenanceForm
 

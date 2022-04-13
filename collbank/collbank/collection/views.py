@@ -182,10 +182,23 @@ def add_collection_xml(col_this, crp):
             # place (0-n)
             add_element("0-n", geo_this, "place", geo, field_name="cities", foreign="name")
             # country (0-1)
-            cntry = geo_this.country
-            if cntry != None:
-                # Look up the country in the list
-                (sEnglish, sAlpha2) = get_country(cntry)
+            cntry = geo_this.countryiso
+            if cntry is None:
+                # Use old method with Country in FieldChoice
+                cntry = geo_this.country
+                if cntry != None:
+                    # Look up the country in the list
+                    (sEnglish, sAlpha2) = get_country(cntry)
+                    # Set the values 
+                    cntMain = ET.SubElement(geo, "Country")
+                    cntMainName = ET.SubElement(cntMain, "CountryName")
+                    cntMainCoding = ET.SubElement(cntMain, "CountryCoding")
+                    cntMainName.text = sEnglish
+                    cntMainCoding.text = sAlpha2
+            else:
+                # Use the new method with CountryIso
+                sEnglish = cntry.english
+                sAlpha2 = cntry.alpha2
                 # Set the values 
                 cntMain = ET.SubElement(geo, "Country")
                 cntMainName = ET.SubElement(cntMain, "CountryName")
@@ -394,6 +407,8 @@ def get_application_context(request, context):
     return context
 
 def get_country(cntryCode):
+    """Get the country details according to the FieldChoice method (EXTINCT)"""
+
     # Get the country string according to field-choice
     sCountry = choice_english(PROVENANCE_GEOGRAPHIC_COUNTRY, cntryCode).strip()
     sCountryAlt = sCountry + " (the)"
@@ -1293,12 +1308,21 @@ class CollectionDetailView(DetailView):
                 append_item(prov_this, "Temporal", "0-1", "single", provenance.temporalProvenance.get_view())
             for geo in provenance.g_provenances.all():
                 append_item(prov_this, "Cities", "0-n", "list", geo.cities.all())
-                cntry = geo.country
-                if cntry != None:
-                    # Look up the country in the list
-                    (sEnglish, sAlpha2) = get_country(cntry)
-                    sCountry = "{} {}".format(sEnglish, sAlpha2)
+
+                cntry = geo.countryiso
+                if cntry is None:
+                    # Use the EXTINCT method of FieldChoice
+                    cntry = geo.country
+                    if cntry != None:
+                        # Look up the country in the list
+                        (sEnglish, sAlpha2) = get_country(cntry)
+                        sCountry = "{} {}".format(sEnglish, sAlpha2)
+                        append_item(prov_this, "Country", "0-1", "single", sCountry)
+                else:
+                    # Use the NEW method with CountryIso
+                    sCountry = "{} {}".format(cntry.english, cntry.alpha2)
                     append_item(prov_this, "Country", "0-1", "single", sCountry)
+                    
             coll_provenances.append({'info_list': prov_this})
         # Add the list of povenances to the context
         context['coll_provenances'] = coll_provenances

@@ -951,6 +951,7 @@ class TotalSize(models.Model):
         """Get a new instance based on the parameters"""
 
         obj = None
+        oErr = ErrHandle()
         try:
             # Get the parameters
             size = oItem.get("size")
@@ -1110,6 +1111,18 @@ class CountryIso(models.Model):
         sBack = "[{}] {}".format(self.alpha2, self.english)
         return sBack
 
+    def get_byalpha2(alpha2):
+        """Get country via the Alpha2"""
+
+        oErr = ErrHandle()
+        obj = None
+        try:
+            obj = CountryIso.objects.filter(alpha2__iexact=alpha2).first()
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("get_byalpha2")
+        return obj
+
 
 class City(models.Model):
     """Name of a city"""
@@ -1146,7 +1159,10 @@ class GeographicProvenance(models.Model):
     provenance = models.ForeignKey("Provenance", blank=False, null=False, default=-1, on_delete=models.CASCADE, related_name="g_provenances")
 
     def __str__(self):
-        cnt = choice_english(PROVENANCE_GEOGRAPHIC_COUNTRY, self.country)
+        if self.countryiso is None:
+            cnt = choice_english(PROVENANCE_GEOGRAPHIC_COUNTRY, self.country)
+        else:
+            cnt = self.countryiso.alpha2
         cts = m2m_combi(self.cities)
         return "{}: {}".format(cnt, cts)
 
@@ -1157,6 +1173,12 @@ class GeographicProvenance(models.Model):
         copy_m2m(self, new_copy, "cities")
         # Return the new copy
         return new_copy
+
+    def get_country_mv(self):
+        cnt = ""
+        if not self.country is None:
+            cnt = choice_english(PROVENANCE_GEOGRAPHIC_COUNTRY, self.country)
+        return cnt
 
     def get_view(self):
         return self.__str__()

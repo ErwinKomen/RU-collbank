@@ -24,7 +24,7 @@ from collbank.collection.models import FieldChoice, Collection, Resource, \
 
 
 adaptation_list = {
-    "collection_list": ["resource_empty", "language_renew", "langname_add", "country_renew"]
+    "collection_list": ["resource_empty", "language_renew", "langname_add", "country_renew", "country_add"]
     }
 
 def listview_adaptations(lv):
@@ -263,47 +263,30 @@ def adapt_langname_add():
     return bResult, msg
 
 def adapt_country_add():
-    """Add the [langname] field contents to table [Language]"""
+    """Determine the [countryiso] field of [GeographicProvenance]"""
 
     oErr = ErrHandle()
     bResult = True
     msg = ""
-    ptr_dict = {}
+    country_dict = {22: "BE", 76: "FR", 83: "DE", 111: "IT", 152: "MA", 158: "NL",
+                    185: "RU", 214: "SR", 217: "SE", 222: "TZ", 230: "TR", 237: "GB"}
 
     try:
-        qs = Language.objects.filter(langname__isnull=True)
+        qs = GeographicProvenance.objects.filter(countryiso__isnull=True, country__isnull=False)
         for obj in qs:
-            # Figure out what the Language pointer is
-            language_ptr = obj.name
-            if not language_ptr in ptr_dict:
-                # Find this entry in FieldChoice
-                fchoice = FieldChoice.objects.filter(field="language.name", machine_value=language_ptr).first()
-                if fchoice is None:
-                    # Going wrong
-                    oErr.Status("adapt_langname_add: cannot find machine_value {} for Language id {}".format(
-                        language_ptr, obj.id))
-                    bResult = False
-                else:
-                    # Get the value of the language
-                    english_name = fchoice.english_name
-                    if "Flemish" in english_name:
-                        english_name = "Flemish"
-                    elif "official aramaic" in english_name.lower():
-                        english_name = "Official Aramaic (700-300 BCE)"
-                    # Look for this language in [LanguageName]
-                    langname = LanguageName.objects.filter(name__iexact=english_name).first()
-                    if langname is None:
-                        # Problem
-                        oErr.Status("adapt_langname_add: cannot find language called [{}] for Language id {}".format(
-                            english_name, obj.id))
-                        bResult = False
-                    else:
-                        ptr_dict[language_ptr] = langname
-        for obj in qs:
-            language_ptr = obj.name
-            if language_ptr in ptr_dict:
-                obj.langname = ptr_dict[language_ptr] 
-                obj.save()
+            # Figure out what the machine_value is of the [country] field
+            cnt = obj.country
+            cnt = int(cnt)
+
+            # Figure out what the alpha2 code is
+            alpha2 = country_dict[cnt]
+
+            # Figure out what the countryIso object is
+            countryiso = CountryIso.get_byalpha2(alpha2)
+
+            # Set this feature
+            obj.countryiso = countryiso
+            obj.save()
         
     except:
         bResult = False
