@@ -1150,19 +1150,16 @@ class City(models.Model):
 class GeographicProvenance(models.Model):
     """Geographic coverage of the collection"""
 
-    # == country (0-1;c) (name+ISO-3166 code)
-    country = models.CharField("Country included in this geographic coverage", choices=build_choice_list(PROVENANCE_GEOGRAPHIC_COUNTRY), 
-                               max_length=5, help_text=get_help(PROVENANCE_GEOGRAPHIC_COUNTRY), default='0')
-    # [0-1] New link to CountryIso
+    ## == country (0-1;c) (name+ISO-3166 code)
+    #country = models.CharField("Country included in this geographic coverage", choices=build_choice_list(PROVENANCE_GEOGRAPHIC_COUNTRY), 
+    #                           max_length=5, help_text=get_help(PROVENANCE_GEOGRAPHIC_COUNTRY), default='0')
+    # [0-1] New link to CountryIso (0-1;c) (name+ISO-3166 code)
     countryiso = models.ForeignKey(CountryIso, null=True, on_delete=models.SET_NULL, related_name="countryiso_gprovenances")
     # [1]     Each Provenance can have [0-n] geographic provenances
     provenance = models.ForeignKey("Provenance", blank=False, null=False, default=-1, on_delete=models.CASCADE, related_name="g_provenances")
 
     def __str__(self):
-        if self.countryiso is None:
-            cnt = choice_english(PROVENANCE_GEOGRAPHIC_COUNTRY, self.country)
-        else:
-            cnt = self.countryiso.alpha2
+        cnt = self.countryiso.alpha2
         cts = m2m_combi(self.cities)
         return "{}: {}".format(cnt, cts)
 
@@ -1174,11 +1171,11 @@ class GeographicProvenance(models.Model):
         # Return the new copy
         return new_copy
 
-    def get_country_mv(self):
-        cnt = ""
-        if not self.country is None:
-            cnt = choice_english(PROVENANCE_GEOGRAPHIC_COUNTRY, self.country)
-        return cnt
+    #def get_country_mv(self):
+    #    cnt = ""
+    #    if not self.country is None:
+    #        cnt = choice_english(PROVENANCE_GEOGRAPHIC_COUNTRY, self.country)
+    #    return cnt
 
     def get_view(self):
         return self.__str__()

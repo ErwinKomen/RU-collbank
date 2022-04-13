@@ -217,23 +217,10 @@ class GenreInline(nested_admin.NestedTabularInline):
 
 
 class PlaceInline(nested_admin.NestedTabularInline):
-    model = City        # GeographicProvenance.place.through
-    # form = 
+    model = City  
     verbose_name = "Geographic provenance: city"
     verbose_name_plural = "Geographic provenance: cities"
     extra = 0
-
-    #def get_formset(self, request, obj = None, **kwargs):
-    #    # Get the currently selected Collection object's identifier
-    #    self.instance = obj
-    #    return super(PlaceInline, self).get_formset(request, obj, **kwargs)
-
-    #def formfield_for_foreignkey(self, db_field, request, **kwargs):
-    #    formfield = super(PlaceInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
-    #    # Look for the field's name as it is used in the Collection model
-    #    if db_field.name == "place":
-    #        formfield.queryset = get_formfield_qs(City, self.instance, "geographicprovenance")
-    #    return formfield
 
 
 class CountryIsoAdmin(admin.ModelAdmin):
@@ -242,31 +229,14 @@ class CountryIsoAdmin(admin.ModelAdmin):
     search_fields = ['alpha2', 'alpha3', 'english']
 
 
-class GeographicProvenanceForm(forms.ModelForm):
-
-    class Meta:
-        model = GeographicProvenance
-        # fields = "__all__"  # ['country', 'place']
-        fields = ['countryiso']     # ['country', 'countryiso']
-        autocomplete_fields = ['countryiso']
-        #widgets = {
-        #    'countryiso': CountryIsoOneWidget(attrs={'data-placeholder': 'Select one country...', 'style': 'width: 100%;', 'class': 'searching'})
-        #    }
-
-    def __init__(self, *args, **kwargs):
-        super(GeographicProvenanceForm, self).__init__(*args, **kwargs)
-        # init_choices(self, 'country', PROVENANCE_GEOGRAPHIC_COUNTRY)
-
-
 class GeographicProvenanceInline(nested_admin.NestedTabularInline):
-    model = GeographicProvenance        # Provenance.geographicProvenance.through
-    form = GeographicProvenanceForm
+    model = GeographicProvenance        
     verbose_name = "Provenance: geographic provenance"
     verbose_name_plural = "Provenance: geographic provenances"
     inlines = [PlaceInline]
     extra = 0
-    #fields = ['country', 'countryiso']
-    #autocomplete_fields = ['countryiso']
+    fields = ['countryiso']
+    autocomplete_fields = ['countryiso']
 
 
 class ProvenanceForm(forms.ModelForm):
@@ -601,7 +571,6 @@ class GeographicProvenanceAdmin(admin.ModelAdmin):
     fieldsets = ( ('Searchable', {'fields': ()}),
                   ('Other',      {'fields': ('countryiso', )}),
                 )
-    form = GeographicProvenanceForm
 
 
 class AnnotationForm(forms.ModelForm):
