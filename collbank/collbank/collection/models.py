@@ -1150,9 +1150,6 @@ class City(models.Model):
 class GeographicProvenance(models.Model):
     """Geographic coverage of the collection"""
 
-    ## == country (0-1;c) (name+ISO-3166 code)
-    #country = models.CharField("Country included in this geographic coverage", choices=build_choice_list(PROVENANCE_GEOGRAPHIC_COUNTRY), 
-    #                           max_length=5, help_text=get_help(PROVENANCE_GEOGRAPHIC_COUNTRY), default='0')
     # [0-1] New link to CountryIso (0-1;c) (name+ISO-3166 code)
     countryiso = models.ForeignKey(CountryIso, null=True, on_delete=models.SET_NULL, related_name="countryiso_gprovenances")
     # [1]     Each Provenance can have [0-n] geographic provenances
@@ -1170,12 +1167,6 @@ class GeographicProvenance(models.Model):
         copy_m2m(self, new_copy, "cities")
         # Return the new copy
         return new_copy
-
-    #def get_country_mv(self):
-    #    cnt = ""
-    #    if not self.country is None:
-    #        cnt = choice_english(PROVENANCE_GEOGRAPHIC_COUNTRY, self.country)
-    #    return cnt
 
     def get_view(self):
         return self.__str__()

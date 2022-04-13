@@ -24,7 +24,7 @@ from collbank.collection.models import FieldChoice, Collection, Resource, \
 
 
 adaptation_list = {
-    "collection_list": ["resource_empty", "language_renew", "langname_add", "country_renew"] #, "country_add"]
+    "collection_list": ["resource_empty", "language_renew", "langname_add", "country_renew"] 
     }
 
 def listview_adaptations(lv):
@@ -262,36 +262,5 @@ def adapt_langname_add():
         oErr.DoError("adapt_langname_add")
     return bResult, msg
 
-#def adapt_country_add():
-#    """Determine the [countryiso] field of [GeographicProvenance]"""
-
-#    oErr = ErrHandle()
-#    bResult = True
-#    msg = ""
-#    country_dict = {22: "BE", 76: "FR", 83: "DE", 111: "IT", 152: "MA", 158: "NL",
-#                    185: "RU", 214: "SR", 217: "SE", 222: "TZ", 230: "TR", 237: "GB"}
-
-#    try:
-#        qs = GeographicProvenance.objects.filter(countryiso__isnull=True, country__isnull=False)
-#        for obj in qs:
-#            # Figure out what the machine_value is of the [country] field
-#            cnt = obj.country
-#            cnt = int(cnt)
-
-#            # Figure out what the alpha2 code is
-#            alpha2 = country_dict[cnt]
-
-#            # Figure out what the countryIso object is
-#            countryiso = CountryIso.get_byalpha2(alpha2)
-
-#            # Set this feature
-#            obj.countryiso = countryiso
-#            obj.save()
-        
-#    except:
-#        bResult = False
-#        msg = oErr.get_error_message()
-#        oErr.DoError("adapt_country_add")
-#    return bResult, msg
 
 
