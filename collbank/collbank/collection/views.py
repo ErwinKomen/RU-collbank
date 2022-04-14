@@ -77,6 +77,7 @@ def add_collection_xml(col_this, crp):
         res = ET.SubElement(crp, "resource")
         # description (0-1)
         add_element("0-1", res_this, "description", res)
+
         # type (1) -- THIS MAY DISAPPEAR
         # add_element("1", res_this, "type", res, fieldchoice =RESOURCE_TYPE)
         # TODO: possibly divide this into DCtype and (optional) subtype
@@ -84,6 +85,7 @@ def add_collection_xml(col_this, crp):
         add_element("1", res_this, "DCtype", res, fieldchoice =RESOURCE_TYPE, part=1)
         # subtype (0-1)
         add_element("0-1", res_this, "subtype", res, fieldchoice =RESOURCE_TYPE, part=2)
+
         # modality (1-n)
         add_element("1-n", res_this, "modality", res, field_name="modalities", foreign="name", fieldchoice=RESOURCE_MODALITY )
         # recording Environment (0-n)
@@ -152,8 +154,6 @@ def add_collection_xml(col_this, crp):
             add_element("1", ann_this, "type", ann, fieldchoice=ANNOTATION_TYPE)
             # mode (1)
             add_element("1", ann_this, "mode", ann, fieldchoice=ANNOTATION_MODE)
-            # formatAnn (1-n)
-            # add_element("1-n", ann_this, "formatAnn", ann, foreign="name", subname="format", fieldchoice=ANNOTATION_FORMAT)
             # annotation_formats (1-n)
             add_element("1-n", ann_this, "format", ann, field_name="annotation_formats", foreign="name", fieldchoice=ANNOTATION_FORMAT)
         # media (0-n)

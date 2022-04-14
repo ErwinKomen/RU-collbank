@@ -33,10 +33,10 @@ admin.site.site_title = 'Collection Bank Site Admin'
 
 urlpatterns = [
     # Examples:
-    url(r'^$', collbank.collection.views.home, name='home'),
+    url(r'^$',        collbank.collection.views.home,    name='home'),
     url(r'^contact$', collbank.collection.views.contact, name='contact'),
-    url(r'^about', collbank.collection.views.about, name='about'),
-    url(r'^nlogin', collbank.collection.views.nlogin, name='nlogin'),
+    url(r'^about',    collbank.collection.views.about,   name='about'),
+    url(r'^nlogin',   collbank.collection.views.nlogin,  name='nlogin'),
 
     url(r'^definitions$', RedirectView.as_view(url='/'+APP_PREFIX+'admin/'), name='definitions'),
     url(r'^collection/add', RedirectView.as_view(url='/'+APP_PREFIX+'admin/collection/collection/add'), name='add'),

@@ -505,32 +505,63 @@ class CollbankModel(object):
                             iStop = 1
                         # =============================
 
+                        # If this is fieldchoice, we need to change the [value] appropriately
+                        fieldchoice = oField.get("fieldchoice")
+                        if not fieldchoice is None:
+                            if isinstance(value, list):
+                                vlist = []
+                                for onevalue in value:
+                                    vlist.append(choice_value(fieldchoice, onevalue))
+                                value = vlist
+                            else:
+                                value = choice_value(fieldchoice, value)
+
                         # Processing depends on the [type]
                         if type == "field":
+                            # See if this is accidentily a list
+                            if isinstance(value, list):
+                                # Get the value
+                                if len(value) == 0:
+                                    value = None
+                                else:
+                                    value = value[0]
                             # Note overwriting
                             old_value = getattr(obj, path)
                             if value != old_value:
                                 # Set the correct field's value
                                 setattr(obj, path, value)
-                        elif type == "fk":
+                        elif type == "fk" or type == "fkc":
                             fkfield = oField.get("fkfield")
                             model = oField.get("model")
                             vfield = oField.get("vfield")
                             if fkfield != None and model != None:
                                 # Find an item with the name for the particular model
                                 cls = apps.app_configs[app_name].get_model(model)
-                                if vfield is None:
-                                    # Find this particular instance
-                                    instance = cls.objects.filter(**{"{}".format(fkfield): value}).first()
-                                else:
-                                    # Find this particular instance
-                                    instance = cls.objects.filter(**{"{}".format(vfield): value}).first()
-                                if instance is None:
-                                    # There is no such instance (yet): NOW WHAT??
-                                    pass
-                                else:
-                                    old_value = getattr(obj,path)
-                                    if instance != old_value:
+
+                                if type == "fk":
+                                    if vfield is None:
+                                        # Find this particular instance
+                                        instance = cls.objects.filter(**{"{}".format(fkfield): value}).first()
+                                    else:
+                                        # Find this particular instance
+                                        instance = cls.objects.filter(**{"{}".format(vfield): value}).first()
+                                    if instance is None:
+                                        # There is no such instance (yet): NOW WHAT??
+                                        pass
+                                    else:
+                                        old_value = getattr(obj,path)
+                                        if instance != old_value:
+                                            setattr(obj, path, instance)
+                                elif type == "fkc":
+                                    # Need to create an item
+                                    if vfield is None:
+                                        # Find this particular instance
+                                        oErr.Status("custom_add: [fkc] has no [vfield] specified")
+                                        pass
+                                    else:
+                                        # Create an instance appropriately
+                                        instance = cls.objects.create(**{'{}'.format(fkfield): obj, '{}'.format(vfield): value})
+                                        # Set the FK appropriately
                                         setattr(obj, path, instance)
                         elif type == "fkob":
                             if not value is None:
@@ -607,48 +638,6 @@ class Title(models.Model):
         idt = self.collection.identifier
         return "[{}] {}".format(idt,self.name[:50])
 
-    def custom_add(oColl, oParams, **kwargs):
-        """Add an object according to the specifications provided"""
-
-        oErr = ErrHandle()
-        obj = None
-        bOverwriting = False
-        bSkip = False
-        lst_msg = []
-        try:
-            profile = kwargs.get("profile")
-            username = kwargs.get("username")
-            team_group = kwargs.get("team_group")
-            source = kwargs.get("source")
-            keyfield = kwargs.get("keyfield", "name")
-
-        except:
-            msg = oErr.get_error_message()
-            oErr.DoError("Title/custom_add")
-        return obj
-
-    def custom_set(self, path, value, **kwargs):
-        """Set related items"""
-
-        bResult = True
-        oErr = ErrHandle()
-        try:
-            profile = kwargs.get("profile")
-            username = kwargs.get("username")
-            team_group = kwargs.get("team_group")
-            value_lst = []
-            if isinstance(value, str) and value[0] != '[':
-                value_lst = value.split(",")
-                for idx, item in enumerate(value_lst):
-                    value_lst[idx] = value_lst[idx].strip()
-            elif isinstance(value, list):
-                value_lst = value
-        except:
-            msg = oErr.get_error_message()
-            oErr.DoError("Title/custom_set")
-            bResult = False
-        return bResult
-
     def get_copy(self):
         # Make a clean copy
         new_copy = get_instance_copy(self)
@@ -672,48 +661,6 @@ class Owner(models.Model):
         idt = self.collection.identifier
         return "[{}] {}".format(idt,self.name[:50])
 
-    def custom_add(oColl, oParams, **kwargs):
-        """Add an object according to the specifications provided"""
-
-        oErr = ErrHandle()
-        obj = None
-        bOverwriting = False
-        bSkip = False
-        lst_msg = []
-        try:
-            profile = kwargs.get("profile")
-            username = kwargs.get("username")
-            team_group = kwargs.get("team_group")
-            source = kwargs.get("source")
-            keyfield = kwargs.get("keyfield", "name")
-
-        except:
-            msg = oErr.get_error_message()
-            oErr.DoError("Owner/custom_add")
-        return obj
-
-    def custom_set(self, path, value, **kwargs):
-        """Set related items"""
-
-        bResult = True
-        oErr = ErrHandle()
-        try:
-            profile = kwargs.get("profile")
-            username = kwargs.get("username")
-            team_group = kwargs.get("team_group")
-            value_lst = []
-            if isinstance(value, str) and value[0] != '[':
-                value_lst = value.split(",")
-                for idx, item in enumerate(value_lst):
-                    value_lst[idx] = value_lst[idx].strip()
-            elif isinstance(value, list):
-                value_lst = value
-        except:
-            msg = oErr.get_error_message()
-            oErr.DoError("Owner/custom_set")
-            bResult = False
-        return bResult
-
     def get_copy(self):
         # Make a clean copy
         new_copy = get_instance_copy(self)
@@ -724,7 +671,7 @@ class Owner(models.Model):
         return self.name
 
 
-class Media(models.Model):
+class Media(CollbankModel, models.Model):
     """Medium on which this resource exists"""
 
     class Meta:
@@ -734,6 +681,12 @@ class Media(models.Model):
     # format = models.ManyToManyField("MediaFormat", blank=True, related_name="mediam2m_mediaformat")
     # [1]
     resource = models.ForeignKey("Resource", blank=False, null=False, default=-1 , on_delete=models.CASCADE, related_name="media_items")
+
+    # Scheme for downloading and uploading
+    specification = [
+        {'name': 'Format',  'type': 'm2o',  'path': 'format',   'fkfield': 'media', 'model': 'MediaFormat',  
+         'vfield': 'name', 'fieldchoice': MEDIA_FORMAT},
+        ]
 
     def __str__(self):
         sFormats = m2m_combi(self.mediaformat12m_media)
@@ -748,6 +701,24 @@ class Media(models.Model):
         # Return the new copy
         return new_copy
 
+    def get_instance(oItem, oParams, **kwargs):
+        """Add an object according to the specifications provided"""
+
+        oErr = ErrHandle()
+        obj = None
+        try:
+            # We should create a new instance
+            resource = oParams.get("resource")
+            obj = Media.objects.create(resource=resource)
+
+            # And now call the standard custom_add() method
+            oParams['media'] = obj
+            obj.custom_add(oItem, oParams, **kwargs)
+
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Media/get_instance")
+        return obj
 
 class MediaFormat(models.Model):
     """Format of a medium"""
@@ -758,26 +729,6 @@ class MediaFormat(models.Model):
 
     def __str__(self):
         return choice_english(MEDIA_FORMAT, self.name)
-
-    def custom_add(oColl, oParams, **kwargs):
-        """Add an object according to the specifications provided"""
-
-        oErr = ErrHandle()
-        obj = None
-        bOverwriting = False
-        bSkip = False
-        lst_msg = []
-        try:
-            profile = kwargs.get("profile")
-            username = kwargs.get("username")
-            team_group = kwargs.get("team_group")
-            source = kwargs.get("source")
-            keyfield = kwargs.get("keyfield", "name")
-
-        except:
-            msg = oErr.get_error_message()
-            oErr.DoError("MediaFormat/custom_add")
-        return obj
 
     def get_copy(self):
         # Make a clean copy
@@ -799,26 +750,6 @@ class AnnotationFormat(models.Model):
     def __str__(self):
         return choice_english(ANNOTATION_FORMAT, self.name)
 
-    def custom_add(oColl, oParams, **kwargs):
-        """Add an object according to the specifications provided"""
-
-        oErr = ErrHandle()
-        obj = None
-        bOverwriting = False
-        bSkip = False
-        lst_msg = []
-        try:
-            profile = kwargs.get("profile")
-            username = kwargs.get("username")
-            team_group = kwargs.get("team_group")
-            source = kwargs.get("source")
-            keyfield = kwargs.get("keyfield", "name")
-
-        except:
-            msg = oErr.get_error_message()
-            oErr.DoError("AnnotationFormat/custom_add")
-        return obj
-
     def get_copy(self):
         # Make a clean copy
         new_copy = get_instance_copy(self)
@@ -829,17 +760,28 @@ class AnnotationFormat(models.Model):
         return self.get_name_display()
 
 
-class Annotation(models.Model):
+class Annotation(CollbankModel, models.Model):
     """Description of one annotation layer in a resource"""
 
-    type = models.CharField("Kind of annotation", choices=build_choice_list(ANNOTATION_TYPE), max_length=5, help_text=get_help(ANNOTATION_TYPE), default='0')
-    mode = models.CharField("Annotation mode", choices=build_choice_list(ANNOTATION_MODE), max_length=5, help_text=get_help(ANNOTATION_MODE), default='0')
-    # The [format] field was used initially, but is now overridden by the [formatAnn] field
-    # format = models.CharField("Annotation format", choices=build_choice_list(ANNOTATION_FORMAT), max_length=5, help_text=get_help(ANNOTATION_FORMAT), default='0')
-    # The [formatAnn] field is the m2m field that should now be used
-    formatAnn = models.ManyToManyField(AnnotationFormat, related_name="annotationm2m_formatann")
-    # [1]
-    resource = models.ForeignKey("Resource", blank=False, null=False, default=-1 , on_delete=models.CASCADE, related_name="annotations")
+    # [1] Obligatory type, but it can be '0'
+    type = models.CharField("Kind of annotation", choices=build_choice_list(ANNOTATION_TYPE), 
+                            max_length=5, help_text=get_help(ANNOTATION_TYPE), default='0')
+    # [0-1] Optional mode (it can be '0'
+    mode = models.CharField("Annotation mode", choices=build_choice_list(ANNOTATION_MODE), 
+                            max_length=5, help_text=get_help(ANNOTATION_MODE), default='0')
+
+    # [1] Annotation belongs to a resource
+    resource = models.ForeignKey("Resource", blank=False, null=False, default=-1 , 
+                                 on_delete=models.CASCADE, related_name="annotations")
+
+    # Scheme for downloading and uploading
+    specification = [
+        {'name': 'Type',    'type': 'field', 'path': 'type', 'fieldchoice': ANNOTATION_TYPE},
+        {'name': 'Mode',    'type': 'field', 'path': 'mode', 'fieldchoice': ANNOTATION_MODE},
+
+        {'name': 'Format',  'type': 'm2o',   'path': 'format', 'fkfield': 'annotation', 
+         'model': 'AnnotationFormat',  'vfield': 'name', 'fieldchoice': ANNOTATION_FORMAT},
+    ]
 
     def __str__(self):
         try:
@@ -857,48 +799,6 @@ class Annotation(models.Model):
         except:
             return "(exception)"
 
-    def custom_add(oColl, oParams, **kwargs):
-        """Add an object according to the specifications provided"""
-
-        oErr = ErrHandle()
-        obj = None
-        bOverwriting = False
-        bSkip = False
-        lst_msg = []
-        try:
-            profile = kwargs.get("profile")
-            username = kwargs.get("username")
-            team_group = kwargs.get("team_group")
-            source = kwargs.get("source")
-            keyfield = kwargs.get("keyfield", "name")
-
-        except:
-            msg = oErr.get_error_message()
-            oErr.DoError("Annotation/custom_add")
-        return obj
-
-    def custom_set(self, path, value, **kwargs):
-        """Set related items"""
-
-        bResult = True
-        oErr = ErrHandle()
-        try:
-            profile = kwargs.get("profile")
-            username = kwargs.get("username")
-            team_group = kwargs.get("team_group")
-            value_lst = []
-            if isinstance(value, str) and value[0] != '[':
-                value_lst = value.split(",")
-                for idx, item in enumerate(value_lst):
-                    value_lst[idx] = value_lst[idx].strip()
-            elif isinstance(value, list):
-                value_lst = value
-        except:
-            msg = oErr.get_error_message()
-            oErr.DoError("Annotation/custom_set")
-            bResult = False
-        return bResult
-
     def get_copy(self):
         # Make a clean copy
         new_copy = get_instance_copy(self)
@@ -907,6 +807,28 @@ class Annotation(models.Model):
         # Return the new copy
         return new_copy
 
+    def get_instance(oItem, oParams, **kwargs):
+        """Get a new instance based on the parameters"""
+
+        obj = None
+        oErr = ErrHandle()
+        try:
+            # Must have the resource
+            resource = oParams.get("resource")
+
+            # We should create a new Annotation instance
+            obj = Annotation.objects.create(resource=resource)
+
+            oParams['annotation'] = obj
+
+            # And now call the standard custom_add() method
+            obj.custom_add(oItem, oParams, **kwargs)
+
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Annotation/get_instance")
+        return obj
+
     def get_view(self):
         """Present the current annotation format"""
         sFmts = m2m_combi(self.annotation_formats)
@@ -914,7 +836,7 @@ class Annotation(models.Model):
         return sBack
 
 
-class TotalSize(models.Model):
+class TotalSize(CollbankModel, models.Model):
     """Total size of the resource"""
 
     # size = models.IntegerField("Size of the collection", default=0)
@@ -923,32 +845,18 @@ class TotalSize(models.Model):
     # [1]     Each resource can have [0-n] total-sizes
     resource = models.ForeignKey("Resource", blank=False, null=False, default=1, on_delete=models.CASCADE, related_name="totalsize12m_resource")
 
+    # Scheme for downloading and uploading
+    specification = [
+        {'name': 'Size',        'type': 'field', 'path': 'size'},
+        {'name': 'SizeUnit',    'type': 'field', 'path': 'sizeUnit'},
+    ]
+
     def __str__(self):
         if self.resource.collection_id >0:
             idt = self.resource.collection.identifier
         else:
             idt = "EMPTY"
         return "[{}] {} {}".format(idt,self.size,self.sizeUnit)
-
-    def custom_add(oColl, oParams, **kwargs):
-        """Add an object according to the specifications provided"""
-
-        oErr = ErrHandle()
-        obj = None
-        bOverwriting = False
-        bSkip = False
-        lst_msg = []
-        try:
-            profile = kwargs.get("profile")
-            username = kwargs.get("username")
-            team_group = kwargs.get("team_group")
-            source = kwargs.get("source")
-            keyfield = kwargs.get("keyfield", "name")
-
-        except:
-            msg = oErr.get_error_message()
-            oErr.DoError("TotalSize/custom_add")
-        return obj
 
     def get_copy(self):
         # Make a clean copy
@@ -962,28 +870,25 @@ class TotalSize(models.Model):
         obj = None
         oErr = ErrHandle()
         try:
-            # Get the parameters
-            size = oItem.get("size")
-            unit_english = oItem.get("sizeUnit")
-            sizeUnit = choice_value(SIZEUNIT, unit_english)
-
             # Must have the resource
             resource = oParams.get("resource")
 
-            if resource is None or size is None or sizeUnit is None:
+            if resource is None:
                 # Cannot process this
                 pass
             else:
                 # Create a new instance
-                obj = TotalSize.objects.create(size=size, sizeUnit=sizeUnit, resource=resource)
+                obj = TotalSize.objects.create(resource=resource)
 
+                # And now call the standard custom_add() method
+                obj.custom_add(oItem, oParams, **kwargs)
         except:
             msg = oErr.get_error_message()
             oErr.DoError("TotalSize/get_instance")
         return obj
     
 
-class TotalCollectionSize(models.Model):
+class TotalCollectionSize(CollbankModel, models.Model):
     """Total size of the collection"""
 
     # [1]
@@ -993,28 +898,14 @@ class TotalCollectionSize(models.Model):
     # [1]     Each collection can have [0-n] total-sizes
     collection = models.ForeignKey("Collection", blank=False, null=False, default=1, on_delete=models.CASCADE, related_name="collection12m_totalsize")
 
+    # Scheme for downloading and uploading
+    specification = [
+        {'name': 'Size',        'type': 'field', 'path': 'size'},
+        {'name': 'SizeUnit',    'type': 'field', 'path': 'sizeUnit'},
+    ]
+
     def __str__(self):
         return "[{}] {} {}".format(self.collection.identifier,self.size,self.sizeUnit)
-
-    def custom_add(oColl, oParams, **kwargs):
-        """Add an object according to the specifications provided"""
-
-        oErr = ErrHandle()
-        obj = None
-        bOverwriting = False
-        bSkip = False
-        lst_msg = []
-        try:
-            profile = kwargs.get("profile")
-            username = kwargs.get("username")
-            team_group = kwargs.get("team_group")
-            source = kwargs.get("source")
-            keyfield = kwargs.get("keyfield", "name")
-
-        except:
-            msg = oErr.get_error_message()
-            oErr.DoError("TotalCollectionSize/custom_add")
-        return obj
 
     def get_copy(self):
         # Make a clean copy
@@ -1026,22 +917,20 @@ class TotalCollectionSize(models.Model):
         """Get a new instance based on the parameters"""
 
         obj = None
+        oErr = ErrHandle()
         try:
-            # Get the parameters
-            size = oItem.get("size")
-            unit_english = oItem.get("sizeUnit")
-            sizeUnit = choice_value(SIZEUNIT, unit_english)
-
             # Must have the collection
             collection = oParams.get("collection")
 
-            if collection is None or size is None or sizeUnit is None:
+            if collection is None:
                 # Cannot process this
                 pass
             else:
                 # Create a new instance
-                obj = TotalCollectionSize.objects.create(size=size, sizeUnit=sizeUnit, collection=collection)
+                obj = TotalCollectionSize.objects.create(collection=collection)
 
+                # And now call the standard custom_add() method
+                obj.custom_add(oItem, oParams, **kwargs)
         except:
             msg = oErr.get_error_message()
             oErr.DoError("TotalCollectionSize/get_instance")
@@ -1420,8 +1309,26 @@ class MultilingualityType(models.Model):
         return self.get_name_display()
 
 
-class Linguality(models.Model):
+class Linguality(CollbankModel, models.Model):
     """Linguality information on this collection"""
+
+
+    # Scheme for downloading and uploading
+    specification = [
+        {'name': 'Type',        'type': 'm2o',  'path': 'lingualityType',       'fkfield': 'linguality', 'model': 'LingualityType',       
+         'vfield': 'name', 'fieldchoice': LINGUALITY_TYPE},
+        {'name': 'Nativeness',  'type': 'm2o',  'path': 'lingualityNativeness', 'fkfield': 'linguality', 'model': 'LingualityNativeness',      
+         'vfield': 'name', 'fieldchoice': LINGUALITY_NATIVENESS},
+        {'name': 'Age group',   'type': 'm2o',  'path': 'lingualityAgeGroup',   'fkfield': 'linguality', 'model': 'LingualityAgeGroup', 
+         'vfield': 'name', 'fieldchoice': LINGUALITY_AGEGROUP},
+        {'name': 'Status',      'type': 'm2o',  'path': 'lingualityStatus',     'fkfield': 'linguality', 'model': 'LingualityStatus',        
+         'vfield': 'name', 'fieldchoice': LINGUALITY_STATUS},
+        {'name': 'Variant',     'type': 'm2o',  'path': 'lingualityVariant',    'fkfield': 'linguality', 'model': 'LingualityVariant',         
+         'vfield': 'name', 'fieldchoice': LINGUALITY_VARIANT},
+        {'name': 'Multiple',    'type': 'm2o',  'path': 'multilingualityType',  'fkfield': 'linguality', 'model': 'MultilingualityType',         
+         'vfield': 'name', 'fieldchoice': LINGUALITY_MULTI},
+
+        ]
 
     class Meta:
         verbose_name_plural = "Lingualities"
@@ -1434,6 +1341,23 @@ class Linguality(models.Model):
         fld_vari = m2m_combi(self.linguality_variants)
         fld_mult = m2m_combi(self.multilinguality_types)
         return "t:{}, n:{}, a:{}, s:{}, v:{}, m:{}".format(fld_type, fld_nati, fld_ageg, fld_stat, fld_vari, fld_mult)
+
+    def get_instance(oItem, oParams, **kwargs):
+        """Add an object according to the specifications provided"""
+
+        oErr = ErrHandle()
+        obj = None
+        try:
+            # We should create a new instance
+            obj = Linguality.objects.create()
+
+            # And now call the standard custom_add() method
+            oParams['linguality'] = obj
+            obj.custom_add(oItem, oParams, **kwargs)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Linguality/get_instance")
+        return obj
 
     def get_copy(self):
         # Make a clean copy
@@ -1680,7 +1604,7 @@ class LanguageDisorder(models.Model):
         return self.name
 
 
-class Relation(models.Model):
+class Relation(CollbankModel, models.Model):
     """Language that is used in this collection"""
 
     # [1]
@@ -1693,6 +1617,12 @@ class Relation(models.Model):
     extrel = models.ForeignKey("ExtColl", blank=True, null=True, on_delete=models.CASCADE, related_name="relatedextcoll", verbose_name="with external collection")
     # [1]     Each collection can have [0-n] relations
     collection = models.ForeignKey("Collection", blank=False, null=False, default=1, on_delete=models.CASCADE, related_name="collection12m_relation")
+
+    # Scheme for downloading and uploading
+    specification = [
+        {'name': 'Name',            'type': 'field', 'path': 'name'},
+        {'name': 'Relation type',   'type': 'field', 'path': 'rtype',   'fieldchoice': RELATION_TYPE},
+        ]
 
     def __str__(self):
         # idt = m2m_identifier(self.collection_set)
@@ -1716,21 +1646,18 @@ class Relation(models.Model):
         oErr = ErrHandle()
         obj = None
         try:
-            # We should create a new instance
-            name = oItem.get("name")
-            rtype_abbr = oItem.get("rtype")
-            rtype = choice_value(RELATION_TYPE, rtype_abbr)
-
             # Make sure we have the right collection
             collection = oParams.get("collection")
 
-            if name is None or rtype is None or collection is None:
-                # Cannot make it
-                pass
-            else:
-                obj = Relation.objects.create(name=name, rtype=rtype, collection=collection)
-                # Possibly add 'related' and 'extrel'
-                # NOTE: they are not used when importing...
+            # We should create a new instance
+            obj = Relation.objects.create(collection=collection)
+
+            # And now call the standard custom_add() method
+            obj.custom_add(oItem, oParams, **kwargs)
+
+            # Possibly add 'related' and 'extrel'
+            # NOTE: they are not used when importing...
+
         except:
             msg = oErr.get_error_message()
             oErr.DoError("Relation/get_instance")
@@ -2000,14 +1927,29 @@ class Access(CollbankModel, models.Model):
         {'name': 'Collection ISLRN',    'type': 'field', 'path': 'ISLRN'},
         {'name': 'Non-commercial only', 'type': 'func',  'path': 'nonCommercialUsageOnly' },
 
-        {'name': 'Medium types',        'type': 'm2o',   'path': 'medium',      'fkfield': 'access', 'model': 'AccessMedium',       'vfield': 'format'},
+        {'name': 'Medium types',        'type': 'm2o',   'path': 'medium',      'fkfield': 'access', 'model': 'AccessMedium',       
+         'vfield': 'format', 'fieldchoice': ACCESS_MEDIUM},
         {'name': 'Websites',            'type': 'm2o',   'path': 'website',     'fkfield': 'access', 'model': 'AccessWebsite',      'vfield': 'name'},
-        {'name': 'Availabilities',      'type': 'm2o',   'path': 'availibility','fkfield': 'access', 'model': 'AccessAvailability', 'vfield': 'name'},
+        {'name': 'Availabilities',      'type': 'm2o',   'path': 'availability','fkfield': 'access', 'model': 'AccessAvailability', 
+         'vfield': 'name', 'fieldchoice': ACCESS_AVAILABILITY},
         {'name': 'License names',       'type': 'm2o',   'path': 'licenseName', 'fkfield': 'access', 'model': 'LicenseName',        'vfield': 'name'},
         {'name': 'License URLs',        'type': 'm2o',   'path': 'licenseURL',  'fkfield': 'access', 'model': 'LicenseUrl',         'vfield': 'name'},
         {'name': 'Access contacts',     'type': 'm2o',   'path': 'contact',     'fkfield': 'access', 'model': 'AccessContact'},
 
         ]
+
+        #append_item(coll_access, "Name", "1", "single", access.name)
+        #
+        #append_item(coll_access, "ISBN", "0-1", "single", access.ISBN)
+        #append_item(coll_access, "ISLRN", "0-1", "single", access.ISLRN)
+        #append_item(coll_access, "Non-commercial usage", "0-1", "single", access.nonCommercialUsageOnly)
+        #
+        #append_item(coll_access, "Medium(s)", "0-n", "list", access.acc_mediums.all())
+        #append_item(coll_access, "Website(s)", "0-n", "list", access.acc_websites.all())
+        #append_item(coll_access, "Availability", "0-n", "list", access.acc_availabilities.all())
+        #append_item(coll_access, "License name(s)", "0-n", "list", access.acc_licnames.all())
+        #append_item(coll_access, "Licence URL(s)", "0-n", "list", access.acc_licurls.all())
+        #append_item(coll_access, "Contact(s)", "0-n", "list", access.acc_contacts.all())
 
     def __str__(self):
         sName = self.name
@@ -2060,6 +2002,7 @@ class Access(CollbankModel, models.Model):
             obj = Access.objects.create(name=name)
 
             # And now call the standard custom_add() method
+            oParams['access'] = obj
             obj.custom_add(oItem, oParams, **kwargs)
         except:
             msg = oErr.get_error_message()
@@ -2142,7 +2085,7 @@ class Person(models.Model):
         return new_copy
 
 
-class ResourceCreator(models.Model):
+class ResourceCreator(CollbankModel, models.Model):
     """Creator of this resource"""
 
     # FKs pointing to ResourceCreator: 
@@ -2199,7 +2142,7 @@ class ResourceCreator(models.Model):
                 obj.custom_add(oItem, oParams, **kwargs)
         except:
             msg = oErr.get_error_message()
-            oErr.DoError("Documentation/get_instance")
+            oErr.DoError("ResourceCreator/get_instance")
         return obj
 
     def get_view(self):
@@ -2373,7 +2316,7 @@ class ValidationMethod(models.Model):
         return self.get_name_display()
 
 
-class Validation(models.Model):
+class Validation(CollbankModel, models.Model):
     """Validation"""
 
     # type (0-1; c)
@@ -2383,8 +2326,10 @@ class Validation(models.Model):
 
     # Scheme for downloading and uploading
     specification = [
-        {'name': 'Validation type',   'type': 'fk',    'path': 'type',  'fkfield': 'validation', 'model': 'ValidationType',    'vfield': 'name'},
-        {'name': 'Validation method', 'type': 'm2o',    'path': 'method','fkfield': 'validation', 'model': 'ValidationMethod',  'vfield': 'name'},
+        {'name': 'Validation type',   'type': 'fkc',    'path': 'type',  'fkfield': 'validation', 'model': 'ValidationType',    
+         'vfield': 'name', 'fieldchoice': VALIDATION_TYPE},
+        {'name': 'Validation method', 'type': 'm2o',    'path': 'method','fkfield': 'validation', 'model': 'ValidationMethod',  
+         'vfield': 'name', 'fieldchoice': VALIDATION_METHOD},
         ]
 
     def __str__(self):
@@ -2411,18 +2356,22 @@ class Validation(models.Model):
             # We should create a new instance
             obj = Validation.objects.create()
 
-            # Extract possible parameters
-            validation_type = oItem.get("type")
-            validation_method = oItem.get("method")
+            ## Extract possible parameters
+            #validation_type = oItem.get("type")
+            #validation_method = oItem.get("method")
 
-            # Process type
-            if not validation_type is None:
-                obj.type = ValidationType.objects.create(name=choice_value(VALIDATION_TYPE, validation_type))
-                obj.save()
+            ## Process type
+            #if not validation_type is None:
+            #    obj.type = ValidationType.objects.create(name=choice_value(VALIDATION_TYPE, validation_type))
+            #    obj.save()
 
-            # Process method
-            if not validation_method is None:
-                instance = ValidationMethod.objects.create(validation=validation, name=choice_value(VALIDATION_METHOD, validation_method))
+            ## Process method
+            #if not validation_method is None:
+            #    instance = ValidationMethod.objects.create(validation=obj, name=choice_value(VALIDATION_METHOD, validation_method))
+
+            # And now call the standard custom_add() method
+            oParams['validation'] = obj
+            obj.custom_add(oItem, oParams, **kwargs)
 
         except:
             msg = oErr.get_error_message()
@@ -2464,7 +2413,7 @@ class ProjectUrl(models.Model):
         return new_copy
 
 
-class Project(models.Model):
+class Project(CollbankModel, models.Model):
     """Project supporting a resource from the collection"""
 
     # title (0-1; f)
@@ -2475,22 +2424,26 @@ class Project(models.Model):
     # [1]     Each collection can have [0-n] projects
     collection = models.ForeignKey("Collection", blank=False, null=False, default=1, on_delete=models.CASCADE, related_name="collection12m_project")
 
-    # ================= Many to many (stale??) ============
-    # funder (0-n; f)
-    funder = models.ManyToManyField(ProjectFunder, blank=True, related_name="projectm2m_funder")
+    ## ================= Many to many (stale??) ============
+    ## funder (0-n; f)
+    #funder = models.ManyToManyField(ProjectFunder, blank=True, related_name="projectm2m_funder")
 
     # Scheme for downloading and uploading
     specification = [
-        {'name': 'Title',   'type': 'field',    'path': 'title',    'vfield': 'name'},
-        {'name': 'URL',     'type': 'field',    'path': 'url',      'vfield': 'name'},
-        {'name': 'Funder',  'type': 'm2o',      'path': 'funder',   'fkfield': 'project', 'model': 'ProjectFunder',  'vfield': 'name'},
+        {'name': 'Title',   'type': 'field','path': 'title',    'vfield': 'name'},
+        {'name': 'URL',     'type': 'fkc',  'path': 'URL',      'fkfield': 'project', 'model': 'ProjectUrl',     'vfield': 'name'},
+        {'name': 'Funder',  'type': 'm2o',  'path': 'funder',   'fkfield': 'project', 'model': 'ProjectFunder',  'vfield': 'name'},
         ]
 
     def __str__(self):
-        idt = self.collection.identifier
-        sName = self.title
-        if sName == "": sName = self.URL
-        return "[{}] {}".format(idt,sName[:50])
+        lHtml = []
+        lHtml.append("[{}] ".format(self.collection.identifier))
+        if not self.title is None and self.title != "":
+            lHtml.append("{}".format(self.title[:50]))
+        elif not self.URL is None:
+            lHtml.append(self.URL.name)
+        sBack = "".join(lHtml)
+        return sBack
 
     def get_copy(self):
         # Make a clean copy
@@ -2526,7 +2479,7 @@ class Project(models.Model):
 
     def get_view(self):
         """The view for detail-view"""
-        sFunders = m2m_combi(self.funder)
+        sFunders = m2m_combi(self.funders)
         return "{} <a href=\"{}\">site</a> (Funder: <span class=\"coll-funder\">{}</span>)".format(self.title, self.URL, sFunders)
 
 
@@ -2547,7 +2500,7 @@ class CharacterEncoding(models.Model):
         return new_copy
 
 
-class WrittenCorpus(models.Model):
+class WrittenCorpus(CollbankModel, models.Model):
     """Written Corpus"""
 
     class Meta:
@@ -2598,6 +2551,23 @@ class WrittenCorpus(models.Model):
         copy_m2m(self, new_copy, 'charenc_writtencorpora')
         # Return the new copy
         return new_copy
+
+    def get_instance(oItem, oParams, **kwargs):
+        """Add an object according to the specifications provided"""
+
+        oErr = ErrHandle()
+        obj = None
+        try:
+            # We should create a new instance
+            obj = WrittenCorpus.objects.create()
+
+            # And now call the standard custom_add() method
+            obj.custom_add(oItem, oParams, **kwargs)
+
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("WrittenCorpus/get_instance")
+        return obj
 
 
 class RecordingEnvironment(models.Model):
@@ -2814,7 +2784,7 @@ class AudioFormat(models.Model):
         return new_copy
 
 
-class SpeechCorpus(models.Model):
+class SpeechCorpus(CollbankModel, models.Model):
     """Spoken corpus"""
 
     class Meta:
@@ -2856,8 +2826,25 @@ class SpeechCorpus(models.Model):
         # Return the new copy
         return new_copy
 
+    def get_instance(oItem, oParams, **kwargs):
+        """Add an object according to the specifications provided"""
 
-class Resource(models.Model):
+        oErr = ErrHandle()
+        obj = None
+        try:
+            # We should create a new instance
+            obj = SpeechCorpus.objects.create()
+
+            # And now call the standard custom_add() method
+            obj.custom_add(oItem, oParams, **kwargs)
+
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("SpeechCorpus/get_instance")
+        return obj
+
+
+class Resource(CollbankModel, models.Model):
     """A resource is part of a collection"""
 
     # (0-1)
@@ -2884,13 +2871,41 @@ class Resource(models.Model):
     # Scheme for downloading and uploading
     specification = [
         {'name': 'Description',         'type': 'field', 'path': 'description'},
-        {'name': 'Resource type',       'type': 'field', 'path': 'type',        'field': RESOURCE_TYPE},
-        {'name': 'DC type',             'type': 'field', 'path': 'DCtype',      'field': RESOURCE_TYPE},
-        {'name': 'Subtype',             'type': 'field', 'path': 'subtype',     'field': RESOURCE_TYPE},
+        # NOTE: type, DCtype and subtype need special treatment
 
-        {'name': 'Written corpus',      'type': 'fkob',  'path': 'writtenCorpus',   'model': 'WrittenCorpus'},
-        {'name': 'Speech corpus',       'type': 'fkob',  'path': 'speechCorpus',    'model': 'SpeechCorpus'},
-
+        {'name': 'Modality',        'type': 'm2o',   'path': 'modality',        'fkfield': 'resource', 'model': 'Modality',  
+         'vfield': 'name', 'fieldchoice': RESOURCE_MODALITY},
+         # Recording environment
+        {'name': 'Recording environment',   'type': 'm2o',    'path': 'recordingEnvironment', 'fkfield': 'resource', 
+         'model': 'RecordingEnvironment',   'vfield': 'name', 'fieldchoice': SPEECHCORPUS_RECORDINGENVIRONMENT},
+         # Recording conditions
+        {'name': 'Recording condition',     'type': 'm2o',    'path': 'recordingConditions',  'fkfield': 'resource', 
+         'model': 'RecordingCondition',     'vfield': 'name'},
+         # Channel
+        {'name': 'Channel',         'type': 'm2o',   'path': 'channel',         'fkfield': 'resource', 'model': 'Channel',   
+         'vfield': 'name', 'fieldchoice': SPEECHCORPUS_CHANNEL},
+         # SocialContext
+        {'name': 'Social context',  'type': 'm2o',   'path': 'socialContext',   'fkfield': 'resource', 'model': 'SocialContext',   
+         'vfield': 'name', 'fieldchoice': SPEECHCORPUS_SOCIALCONTEXT},
+         # PlanningType
+        {'name': 'Planning type',   'type': 'm2o',   'path': 'planningType',    'fkfield': 'resource', 'model': 'PlanningType',   
+         'vfield': 'name', 'fieldchoice': SPEECHCORPUS_PLANNINGTYPE},
+         # Interactivity
+        {'name': 'Interactivity',   'type': 'm2o',   'path': 'interactivity',   'fkfield': 'resource', 'model': 'Interactivity',   
+         'vfield': 'name', 'fieldchoice': SPEECHCORPUS_INTERACTIVITY},
+         # Involvement
+        {'name': 'Involvement',     'type': 'm2o',   'path': 'involvement',     'fkfield': 'resource', 'model': 'Involvement',   
+         'vfield': 'name', 'fieldchoice': SPEECHCORPUS_INVOLVEMENT},
+         # Audience
+        {'name': 'Audience',        'type': 'm2o',   'path': 'audience',        'fkfield': 'resource', 'model': 'Audience',   
+         'vfield': 'name', 'fieldchoice': SPEECHCORPUS_AUDIENCE },
+         # Speech and Written corpus
+        {'name': 'Speech corpus',   'type': 'fkob',  'path': 'speechCorpus',    'model': 'SpeechCorpus'},
+        {'name': 'Written corpus',  'type': 'fkob',  'path': 'writtenCorpus',   'model': 'WrittenCorpus'},
+        # Totalsize, annotation, media
+        {'name': 'TotalSize',       'type': 'm2o',   'path': 'totalSize',       'fkfield': 'resource', 'model': 'TotalSize'},
+        {'name': 'Annotation',      'type': 'm2o',   'path': 'annotation',      'fkfield': 'resource', 'model': 'Annotation'},
+        {'name': 'Media',           'type': 'm2o',   'path': 'media',           'fkfield': 'resource', 'model': 'Media'},
         ]
 
     def __str__(self):
@@ -2935,22 +2950,24 @@ class Resource(models.Model):
         try:
             # We should create a new instance
             description = oItem.get("description", "-")
-            obj = Resource.objects.create(description=description)
+            collection = oParams.get("collection")
+            obj = Resource.objects.create(collection=collection, description=description)
 
             # Treat the types
-            lTypes = []
-            lTypes.append(oItem.get("DCtype"))
-            lTypes.append(oItem.get("subtype"))
-            sType = ":".join
-            # Find the type
-            mv = choice_value(RESOURCE_TYPE, sType)
-            obj.type = mv
-            obj.DCtype = mv
-            obj.subtype = mv
-            obj.save()
-
+            iDCtype = Resource.xml_DCtype(oItem.get("DCtype"))
+            if not iDCtype is None:
+                obj.DCtype = iDCtype
+                iSubType = Resource.xml_DCsubtype(oItem.get("DCtype"), oItem.get("subtype"))
+                if not iSubType is None:
+                    obj.subtype = iSubType
+                    obj.type = iSubType
+                else:
+                    obj.type = iDCtype
+                # Make sure to save any changes
+                obj.save()
 
             # And now call the standard custom_add() method
+            oParams['resource'] = obj
             obj.custom_add(oItem, oParams, **kwargs)
 
         except:
@@ -2971,6 +2988,51 @@ class Resource(models.Model):
             sBack = sTypeFull
         return sBack
 
+    def xml_DCtype(sDCtype):
+        """Determine the Fieldchoice mv for the DCtype"""
+
+        oErr = ErrHandle()
+        iBack = None
+        try:
+            # Validate
+            if not sDCtype is None and sDCtype != "":
+                # Look for the first one that has the english_name
+                obj = FieldChoice.objects.filter(field=RESOURCE_TYPE, english_name__iexact=sDCtype).first()
+                if obj is None:
+                    # Look for the first one that has the name with colon
+                    starting = "{}:".format(sDCtype)
+                    obj = FieldChoice.objects.filter(field=RESOURCE_TYPE, english_name__istartswith=starting).first()
+                # Do we have a match?
+                if not obj is None:
+                    # Get the mv
+                    iBack = obj.machine_value
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("xml_DCtype")
+
+        return iBack
+
+    def xml_DCsubtype(sDCtype, sSubType):
+        """Determine the Fieldchoice mv for the subtype (of DCtype)"""
+
+        oErr = ErrHandle()
+        iBack = None
+        try:
+            # If no subtype is specified, we return
+            if not sDCtype is None and sDCtype != "" and not sSubType is None and sSubType != "":
+                # Combine what we are looking for
+                sSearch = ":".join([sDCtype, sSubType])
+                obj = FieldChoice.objects.filter(field=RESOURCE_TYPE, english_name__iexact=sSearch).first()
+                # Do we have a match?
+                if not obj is None:
+                    # Get the mv
+                    iBack = obj.machine_value
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("xml_DCsubtype")
+
+        return iBack
+    
 
 class ExtColl(models.Model):
     """External collection"""
@@ -3066,8 +3128,8 @@ class Collection(models.Model, CollbankModel):
     specification = [
         {'name': 'Registry identifier', 'type': 'field', 'path': 'pidname',     'readonly': True},
         {'name': 'Url',                 'type': 'field', 'path': 'url',         'readonly': True},  # project/url
-        {'name': 'Landing page',        'type': 'field', 'path': 'landingPage', 'readonly': True},  # ResourceProxy
-        {'name': 'Search page',         'type': 'field', 'path': 'searchPage',  'readonly': True},  # ResourceProxy
+        {'name': 'Landing page',        'type': 'field', 'path': 'landingPage'},                    # ResourceProxy
+        {'name': 'Search page',         'type': 'field', 'path': 'searchPage'},                     # ResourceProxy
 
         {'name': 'Description',         'type': 'field', 'path': 'description'},
         {'name': 'Clarin centre',       'type': 'field', 'path': 'clarinCentre'},
@@ -3088,7 +3150,7 @@ class Collection(models.Model, CollbankModel):
         {'name': 'Owners',              'type': 'm2o',  'path': 'owner',        'fkfield': 'collection', 'model': 'Owner',  'vfield': 'name'},
         {'name': 'Genres',              'type': 'm2o',  'path': 'genre',        'fkfield': 'collection', 'model': 'Genre',  'vfield': 'name'},
         {'name': 'Domains',             'type': 'm2o',  'path': 'domain',       'fkfield': 'collection', 'model': 'Domain', 'vfield': 'name'},
-        {'name': 'PIDs',                'type': 'm2o',  'path': 'code',         'fkfield': 'collection', 'model': 'PID',    'vfield': 'code'},
+        {'name': 'PIDs',                'type': 'm2o',  'path': 'PID',          'fkfield': 'collection', 'model': 'PID',    'vfield': 'code'},
         {'name': 'Language Disorder',   'type': 'm2o',  'path': 'languageDisorder','fkfield': 'collection', 'model': 'LanguageDisorder', 'vfield': 'name'},
         {'name': 'Provenance',          'type': 'm2o',  'path': 'provenance',      'fkfield': 'collection', 'model': 'Provenance'},
         {'name': 'Resource',            'type': 'm2o',  'path': 'resource',        'fkfield': 'collection', 'model': 'Resource'},

@@ -664,21 +664,6 @@ class AnnotationAdmin(nested_admin.NestedModelAdmin):
     def formfield_for_dbfield(self, db_field, **kwargs):
       itemThis = kwargs.pop('obj', None)
       formfield = super(AnnotationAdmin, self).formfield_for_dbfield(db_field, **kwargs)
-      # Adapt the queryset
-      if db_field.name == "formatAnn" and itemThis:
-          # Check if this needs to be populated
-          if itemThis.formatAnn.count() == 0:
-              # This needs populating
-              formatNew = AnnotationFormat.objects.create(name = itemThis.format)
-              # Add it to this model
-              itemThis.formatAnn.add(formatNew)
-          # Now show it
-          formfield.queryset = AnnotationFormat.objects.filter(annotation=itemThis.pk).select_related()
-      elif db_field.name == "type" and itemThis and itemThis.formatAnn.count() == 0:
-          # Create a new format object
-          formatNew = AnnotationFormat.objects.create(name = itemThis.format)
-          # Add it to this model
-          itemThis.formatAnn.add(formatNew)
       return formfield
 
 
