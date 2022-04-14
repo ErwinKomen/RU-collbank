@@ -500,6 +500,11 @@ class CollbankModel(object):
                         path = oField.get("path")
                         type = oField.get("type")
 
+                        # ======= DEBUGGING ===========
+                        if path.lower() == "resource":
+                            iStop = 1
+                        # =============================
+
                         # Processing depends on the [type]
                         if type == "field":
                             # Note overwriting
@@ -560,7 +565,11 @@ class CollbankModel(object):
                                     else:
                                         # Create a new instance
                                         params[fkfield] = obj
-                                        instance = cls.get_instance(value, params, **kwargs)
+                                        if isinstance(value, list):
+                                            for onevalue in value:
+                                                instance = cls.get_instance(onevalue, params, **kwargs)
+                                        else:
+                                            instance = cls.get_instance(value, params, **kwargs)
                                 else:
                                     # A vfield has been specified
                                     if isinstance(value, list):
@@ -1089,6 +1098,25 @@ class TemporalProvenance(models.Model):
         # Return the new copy
         return new_copy
 
+    def get_instance(oItem, oParams, **kwargs):
+        """Add an object according to the specifications provided"""
+
+        oErr = ErrHandle()
+        obj = None
+        try:
+            if not oItem is None:
+                startYear = oItem.get("startYear", "")
+                endYear = oItem.get("endYear", "")
+
+                if endYear is None or endYear == "":
+                    endYear = startYear
+                # Create an instance
+                obj = TemporalProvenance.objects.create(startYear=startYear, endYear=endYear)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("TemporalProvenance/get_instance")
+        return obj
+
     def get_view(self):
         return "{}-{}".format(self.startYear, self.endYear)
 
@@ -1168,6 +1196,23 @@ class GeographicProvenance(models.Model):
         # Return the new copy
         return new_copy
 
+    def get_countryiso(oGeoProv):
+        """Retrieve the [countryiso] from a geographic provenance specification"""
+
+        oErr = ErrHandle()
+        obj = None
+        try:
+            if not oGeoProv is None:
+                oCountry = oGeoProv.get("Country")
+                if not oCountry is None:
+                    sCountryCoding = oCountry.get("CountryCoding")
+                    if not sCountryCoding is None:
+                        obj = CountryIso.objects.filter(alpha2__iexact=sCountryCoding).first()
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("get_countryiso")
+        return obj
+
     def get_view(self):
         return self.__str__()
 
@@ -1212,13 +1257,17 @@ class Provenance(models.Model):
             else:
                 obj = Provenance.objects.create(collection=collection)
 
-                # Get the FK in a straight forward way
-                obj.temporalProvenance = TemporalProvenance.get_instance(oItem.get('temporalProvenance'))
-                obj.save()
+                prov_temp = oItem.get('temporalProvenance')
+                if not prov_temp is None:
+                    # Get the FK in a straight forward way
+                    obj.temporalProvenance = TemporalProvenance.get_instance(prov_temp, oParams, **kwargs)
+                    # Save this change
+                    obj.save()
 
-                oParams['provenance'] = obj
-                # And now call the standard custom_add() method
-                obj.custom_add(oItem.get("geographicProvenance"), oParams, **kwargs)
+                # Create a geographicProvenance if this is needed
+                countryiso = GeographicProvenance.get_countryiso( oItem.get("geographicProvenance"))
+                if not countryiso is None:
+                    obj_geo = GeographicProvenance.objects.create(provenance=obj, countryiso=countryiso)
         except:
             msg = oErr.get_error_message()
             oErr.DoError("Provenance/get_instance")
@@ -2379,8 +2428,7 @@ class Validation(models.Model):
             msg = oErr.get_error_message()
             oErr.DoError("Validation/get_instance")
         return obj
-
-
+    
 
 class ProjectFunder(models.Model):
     """Funder of project"""
@@ -2836,12 +2884,12 @@ class Resource(models.Model):
     # Scheme for downloading and uploading
     specification = [
         {'name': 'Description',         'type': 'field', 'path': 'description'},
-        {'name': 'Resource type',       'type': 'field', 'path': 'type'},
-        {'name': 'DC type',             'type': 'field', 'path': 'DCtype'},
-        {'name': 'Subtype',             'type': 'field', 'path': 'subtype'},
+        {'name': 'Resource type',       'type': 'field', 'path': 'type',        'field': RESOURCE_TYPE},
+        {'name': 'DC type',             'type': 'field', 'path': 'DCtype',      'field': RESOURCE_TYPE},
+        {'name': 'Subtype',             'type': 'field', 'path': 'subtype',     'field': RESOURCE_TYPE},
 
-        {'name': 'Written corpus',      'type': 'func',  'path': 'writtenCorpus'},
-        {'name': 'Speech corpus',       'type': 'func',  'path': 'speechCorpus'},
+        {'name': 'Written corpus',      'type': 'fkob',  'path': 'writtenCorpus',   'model': 'WrittenCorpus'},
+        {'name': 'Speech corpus',       'type': 'fkob',  'path': 'speechCorpus',    'model': 'SpeechCorpus'},
 
         ]
 
@@ -2857,51 +2905,6 @@ class Resource(models.Model):
             idt,
             choice_english(RESOURCE_TYPE, iType),
             sAnn)
-
-    def custom_add(oItem, oParams, **kwargs):
-        """Add an object according to the specifications provided"""
-
-        oErr = ErrHandle()
-        obj = None
-        bOverwriting = False
-        bSkip = False
-        lst_msg = []
-        try:
-            profile = kwargs.get("profile")
-            username = kwargs.get("username")
-            team_group = kwargs.get("team_group")
-            source = kwargs.get("source")
-            keyfield = kwargs.get("keyfield", "name")
-
-            # First get to the collection
-            coll = oItem.get("collection")
-
-        except:
-            msg = oErr.get_error_message()
-            oErr.DoError("Resource/custom_add")
-        return obj
-
-    def custom_set(self, path, value, **kwargs):
-        """Set related items"""
-
-        bResult = True
-        oErr = ErrHandle()
-        try:
-            profile = kwargs.get("profile")
-            username = kwargs.get("username")
-            team_group = kwargs.get("team_group")
-            value_lst = []
-            if isinstance(value, str) and value[0] != '[':
-                value_lst = value.split(",")
-                for idx, item in enumerate(value_lst):
-                    value_lst[idx] = value_lst[idx].strip()
-            elif isinstance(value, list):
-                value_lst = value
-        except:
-            msg = oErr.get_error_message()
-            oErr.DoError("Resource/custom_set")
-            bResult = False
-        return bResult
 
     def get_copy(self):
         # Make a clean copy
@@ -2923,6 +2926,37 @@ class Resource(models.Model):
         copy_fk(self, new_copy, "speechCorpus")
         # Return the new copy
         return new_copy
+
+    def get_instance(oItem, oParams, **kwargs):
+        """Add an object according to the specifications provided"""
+
+        oErr = ErrHandle()
+        obj = None
+        try:
+            # We should create a new instance
+            description = oItem.get("description", "-")
+            obj = Resource.objects.create(description=description)
+
+            # Treat the types
+            lTypes = []
+            lTypes.append(oItem.get("DCtype"))
+            lTypes.append(oItem.get("subtype"))
+            sType = ":".join
+            # Find the type
+            mv = choice_value(RESOURCE_TYPE, sType)
+            obj.type = mv
+            obj.DCtype = mv
+            obj.subtype = mv
+            obj.save()
+
+
+            # And now call the standard custom_add() method
+            obj.custom_add(oItem, oParams, **kwargs)
+
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Resource/get_instance")
+        return obj
 
     def subtype_only(self):
         """Display only the subtype text if it exists"""
@@ -3056,8 +3090,8 @@ class Collection(models.Model, CollbankModel):
         {'name': 'Domains',             'type': 'm2o',  'path': 'domain',       'fkfield': 'collection', 'model': 'Domain', 'vfield': 'name'},
         {'name': 'PIDs',                'type': 'm2o',  'path': 'code',         'fkfield': 'collection', 'model': 'PID',    'vfield': 'code'},
         {'name': 'Language Disorder',   'type': 'm2o',  'path': 'languageDisorder','fkfield': 'collection', 'model': 'LanguageDisorder', 'vfield': 'name'},
-        {'name': 'Resource',            'type': 'm2o',  'path': 'resource',        'fkfield': 'collection', 'model': 'Resource'},
         {'name': 'Provenance',          'type': 'm2o',  'path': 'provenance',      'fkfield': 'collection', 'model': 'Provenance'},
+        {'name': 'Resource',            'type': 'm2o',  'path': 'resource',        'fkfield': 'collection', 'model': 'Resource'},
         {'name': 'Language',            'type': 'm2o',  'path': 'Language',        'fkfield': 'collection', 'model': 'CollectionLanguage'},
         {'name': 'Relation',            'type': 'm2o',  'path': 'dc-relation',     'fkfield': 'collection', 'model': 'Relation'},
         {'name': 'TotalSize',           'type': 'm2o',  'path': 'totalSize',       'fkfield': 'collection', 'model': 'TotalCollectionSize'},
@@ -3102,44 +3136,6 @@ class Collection(models.Model, CollbankModel):
         # Return positively
         return True
 
-    def get_instance(oItem):
-        """kkk"""
-
-        def get_shortest(lst_value):
-            shortest = None
-            for onevalue in lst_value:
-                # Keep track of what the shortest is (for title)
-                if shortest is None:
-                    shortest = onevalue
-                elif len(onevalue) < len(shortest):
-                    shortest = onevalue
-            return shortest
-
-        bOverwriting = False
-        instance = None
-        try:
-            # Adapt the title, if need be
-            titles = oItem.get("title")
-            oItem['title'] = [ titles ] if isinstance(titles, str) else titles
-
-            # Get to the identifier, which is the shortest title
-            identifier = get_shortest(oItem.get("title"))
-            if identifier is None or identifier == "":
-                oErr.DoError("Collection/get_instance: no [identifier] provided")
-            else:
-                # Retrieve the object
-                instance = Collection.objects.filter(identifier=identifier).first()
-                if instance is None:
-                    # This object doesn't yet exist: create it
-                    instance = Collection.objects.create(identifier=identifier)
-                else:
-                    bOverwriting = True
-
-        except:
-            msg = oErr.get_error_message()
-            oErr.DoError("Collection/get_instance")
-        return bOverwriting, instance
-
     def do_identifier(self):
         # This function is used in [CollectionAdmin] in list_display
         return str(self.identifier)
@@ -3181,6 +3177,45 @@ class Collection(models.Model, CollbankModel):
     def get_identifier(self):
         """Get a proper copy of the identifier as string"""
         return self.identifier.value_to_string()
+
+    def get_instance(oItem):
+        """kkk"""
+
+        def get_shortest(lst_value):
+            shortest = None
+            for onevalue in lst_value:
+                # Keep track of what the shortest is (for title)
+                if shortest is None:
+                    shortest = onevalue
+                elif len(onevalue) < len(shortest):
+                    shortest = onevalue
+            return shortest
+
+        bOverwriting = False
+        instance = None
+        oErr = ErrHandle()
+        try:
+            # Adapt the title, if need be
+            titles = oItem.get("title")
+            oItem['title'] = [ titles ] if isinstance(titles, str) else titles
+
+            # Get to the identifier, which is the shortest title
+            identifier = get_shortest(oItem.get("title"))
+            if identifier is None or identifier == "":
+                oErr.DoError("Collection/get_instance: no [identifier] provided")
+            else:
+                # Retrieve the object
+                instance = Collection.objects.filter(identifier=identifier).first()
+                if instance is None:
+                    # This object doesn't yet exist: create it
+                    instance = Collection.objects.create(identifier=identifier)
+                else:
+                    bOverwriting = True
+
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Collection/get_instance")
+        return bOverwriting, instance
 
     def get_pidname(self, pidservice = None):
         """Get the persistent identifier and create it if it is not there"""

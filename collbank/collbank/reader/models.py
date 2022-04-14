@@ -25,7 +25,7 @@ class SourceInfo(models.Model):
     # [0-1] URL that was used
     url = models.URLField("URL", null=True, blank=True)
     # [0-1] File that was used for uploading
-    file = models.FileField("File", null=True, blank=True)
+    file = models.FileField("File", null=True, blank=True, upload_to="collbank/")
     # [1] The person who was in charge of extracting the information
     collector = models.CharField("Collected by", max_length=LONG_STRING)
     # [0-1] Link to the actual user
