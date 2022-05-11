@@ -304,11 +304,22 @@ class LanguageNameForm(forms.ModelForm):
         super(LanguageNameForm, self).__init__(*args, **kwargs)
 
 
+class LanguageIsoAdmin(admin.ModelAdmin):
+    search_fields = ['code']
+
+    def has_change_permission(self, request, obj=None ):
+        return False
+
+    def has_delete_permission(self, request, obj=None ):
+        return False
+
+
 class LanguageNameAdmin(admin.ModelAdmin):
     # form = LanguageNameForm
     fields = ['name', 'url', 'iso']
     ordering = ['iso__code', 'name']
     search_fields = ['name', 'iso__code']
+    autocomplete_fields = ['iso']
 
 
 class CollectionRelationForm(forms.ModelForm):
@@ -1978,6 +1989,7 @@ admin.site.register(MultilingualityType, MultilingualityTypeAdmin)
 admin.site.register(Linguality, LingualityAdmin)
 # -- language
 # admin.site.register(Language, LanguageAdmin)
+admin.site.register(LanguageIso, LanguageIsoAdmin)
 admin.site.register(LanguageName, LanguageNameAdmin)
 # -- languageDisorder
 admin.site.register(LanguageDisorder)
