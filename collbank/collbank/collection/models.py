@@ -720,6 +720,7 @@ class Media(CollbankModel, models.Model):
             oErr.DoError("Media/get_instance")
         return obj
 
+
 class MediaFormat(models.Model):
     """Format of a medium"""
 
@@ -3414,11 +3415,13 @@ class Collection(models.Model, CollbankModel):
         return True
 
     def save(self, **kwargs):
+        oErr = ErrHandle()
         try:
             result = super(Collection,self).save(**kwargs)
             return result
         except:
-            print("Unexpected error:", sys.exc_info()[0])
+            msg = oErr.get_error_message()
+            oErr.DoError("Collection/save")
             return None
 
     def save_relations(self):

@@ -2983,8 +2983,11 @@ var ru = (function ($, ru) {
        *    If 'disable' is true, then disable all <a> with class 'btn'
        *
        */
-      submitform: function (elStart, disable) {
-        var elForm = null;
+      submitform: function (elStart, disable, feedback) {
+        var elForm = null,
+            status = "",
+            url = "",
+            data = null;
 
         try {
           if (disable !== undefined && disable) {
@@ -2995,8 +2998,30 @@ var ru = (function ($, ru) {
           // Possibly get the waiting rolling
           $("#" + elStart).find(".waiting").removeClass("hidden");
 
-          // COntinue to submit
-          document.getElementById(elStart).submit();
+          // Are we working with feedback?
+          if (feedback === undefined || feedback === "") {
+            // COntinue to submit
+            document.getElementById(elStart).submit();
+          } else {
+            // Perform a POST and then return the feedback on the right place
+            elForm = $("#" + elStart).closest("form");
+            url = $(elForm)[0]["action"];
+            data = elForm.serializeArray();
+            $.post(url, data, function (response) {
+              // Possibly get the waiting rolling
+              $("#" + elStart).find(".waiting").addClass("hidden");
+              // Get the status
+              status = response.status;
+              // Show results
+              if (status === "error") {
+                $(feedback).html("Error: " + response.errors);
+              } else {
+                $(feedback).html("Done");
+              }
+
+            });
+          }
+
         } catch (ex) {
           private_methods.errMsg("submitform", ex);
         }

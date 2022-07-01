@@ -8,7 +8,7 @@
       <div class="hidden"><input name="sourceinfo_id" value="{{object.id}}" /></div>
 
       <a class="btn btn-xs jumbo-3" role="button" 
-         onclick="ru.basic.submitform('file_upload_form', disable=false)" >
+         onclick="ru.basic.submitform('file_upload_form', disable=false, feedback='#upload_feedback')" >
         <span>Import</span>
 
       </a>
@@ -18,6 +18,14 @@
       </div>
 
     </form>
+    <div id="upload_errors"></div>
+  </div>
+</div>
+<div class="row">
+  <div class="col-md-12">
+    <div id="upload_feedback" style="color: darkred;">
+      <!-- This is where feedback from the upload appears -->
+    </div>
   </div>
 </div>
 

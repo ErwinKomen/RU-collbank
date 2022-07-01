@@ -380,34 +380,26 @@ class SourceInfoDetails(SourceInfoEdit):
     rtype = "html"
     
 
-class SourceInfoLoadXml(SourceInfoDetails):
+class SourceInfoLoadXml(BasicPart):
     """Import an XML description of a collection"""
 
-    initRedirect = True
+    MainModel = SourceInfo
 
-    def initializations(self, request, pk):
+    def add_to_context(self, context):
+
         oErr = ErrHandle()
         try:
-
-            # Get the parameters
-            self.qd = request.POST
-            self.object = None
-
-            # The default redirectpage is just this manuscript
-            self.redirectpage = reverse("sourceinfo_details", kwargs = {'pk': pk})
-
-            # Get the object
-            if not pk is None:
-                instance = SourceInfo.objects.filter(id=pk).first()
-                if not instance is None:
-                    # Perform the actual uploading
-                    oBack = self.read_xml(instance)
-
-            # Getting here means all went well
+            instance = self.obj
+            if not instance is None:
+                # Perform the actual uploading
+                oBack = self.read_xml(instance)
+                if oBack['status'] == "error":
+                    self.arErr.append( oBack['msg'] )
         except:
             msg = oErr.get_error_message()
             oErr.DoError("SourceInfoLoadXml/initializations")
-        return None
+            context['errors'] = msg
+        return context
 
     def read_xml(self, instance):
         """Import an XML description of a collection and add it to the DB"""
@@ -528,6 +520,218 @@ class SourceInfoLoadXml(SourceInfoDetails):
                             elif resource_type == "searchpage":
                                 lst_searchpage.append(resource_ref)
                         xx = isinstance(lResourceProxy, list)
+                # Before we proceed: we need to have a landingpage
+                bNoLandingPage = (lst_landingpage is None or len(lst_landingpage) == 0 or \
+                                  lst_landingpage[0] is None or lst_landingpage[0] == "")
+                if bNoLandingPage:
+                    # Warn the user
+                    oBack['status'] = 'error'
+                    oBack['msg'] = "The XML does not (correctly) specify a landingpage"
+                    return oBack
+
+                # Get the components
+                oComponents = oCollection.get("Components")
+
+                # Get a [Collection] instance based on the 'CorpusCollection' component
+                coll_info = oComponents.get("CorpusCollection")
+                bOverwriting, collection = Collection.get_instance(coll_info)
+
+                if not collection is None:
+                    # Adapt the coll_info a little bit
+                    coll_info['landingpage'] = lst_landingpage
+                    coll_info['searchpage'] = lst_searchpage
+
+                    # Add any other information from [coll_info]
+                    params = dict(overwriting=bOverwriting)
+                    collection.custom_add(coll_info, params, **kwargs)
+
+            else:
+                oErr.Status("read_xml: unable to import the XML, since there is no <CMD>")
+
+        except:
+            msg = oErr.get_error_message()
+            # oBack['filename'] = filename
+            oBack['status'] = 'error'
+            oBack['msg'] = msg
+    
+        # Return the object that has been created
+        return oBack
+
+
+class SourceInfoLoadXmlORG(SourceInfoDetails):
+    """Import an XML description of a collection"""
+
+    initRedirect = True
+
+    #def initializations(self, request, pk):
+    #    oErr = ErrHandle()
+    #    try:
+
+    #        # Get the parameters
+    #        self.qd = request.POST
+    #        self.object = None
+
+    #        # The default redirectpage is just this manuscript
+    #        self.redirectpage = reverse("sourceinfo_details", kwargs = {'pk': pk})
+
+    #        # Get the object
+    #        if not pk is None:
+    #            instance = SourceInfo.objects.filter(id=pk).first()
+    #            if not instance is None:
+    #                # Perform the actual uploading
+    #                oBack = self.read_xml(instance)
+
+    #        # Getting here means all went well
+    #    except:
+    #        msg = oErr.get_error_message()
+    #        oErr.DoError("SourceInfoLoadXml/initializations")
+    #    return None
+
+    def add_to_context(self, context, instance):
+        # First do the regular one
+        context = super(SourceInfoLoadXml, self).add_to_context(context, instance)
+
+        oErr = ErrHandle()
+        try:
+            if not instance is None:
+                # Perform the actual uploading
+                oBack = self.read_xml(instance)
+                if oBack['status'] == "error":
+                    context['errors'] = oBack['msg']
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("SourceInfoLoadXml/initializations")
+            context['errors'] = msg
+        return context
+
+    def read_xml(self, instance):
+        """Import an XML description of a collection and add it to the DB"""
+
+        def get_shortest(lst_value):
+            shortest = None
+            for onevalue in lst_value:
+                # Keep track of what the shortest is (for title)
+                if shortest is None:
+                    shortest = onevalue
+                elif len(onevalue) < len(shortest):
+                    shortest = onevalue
+            return shortest
+
+        def add_field_values(obj, value, sObl, cls, fk, sField):
+            """"""
+            if "-n" in sObl:
+                # Potentially multiple values
+                lst_value = [ value ] if isinstance(value, str) else value
+                lst_current = [getattr(x, sField) for x in cls.objects.filter(**{"{}__id".format(fk): obj.id})]
+                for oneval in lst_value:
+                    if not oneval in lst_current:
+                        oNew = {}
+                        oNew[fk] = obj
+                        oNew[sField] = oneval
+                        cls.objects.create(**oNew)
+            else:
+                pass
+
+        def get_instance(oItem):
+            """kkk"""
+
+            bOverwriting = False
+            instance = None
+            try:
+                # Get to the identifier, which is the shortest title
+                identifier = get_shortest(oItem.get("title"))
+                if identifier is None or identifier == "":
+                    oErr.DoError("Collection/get_instance: no [identifier] provided")
+                else:
+                    # Retrieve the object
+                    instance = Collection.objects.filter(identifier=identifier).first()
+                    if instance is None:
+                        # This object doesn't yet exist: create it
+                        instance = Collection.objects.create(identifier=identifier)
+                    else:
+                        bOverWriting = True
+
+            except:
+                msg = oErr.get_error_message()
+                oErr.DoError("read_xml/get_instance")
+            return bOverwriting, instance
+
+        oErr = ErrHandle()
+        oBack = dict(status="ok", msg="", filename="")
+        iCollCount = 0
+        # Overall keeping track of read collections
+        lst_colls = []
+        field_header = ['MdCreator', 'MdSelfLink', 'MdProfile', 'MdCollectionDisplayName']
+        # field_coll = ['title', 'description', 'owner', 'genre', 'languageDisorder', 'domain', 'clarinCentre', 'version']
+        field_coll = [
+            {"name": "title",           "optionality": "1-n"},
+            {"name": "description",     "optionality": "0-1"},
+            {"name": "owner",           "optionality": "0-n"},
+            {"name": "genre",           "optionality": "0-n"},
+            {"name": "languageDisorder", "optionality": "0-n"},
+            {"name": "domain",          "optionality": "0-n"},
+            {"name": "clarinCentre",    "optionality": "0-1"},
+            {"name": "version",         "optionality": "0-1"},
+            ]
+
+        try:
+            # Get some standard information
+            user = self.request.user
+            username = user.username
+            kwargs = {'user': user, 'username': username}
+
+
+            # Get the file and read it
+            data_file = instance.file
+
+            # Convert the XML immediately into a dictionary
+            doc = xmltodict.parse(data_file)
+            oCollection = doc.get("CMD")
+            if not oCollection is None:
+                # For debugging: get a string of the object
+                sCMD = json.dumps(oCollection, indent=2)
+
+                # get the header 
+                oHeader = oCollection.get('Header')
+                # Process the header information
+
+                # Get the resources
+                # NOTE: recognized are: LandingPage and SearchPage
+                oResources = oCollection.get('Resources')
+                lst_searchpage = []
+                lst_landingpage = []
+                if not oResources is None:
+                    # If there are any resources, process them
+                    oResourceProxyList = oResources.get("ResourceProxyList")
+                    if not oResourceProxyList is None:
+                        lst_proxy = []
+                        lResourceProxy = oResourceProxyList.get("ResourceProxy")
+                        if isinstance(lResourceProxy, list):
+                            lst_proxy = lResourceProxy
+                        else:
+                            lst_proxy.append(lResourceProxy)
+
+                        for oResourceProxy in lst_proxy:
+                            oResType = oResourceProxy.get("ResourceType")
+                            resource_type = oResType.get("#text").lower()
+                            resource_mtype = oResType.get("@mimetype")
+                            resource_ref = oResourceProxy.get("ResourceRef")
+
+                            # Process the resource
+                            if resource_type == "landingpage":
+                                lst_landingpage.append(resource_ref)
+                            elif resource_type == "searchpage":
+                                lst_searchpage.append(resource_ref)
+                        xx = isinstance(lResourceProxy, list)
+                # Before we proceed: we need to have a landingpage
+                bNoLandingPage = (lst_landingpage is None or len(lst_landingpage) == 0 or \
+                                  lst_landingpage[0] is None or lst_landingpage[0] == "")
+                if bNoLandingPage:
+                    # Warn the user
+                    oBack['status'] = 'error'
+                    oBack['msg'] = "The XML does not (correctly) specify a landingpage"
+                    return oBack
+
                 # Get the components
                 oComponents = oCollection.get("Components")
 
