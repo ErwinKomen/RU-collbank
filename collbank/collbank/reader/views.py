@@ -384,6 +384,7 @@ class SourceInfoLoadXml(BasicPart):
     """Import an XML description of a collection"""
 
     MainModel = SourceInfo
+    template_name = "collection/coll_uploaded.html"
 
     def add_to_context(self, context):
 
@@ -395,6 +396,8 @@ class SourceInfoLoadXml(BasicPart):
                 oBack = self.read_xml(instance)
                 if oBack['status'] == "error":
                     self.arErr.append( oBack['msg'] )
+                else:
+                    context['collection'] = oBack['collection']
         except:
             msg = oErr.get_error_message()
             oErr.DoError("SourceInfoLoadXml/initializations")
@@ -471,6 +474,8 @@ class SourceInfoLoadXml(BasicPart):
             {"name": "version",         "optionality": "0-1"},
             ]
 
+        collection = None
+
         try:
             # Get some standard information
             user = self.request.user
@@ -545,14 +550,26 @@ class SourceInfoLoadXml(BasicPart):
                     params = dict(overwriting=bOverwriting)
                     collection.custom_add(coll_info, params, **kwargs)
 
+                    oBack['collection'] = collection
+
             else:
-                oErr.Status("read_xml: unable to import the XML, since there is no <CMD>")
+                msg = "read_xml: unable to import the XML, since there is no <CMD>"
+                oErr.Status(msg)
+                oBack['status'] = 'error'
+                oBack['msg'] = msg
 
         except:
             msg = oErr.get_error_message()
             # oBack['filename'] = filename
             oBack['status'] = 'error'
             oBack['msg'] = msg
+
+        # Double check if there were errors
+        if oBack['status'] == "error":
+            # Check if a collection has been made
+            if not collection is None:
+                # Since there were errors, it needs to be removed again
+                collection.delete()
     
         # Return the object that has been created
         return oBack

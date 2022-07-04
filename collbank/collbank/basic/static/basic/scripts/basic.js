@@ -3016,7 +3016,14 @@ var ru = (function ($, ru) {
               if (status === "error") {
                 $(feedback).html("Error: " + response.errors);
               } else {
-                $(feedback).html("Done");
+                if (response.html === undefined || response.html === "") {
+                  $(feedback).html("Done");
+                } else {
+                  // Show the response
+                  $(feedback).html(response.html)
+                }
+                // Since it has been successful, disable the button
+                $("#" + elStart).find(".btn").addClass("disabled");
               }
 
             });
