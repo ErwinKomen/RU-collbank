@@ -39,28 +39,32 @@ urlpatterns = [
     url(r'^nlogin',   collbank.collection.views.nlogin,  name='nlogin'),
 
     url(r'^definitions$', RedirectView.as_view(url='/'+APP_PREFIX+'admin/'), name='definitions'),
+
+    # ------------ Corpus collection handling and viewing --------------------------------------------
     url(r'^collection/add', RedirectView.as_view(url='/'+APP_PREFIX+'admin/collection/collection/add'), name='add'),
     url(r'^collection/view/(?P<pk>\d+)$', CollectionDetailView.as_view(), name='coll_detail'),
     url(r'^collection/export/(?P<pk>\d+)$', CollectionDetailView.as_view(),  {'type': 'output'}, name='output'),
     url(r'^collection/handle/(?P<pk>\d+)$', CollectionDetailView.as_view(),  {'type': 'handle'}, name='handle'),
     url(r'^collection/publish/(?P<pk>\d+)$', CollectionDetailView.as_view(),  {'type': 'publish'}, name='publish'),
     url(r'^collection/evaluate/(?P<pk>\d+)$', CollectionDetailView.as_view(),  {'type': 'evaluate'}, name='evaluate'),
-    # url(r'^collection/import/xml/$', CollectionUploadXml.as_view(), name='collection_upload_xml'),
+    url(r'^overview/$', CollectionListView.as_view(), name='overview'),
+    url(r'^admin/collection/collection/$', RedirectView.as_view(pattern_name='overview'), name='collectionlist'),
+
+    # -------------- Additional calls supporting the above -------------------------------------------
     url(r'^external/list', RedirectView.as_view(url='/'+APP_PREFIX+'admin/collection/extcoll'), name='extcoll_list'),
     url(r'^external/add', RedirectView.as_view(url='/'+APP_PREFIX+'admin/collection/extcoll/add'), name='extcoll_add'),
     url(r'^registry/(?P<slug>[-_\.\w]+)$', CollectionDetailView.as_view(),  {'type': 'registry'}, name='registry'),
     url(r'^reload_collbank/$', collbank.collection.views.reload_collbank, name='reload'),
-    url(r'^overview/$', CollectionListView.as_view(), name='overview'),
-    url(r'^admin/collection/collection/$', RedirectView.as_view(pattern_name='overview'), name='collectionlist'),
     url(r'^admin/copy/$', collbank.collection.admin.copy_item, name='copyadmin'),
     url(r'^subtype_choices/', collbank.collection.views.subtype_choices),
 
+    # ------------- Uploading XML definitions and viewing those uploads -------------------------------
     url(r'^source/list', SourceInfoList.as_view(), name='sourceinfo_list'),
     url(r'^source/details(?:/(?P<pk>\d+))?/$', SourceInfoDetails.as_view(), name='sourceinfo_details'),
     url(r'^source/edit(?:/(?P<pk>\d+))?/$', SourceInfoEdit.as_view(), name='sourceinfo_edit'),
     url(r'^source/load(?:/(?P<pk>\d+))?/$', SourceInfoLoadXml.as_view(), name='sourceinfo_load'),
 
-
+    # ------------- Authorization stuff ---------------------------------------------------------------
     url(r'^signup/$', collbank.collection.views.signup, name='signup'),
 
     url(r'^login/user/(?P<user_id>\w[\w\d_]+)$', collbank.collection.views.login_as_user, name='login_as'),
@@ -74,6 +78,7 @@ urlpatterns = [
         name='login'),
     url(r'^logout$',  LogoutView.as_view(next_page=reverse_lazy('home')), name='logout'),
 
+    # ------------- Select2 ---------------------------------------------------------------------------
     url(r"^select2/", include("django_select2.urls")),
 
     # Uncomment the admin/doc line below to enable admin documentation:
