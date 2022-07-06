@@ -540,8 +540,24 @@ class SourceInfoLoadXml(BasicPart):
                 # Get a [Collection] instance based on the 'CorpusCollection' component
                 coll_info = oComponents.get("CorpusCollection")
                 bOverwriting, collection = Collection.get_instance(coll_info)
+                x = Collection.objects.all().order_by('id').last()
+                # issue #79: may not overwrite
+                if bOverwriting:
+                    html = []
+                    html.append("<p>Importing this XML is an attempt to overwrite the collection with identifier [{}].</p>".format(collection.identifier))
+                    html.append("<p>Overwriting is <b>not</b> allowed!</p>")
+                    html.append("<p>Your options:")
+                    html.append("<ul><li>Rename the identifier in the XML you are trying to import</li>")
+                    html.append("<li>Delete the existing [{}] and then import the new one</li></ul>".format(collection.identifier))
+                    msg = "\n".join(html)
+                    oBack['status'] = 'error'
+                    oBack['msg'] = msg
 
-                if not collection is None:
+                    # ========= IMPORTANT ============================
+                    # Immediately return this [oBack] to make sure it does not get distorted!!!
+                    return oBack
+
+                elif not collection is None:
                     # Adapt the coll_info a little bit
                     coll_info['landingpage'] = lst_landingpage
                     coll_info['searchpage'] = lst_searchpage
