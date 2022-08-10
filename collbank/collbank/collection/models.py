@@ -3315,6 +3315,12 @@ class Collection(models.Model, CollbankModel):
             print("get_pidname error:", sys.exc_info()[0])
             return ""
 
+    def get_pidfull(self):
+        sBack = ""
+        if self.pidname != None:
+            sBack = "http://hdl.handle.net/21.11114/{}".format(self.pidname)
+        return sBack
+
     def get_publisfilename(self, sType=""):
         # Get the correct pidname
         sFileName = self.get_xmlfilename()

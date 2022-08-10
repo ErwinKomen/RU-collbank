@@ -33,6 +33,15 @@
   {% endif %}
 
   <div class="panel panel-default">
+    <!-- PID if existing -->
+    {% if collection.pidname %}
+      <div class="row">
+        <div class="col-md-3">Persistent Identifier<span class="obl" 
+          title="The PID is automatically created and cannot be altered. The PID will only be valid after publication of the collection">auto</span></div>
+        <div class="col-md-9">{{collection.get_pidfull}}</div>
+      </div>
+    {% endif %}
+
     <!-- Description -->
     <div class="row">
       <div class="col-md-3">Description<span class="obl">0-1</span></div>
