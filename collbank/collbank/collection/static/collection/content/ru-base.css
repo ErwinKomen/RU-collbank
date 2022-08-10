@@ -1,4 +1,4 @@
-﻿/* FORM DEFAULTS */
+/* FORM DEFAULTS */
 
 input, textarea, select, .form-row p, form .button {
     margin: 2px 0;
@@ -236,10 +236,10 @@ div.system-message p.system-message-title {
 /* BREADCRUMBS */
 
 div.breadcrumbs {
-    /* */background: lightblue; /* #79aec8; */
+    /* */ background: lightblue; /* #79aec8; */
     background-color: cornflowerblue;
     padding: 5px 80px;
-    margin-top: -20px;
+    /* margin-top: -20px;  /* */
     border: none;
     font-size: 14px;
     color: #c4dce8;

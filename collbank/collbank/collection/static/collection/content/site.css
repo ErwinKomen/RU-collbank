@@ -1,4 +1,4 @@
-﻿body {
+body {
     padding-top: 50px;
     padding-bottom: 20px;
 }
@@ -96,7 +96,7 @@ div.inline-group a.add-related {
 /* navbar */
 .navbar-custom {
     background-color: blue;
-    border-color: darkblue;
+    border-color: blue; /* darkblue; */
 }
 /* title */
 .navbar-custom .navbar-brand {

@@ -1203,6 +1203,9 @@ class LingualityType(models.Model):
         # Return the new copy
         return new_copy
 
+    def get_view(self):
+        return self.get_name_display()
+
 
 class LingualityNativeness(models.Model):
     """Nativeness type of linguality"""
@@ -1480,12 +1483,18 @@ class Language(models.Model):
         return sBack
 
     def get_view(self):
-        sBack = ""
+        html = []
+        # Name of the language
         if self.langname is None:
-            sBack = self.get_name_display()
+            html.append(self.get_name_display())
+            html.append("(no iso code)")
         else:
-            sBack = self.langname.name
-        # return self.get_name_display()
+            html.append(self.langname.name)
+            # Isocode
+            html.append("[{}]".format(self.langname.iso.code))
+
+        # Combine
+        sBack = " ".join(html)
         return sBack
 
 
