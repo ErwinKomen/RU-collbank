@@ -151,7 +151,7 @@ def add_collection_xml(col_this, crp):
             # Add this annotation element
             ann = ET.SubElement(res, "annotation")
             # type (1)
-            add_element("1", ann_this, "type", ann, fieldchoice=ANNOTATION_TYPE)
+            add_element("1", ann_this, "type", ann, fieldchoice=ANNOTATION_TYPE, alternative = 'othertype')
             # mode (1)
             add_element("1", ann_this, "mode", ann, fieldchoice=ANNOTATION_MODE)
             # annotation_formats (1-n)
@@ -317,6 +317,9 @@ def add_element(optionality, col_this, el_name, crp, **kwargs):
     if "fieldchoice" in kwargs: field_choice = kwargs["fieldchoice"]
     field_name = el_name
     if "field_name" in kwargs: field_name = kwargs["field_name"]
+    alternative = None
+    if "alternative" in kwargs: alternative = kwargs["alternative"]
+
     col_this_el = getattr(col_this, field_name)
     sub_name = el_name
     if "subname" in kwargs: sub_name = kwargs["subname"]
@@ -325,7 +328,13 @@ def add_element(optionality, col_this, el_name, crp, **kwargs):
         if optionality == "1" or col_value != None:
             if foreign != "" and not isinstance(col_this_el, str):
                 col_value = getattr(col_this_el, foreign)
-            if field_choice != "": col_value = choice_english(field_choice, col_value)
+            if field_choice != "": 
+                sBack = choice_english(field_choice, col_value)
+                if sBack == "other" and not alternative is None:
+                    # Get the value from the alternative field
+                    col_value = getattr(col_this, alternative)
+                else:
+                    col_value = sBack
             # Make sure the value is a string
             col_value = str(col_value)
             # Do we need to discern parts?
@@ -347,7 +356,13 @@ def add_element(optionality, col_this, el_name, crp, **kwargs):
         if foreign == "": return False
         for t in col_this_el.all():
             col_value = getattr(t, foreign)
-            if field_choice != "": col_value = choice_english(field_choice, col_value)
+            if field_choice != "": 
+                sBack = choice_english(field_choice, col_value)
+                if sBack == "other" and not alternative is None:
+                    # Get the value from the alternative field
+                    col_value = getattr(col_this, alternative)
+                else:
+                    col_value = sBack
             # Make sure the value is a string
             col_value = str(col_value)
             if col_value == "(empty)": 
