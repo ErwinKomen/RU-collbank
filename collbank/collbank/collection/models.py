@@ -767,6 +767,8 @@ class Annotation(CollbankModel, models.Model):
     # [1] Obligatory type, but it can be '0'
     type = models.CharField("Kind of annotation", choices=build_choice_list(ANNOTATION_TYPE), 
                             max_length=5, help_text=get_help(ANNOTATION_TYPE), default='0')
+    # [0-1] Optional other type in a string
+    othertype = models.CharField("kind of 'other' annotation", blank=True, null=True, max_length=MAX_STRING_LEN)
     # [0-1] Optional mode (it can be '0'
     mode = models.CharField("Annotation mode", choices=build_choice_list(ANNOTATION_MODE), 
                             max_length=5, help_text=get_help(ANNOTATION_MODE), default='0')
@@ -777,11 +779,12 @@ class Annotation(CollbankModel, models.Model):
 
     # Scheme for downloading and uploading
     specification = [
-        {'name': 'Type',    'type': 'field', 'path': 'type', 'fieldchoice': ANNOTATION_TYPE},
-        {'name': 'Mode',    'type': 'field', 'path': 'mode', 'fieldchoice': ANNOTATION_MODE},
+        {'name': 'Type',    'type': 'field', 'path': 'type',        'fieldchoice': ANNOTATION_TYPE},
+        {'name': 'Other',   'type': 'field', 'path': 'othertype'},
+        {'name': 'Mode',    'type': 'field', 'path': 'mode',        'fieldchoice': ANNOTATION_MODE},
 
-        {'name': 'Format',  'type': 'm2o',   'path': 'format', 'fkfield': 'annotation', 
-         'model': 'AnnotationFormat',  'vfield': 'name', 'fieldchoice': ANNOTATION_FORMAT},
+        {'name': 'Format',  'type': 'm2o',   'path': 'format',      'fkfield': 'annotation', 
+         'model': 'AnnotationFormat',  'vfield': 'name',            'fieldchoice': ANNOTATION_FORMAT},
     ]
 
     def __str__(self):
@@ -833,7 +836,13 @@ class Annotation(CollbankModel, models.Model):
     def get_view(self):
         """Present the current annotation format"""
         sFmts = m2m_combi(self.annotation_formats)
-        sBack = "[{}] [{}] [{}]".format(self.get_type_display(), self.get_mode_display(), sFmts)
+        annotationtype = self.get_type_display()
+        annotationmode = self.get_mode_display()
+        if annotationtype == "other":
+            # Check if [othertype] has been specified
+            if not self.othertype is None and self.othertype != "":
+                annotationtype = "{}: {}".format(annotationtype, self.othertype)
+        sBack = "[{}] [{}] [{}]".format(annotationtype, annotationmode, sFmts)
         return sBack
 
 

@@ -588,10 +588,11 @@ class AnnotationForm(forms.ModelForm):
 
     class Meta:
         model = Annotation
-        fields = ['type', 'mode']
+        fields = ['type', 'othertype', 'mode']
         # inlines = [AnnotationFormatInline]
         widgets = {
             'type': forms.Select(attrs={'width': 30}),
+            'othertype': forms.TextInput(attrs={'size': 40, 'placeholder': '(only used when the annotation type is "other")'}),
             'mode': forms.Select(attrs={'width': 30})
         }
 
