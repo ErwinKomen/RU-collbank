@@ -514,7 +514,18 @@ class CollbankModel(object):
                                     vlist.append(choice_value(fieldchoice, onevalue))
                                 value = vlist
                             else:
-                                value = choice_value(fieldchoice, value)
+                                iBack = choice_value(fieldchoice, value)
+                                # But what if we end up not knowing this value??
+                                if iBack < 0:
+                                    # The value is not known - do we have an alternative field??
+                                    alternative = oField.get("alternative")
+                                    if not alternative is None:
+                                        # Set the alternative field
+                                        setattr(obj, alternative, value)
+                                        # Make sure that we set the fieldchoice field to 'other'
+                                        value = choice_value(fieldchoice, "other")
+                                else:
+                                    value = iBack
 
                         # Processing depends on the [type]
                         if type == "field":
@@ -779,7 +790,7 @@ class Annotation(CollbankModel, models.Model):
 
     # Scheme for downloading and uploading
     specification = [
-        {'name': 'Type',    'type': 'field', 'path': 'type',        'fieldchoice': ANNOTATION_TYPE},
+        {'name': 'Type',    'type': 'field', 'path': 'type',        'fieldchoice': ANNOTATION_TYPE, 'alternative': 'othertype'},
         {'name': 'Other',   'type': 'field', 'path': 'othertype'},
         {'name': 'Mode',    'type': 'field', 'path': 'mode',        'fieldchoice': ANNOTATION_MODE},
 
