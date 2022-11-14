@@ -64,6 +64,12 @@ urlpatterns = [
     url(r'^source/edit(?:/(?P<pk>\d+))?/$', SourceInfoEdit.as_view(), name='sourceinfo_edit'),
     url(r'^source/load(?:/(?P<pk>\d+))?/$', SourceInfoLoadXml.as_view(), name='sourceinfo_load'),
 
+    # ------------- Uploading VLO XML definitions and viewing those uploads -------------------------------
+    url(r'^vloitem/list', VloItemList.as_view(), name='vloitem_list'),
+    url(r'^vloitem/details(?:/(?P<pk>\d+))?/$', VloItemDetails.as_view(), name='vloitem_details'),
+    url(r'^vloitem/edit(?:/(?P<pk>\d+))?/$', VloItemEdit.as_view(), name='vloitem_edit'),
+    url(r'^vloitem/load(?:/(?P<pk>\d+))?/$', VloItemLoadXml.as_view(), name='vloitem_load'),
+
     # ------------- Authorization stuff ---------------------------------------------------------------
     url(r'^signup/$', collbank.collection.views.signup, name='signup'),
 

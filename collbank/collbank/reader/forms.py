@@ -5,7 +5,7 @@ Definition of forms.
 from django import forms
 from django.contrib.auth.models import User
 from django.forms.widgets import *
-from collbank.reader.models import SourceInfo
+from collbank.reader.models import SourceInfo, VloItem
 
 
 
@@ -45,6 +45,35 @@ class SourceInfoForm(forms.ModelForm):
         self.fields['created'].required = False
         self.fields['file'].required = False
         self.fields['url'].required = False
+
+        # Get the instance
+        if 'instance' in kwargs:
+            instance = kwargs['instance']
+            self.fields['user'].initial = instance.user
+            self.fields['user'].queryset = User.objects.filter(id=instance.user.id)
+
+
+class VloItemForm(forms.ModelForm):
+    """A form to show sourceinfo"""
+
+    class Meta:
+        ATTRS_FOR_FORMS = {'class': 'form-control'};
+
+        model = VloItem
+        fields = ['abbr', 'user', 'created', 'file']
+        widgets={'abbr':    forms.TextInput(attrs={'style': 'width: 100%;', 'class': 'searching'}),
+                 'created': forms.TextInput(attrs={'style': 'width: 100%;'}),
+                 'file':    forms.FileInput(attrs={'style': 'width: 100%;'})
+                 }
+
+    def __init__(self, *args, **kwargs):
+        # Start by executing the standard handling
+        super(VloItemForm, self).__init__(*args, **kwargs)
+        # Some fields are not required
+        self.fields['abbr'].required = False
+        self.fields['user'].required = False
+        self.fields['created'].required = False
+        self.fields['file'].required = False
 
         # Get the instance
         if 'instance' in kwargs:
