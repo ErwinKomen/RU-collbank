@@ -1,4 +1,4 @@
-﻿body
+body
 {
 }
 
@@ -104,3 +104,23 @@ td.ruler {
     font-size: small;
     font-family: monospace;
 }
+
+table tbody tr td.clickable:hover, table tbody tr.clickable td:hover, div.clickable:hover, span.clickable:hover, th div a.clickable:hover {
+    cursor: pointer;
+}
+
+table tbody tr td.clickable:hover, table tbody tr.clickable td:hover, table tbody tr td span.clickable:hover, th div a.clickable:hover {
+    background-color: lightgoldenrodyellow;
+}
+
+a.nostyle:link, a.nostyle:visited {
+    text-decoration: inherit;
+    color: inherit;
+    cursor: inherit;
+}
+
+td a.nostyle {
+    display: inline-block;
+}
+
+

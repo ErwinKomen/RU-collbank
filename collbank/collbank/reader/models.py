@@ -123,7 +123,7 @@ class VloItem(models.Model):
     """XML item for direct output into the VLO (virtual language observatory)"""
 
     # [0-1] Abbreviation to be used for the metadata file naming
-    abbr = models.CharField("Abbreviation", null=True, blank=True, max_length=LONG_STRING)
+    abbr = models.CharField("Abbreviation", null=True, blank=True, max_length=LONG_STRING, default="oh")
     # [0-1] File that was used for uploading
     file = models.FileField("File", null=True, blank=True, upload_to=vloitem_path)  # upload_to="collbank/")
     # [0-1] Link to the actual user

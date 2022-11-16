@@ -785,8 +785,8 @@ class VloItemList(BasicList):
     order_default = order_cols
     order_heads = [
         {'name': 'User',    'order': 'o=1', 'type': 'str', 'custom': 'user',    'linkdetails': True},
-        {'name': 'Abbr',    'order': 'o=2', 'type': 'str', 'custom': 'abbr',    'linkdetails': True, 'main': True},
-        {'name': 'VLO name','order': 'o=3', 'type': 'str', 'custom': 'vloname', 'linkdetails': True},
+        {'name': 'Abbr',    'order': 'o=2', 'type': 'str', 'custom': 'abbr',    'linkdetails': True},
+        {'name': 'VLO name','order': 'o=3', 'type': 'str', 'custom': 'vloname', 'linkdetails': True, 'main': True},
         {'name': 'Created', 'order': 'o=4', 'type': 'str', 'custom': 'created', 'linkdetails': True},
     ]
 
