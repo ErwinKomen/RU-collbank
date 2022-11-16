@@ -349,14 +349,17 @@ class SourceInfoEdit(BasicDetails):
                 {'type': 'plain', 'label': "User name:",    'value': instance.get_username(),   },
                 {'type': 'plain', 'label': "Created:",      'value': instance.get_created()},
                 ]
-            # If there is a file, we can add a button to upload it
-            if not instance.file is None and not context['object'] is None:
-                lhtml = []
-                # Add an upload button
-                lhtml.append(render_to_string("reader/upload_file.html", context, self.request))
 
-                # Store the after_details in the context
-                context['after_details'] = "\n".join(lhtml)
+            # Is this userplus or superuser?
+            if context['is_app_editor'] or context['is_app_moderator']:
+                # If there is a file, we can add a button to upload it
+                if not instance.file is None and not context['object'] is None:
+                    lhtml = []
+                    # Add an upload button
+                    lhtml.append(render_to_string("reader/upload_file.html", context, self.request))
+
+                    # Store the after_details in the context
+                    context['after_details'] = "\n".join(lhtml)
 
 
         except:
@@ -832,14 +835,17 @@ class VloItemEdit(BasicDetails):
                 {'type': 'plain', 'label': "Publication status:",   'value': instance.get_status()              },
                 {'type': 'plain', 'label': "Publication date:",     'value': instance.publishdate()             },
                 ]
-            # If there is a file, we can add a button to upload it
-            if not instance.file.name is None and not context['object'] is None:
-                lhtml = []
-                # Add an upload button
-                lhtml.append(render_to_string("reader/upload_vlo.html", context, self.request))
 
-                # Store the after_details in the context
-                context['after_details'] = "\n".join(lhtml)
+            # Is this userplus or superuser?
+            if context['is_app_userplus'] or context['is_app_moderator']:
+                # If there is a file, we can add a button to upload it
+                if not instance.file.name is None and not context['object'] is None:
+                    lhtml = []
+                    # Add an upload button
+                    lhtml.append(render_to_string("reader/upload_vlo.html", context, self.request))
+
+                    # Store the after_details in the context
+                    context['after_details'] = "\n".join(lhtml)
 
         except:
             msg = oErr.get_error_message()
@@ -876,6 +882,16 @@ class VloItemEdit(BasicDetails):
             oErr.DoError("get_pidbutton")
         return sBack
 
+    def is_vlo_editor(self):
+        allowed_groups = ['collbank_moderator', 'collbank_userplus']
+        bResult = self.user_is_superuser()
+        if not bResult:
+            for group in allowed_groups:
+                if user_is_ingroup(self.request, group):
+                    bResult = True
+                    break
+        return bResult
+
 
 class VloItemDetails(VloItemEdit):
     """Like VloItem Edit, but then html output"""
@@ -896,6 +912,9 @@ class VloItemRegister(VloItemDetails):
 
             # Make sure that we redirect to the details view
             self.redirectpage = reverse("vloitem_details", kwargs={'pk': instance.id})
+
+            if not self.is_vlo_editor():
+                return None
 
             # Getting here means that we are allowed to register
             pidname = instance.get_pidname()
@@ -948,6 +967,9 @@ class VloItemPublish(VloItemDetails):
             # Make sure that we redirect to the details view
             self.redirectpage = reverse("vloitem_details", kwargs={'pk': instance.id})
 
+            if not self.is_vlo_editor():
+                return None
+
             # Getting here means that we are allowed to register
             pidname = instance.get_pidname()
             if pidname is None or pidname == "":
@@ -981,7 +1003,26 @@ class VloItemLoadXml(BasicPart):
     MainModel = VloItem
     template_name = "reader/vloitem_uploaded.html"
 
+    def is_vlo_editor(self):
+        allowed_groups = ['collbank_moderator', 'collbank_userplus']
+        bResult = self.user_is_superuser()
+        if not bResult:
+            for group in allowed_groups:
+                if user_is_ingroup(self.request, group):
+                    bResult = True
+                    break
+        return bResult
+
+    def checkAuthentication(self,request):
+        # First do the regular one
+        bAuthenticated = super(VloItemLoadXml, self).checkAuthentication(request)
+        if bAuthenticated:
+            # Now do an additional check
+            bAuthenticated = self.is_vlo_editor()
+        return bAuthenticated
+
     def add_to_context(self, context):
+        """Add information to the context"""
 
         oErr = ErrHandle()
         try:
@@ -1108,10 +1149,11 @@ class VloItemLoadXml(BasicPart):
 
         # Double check if there were errors
         if oBack['status'] == "error":
-            # Check if a collection has been made
-            if not collection is None:
-                # Since there were errors, it needs to be removed again
-                collection.delete()
+            iStop = 1
+            ## Check if a collection has been made
+            #if not collection is None:
+            #    # Since there were errors, it needs to be removed again
+            #    collection.delete()
     
         # Return the object that has been created
         return oBack

@@ -1956,6 +1956,9 @@ class BasicDetails(DetailView):
         # Return the calculated context
         return context
 
+    def user_is_superuser(self):
+        return user_is_superuser(self.request)
+
     def action_add(self, instance, details, actiontype):
         """User can fill this in to his/her liking"""
 
@@ -2741,6 +2744,9 @@ class BasicPart(View):
         return True
 
     def custom_init(self):
-        pass    
+        pass   
+    
+    def user_is_superuser(self):
+        return user_is_superuser(self.request)
            
 
