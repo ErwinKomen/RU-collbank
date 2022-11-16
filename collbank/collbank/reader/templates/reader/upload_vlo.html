@@ -7,11 +7,31 @@
       {% csrf_token %}
       <div class="hidden"><input name="vloitem_id" value="{{object.id}}" /></div>
 
-      <a class="btn btn-xs jumbo-3" role="button" 
-         onclick="ru.basic.submitform('file_upload_form', disable=false, feedback='#upload_feedback')" >
-        <span>Import</span>
+      {% if object.file.name %}
+        <a class="btn btn-xs jumbo-3" role="button" 
+           onclick="ru.basic.submitform('file_upload_form', disable=false, feedback='#upload_feedback')" >
+          <span>Import</span>
 
-      </a>
+        </a>
+      {% endif %}
+
+      {% if object.vloname and object.xmlcontent %}
+        <!-- Allow registering this item -->
+        <a class="btn btn-xs jumbo-3" role="button" 
+           href="{% url 'vloitem_register' object.id %}" >
+          <span>Register</span>
+
+        </a>
+      {% endif %}
+
+      {% if object.pidname != "empty" %}
+        <!-- Allow publishing this item -->
+        <a class="btn btn-xs jumbo-3" role="button" 
+           href="{% url 'vloitem_publish' object.id %}" >
+          <span>Publish</span>
+
+        </a>
+      {% endif %}
 
       <div class="hidden waiting">
         <span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span>

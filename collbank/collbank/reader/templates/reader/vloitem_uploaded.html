@@ -1,0 +1,8 @@
+{% load i18n %}
+
+<div>Ready importing the xml as VLO-item [{{vloitem.vloname}}] with id={{vloitem.id}}</div>
+<div>
+  Now <a role="button" class="btn btn-xs jumbo-3" href="{% url 'vloitem_register' vloitem.id %}">Register</a>
+  the imported VLO-item, or return to the
+  <a role="button" class="btn btn-xs jumbo-3" href="{% url 'vloitem_list' %}">VLO-item Overview</a>.
+</div>

@@ -69,6 +69,8 @@ urlpatterns = [
     url(r'^vloitem/details(?:/(?P<pk>\d+))?/$', VloItemDetails.as_view(), name='vloitem_details'),
     url(r'^vloitem/edit(?:/(?P<pk>\d+))?/$', VloItemEdit.as_view(), name='vloitem_edit'),
     url(r'^vloitem/load(?:/(?P<pk>\d+))?/$', VloItemLoadXml.as_view(), name='vloitem_load'),
+    url(r'^vloitem/register(?:/(?P<pk>\d+))?/$', VloItemRegister.as_view(), name='vloitem_register'),
+    url(r'^vloitem/publish(?:/(?P<pk>\d+))?/$', VloItemPublish.as_view(), name='vloitem_publish'),
 
     # ------------- Authorization stuff ---------------------------------------------------------------
     url(r'^signup/$', collbank.collection.views.signup, name='signup'),

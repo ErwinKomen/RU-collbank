@@ -793,8 +793,8 @@ class VloItemList(BasicList):
     def get_field_value(self, instance, custom):
         sBack = ""
         sTitle = ""
-        if custom == "code":
-            sBack = instance.get_code_html()
+        if custom == "abbr":
+            sBack = instance.get_abbr()
         elif custom == "user":
             sBack = instance.get_username()
         elif custom == "vloname":
@@ -823,20 +823,23 @@ class VloItemEdit(BasicDetails):
                 {'type': 'plain', 'label': "User ID",       'value': instance.user.id,         'field_key': "user", 'empty': 'idonly'},
                 # ================================
                 {'type': 'plain', 'label': "Abbreviation:", 'value': instance.get_abbr(),   'field_key': "abbr" },
-                {'type': 'plain', 'label': "File:",         'value': instance.get_file(),   'field_key': "file"},
-                {'type': 'plain', 'label': "VLO name:",     'value': instance.get_vloname()         },
-                {'type': 'plain', 'label': "User name:",    'value': instance.get_username(),       },
-                {'type': 'plain', 'label': "Created:",      'value': instance.get_created()         },
+                {'type': 'plain', 'label': "File:",         'value': instance.get_file(),   'field_key': "file" },
+                {'type': 'plain', 'label': "VLO name:",     'value': instance.get_vloname()                     },
+                {'type': 'plain', 'label': "PID:",          'value': instance.get_pidname(viewonly=True)        },
+                {'type': 'plain', 'label': "Handle Link:",  'value': self.get_pidbutton(instance)               },
+                {'type': 'plain', 'label': "User name:",    'value': instance.get_username(),                   },
+                {'type': 'plain', 'label': "Created:",      'value': instance.get_created()                     },
+                {'type': 'plain', 'label': "Publication status:",   'value': instance.get_status()              },
+                {'type': 'plain', 'label': "Publication date:",     'value': instance.publishdate()             },
                 ]
             # If there is a file, we can add a button to upload it
-            if not instance.file is None and not context['object'] is None:
+            if not instance.file.name is None and not context['object'] is None:
                 lhtml = []
                 # Add an upload button
                 lhtml.append(render_to_string("reader/upload_vlo.html", context, self.request))
 
                 # Store the after_details in the context
                 context['after_details'] = "\n".join(lhtml)
-
 
         except:
             msg = oErr.get_error_message()
@@ -854,18 +857,128 @@ class VloItemEdit(BasicDetails):
                 form.instance.user = self.request.user
                 # This will now get saved correctly
         return bStatus, msg
-    
+
+    def get_pidbutton(self, instance):
+        sBack = ""
+        html = []
+        oErr = ErrHandle()
+        try:
+            # First get the full PID link
+            url = instance.get_pidfull()
+            html.append("<span>{}</span>".format(url))
+            if not url is None and url != "" and url != "-":
+                # Now create a button to go there
+                html.append("&nbsp;&nbsp;<span><a class='btn btn-xs jumbo-1' href='{}'>Try handle</a></span>".format(url))
+
+            sBack = "\n".join(html)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("get_pidbutton")
+        return sBack
 
 class VloItemDetails(VloItemEdit):
     """Like VloItem Edit, but then html output"""
     rtype = "html"
+
+
+class VloItemRegister(VloItemDetails):
+    """Try to register the item, and then show it"""
+
+    def custom_init(self, instance):
+        oErr = ErrHandle()
+        try:
+            # Check if everything is ready for registering
+            if instance is None or not instance.may_register():
+                # Make sure that we redirect to vlo listview
+                self.redirectpage = reverse("vloitem_list")
+                return None
+
+            # Make sure that we redirect to the details view
+            self.redirectpage = reverse("vloitem_details", kwargs={'pk': instance.id})
+
+            # Getting here means that we are allowed to register
+            pidname = instance.get_pidname()
+
+            # Now that we have a pidname, we can fill in the handle 
+            selflink = instance.get_selflink()
+            if selflink != "":
+                # Yes, we have a selflink: process this internally
+                doc = xmltodict.parse(instance.xmlcontent)
+                oContent = doc.get("CMD")
+                if not oContent is None:
+                    # For debugging: get a string of the object
+                    sCMD = json.dumps(oContent, indent=2)
+
+                    # get the header 
+                    oHeader = oContent.get('Header')
+
+                    # Check the header's selflink information
+                    currentlink = oHeader.get("MdSelfLink", "")
+                    if selflink != currentlink:
+                        oHeader['MdSelfLink'] = selflink
+
+                # Get the contents as text
+                sContent = xmltodict.unparse(doc, pretty=True)
+                # Store the contents into the VloItem 
+                instance.xmlcontent = sContent
+                # And save it
+                instance.save()
+
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("VloItemRegister/custom_init")
+
+        # No need to return anything
+        return None
+    
+
+class VloItemPublish(VloItemDetails):
+    """Try to register the item, and then show it"""
+
+    def custom_init(self, instance):
+        oErr = ErrHandle()
+        try:
+            # Check if everything is ready for registering
+            if instance is None:
+                # Make sure that we redirect to vlo listview
+                self.redirectpage = reverse("vloitem_list")
+                return None
+
+            # Make sure that we redirect to the details view
+            self.redirectpage = reverse("vloitem_details", kwargs={'pk': instance.id})
+
+            # Getting here means that we are allowed to register
+            pidname = instance.get_pidname()
+            if pidname is None or pidname == "":
+                return None
+
+            # There is a PID name, so we may publish the lot
+            sXmlText = instance.xmlcontent
+            if not sXmlText is None and sXmlText != "":
+                # Get the full path to the registry file
+                fPublish = instance.get_publisfilename()
+                # Write it to a file in the XML directory
+                with open(fPublish, encoding="utf-8", mode="w") as f:  
+                    f.write(sXmlText)
+
+                # Publish the .cmdi.xml
+                fPublish = instance.get_publisfilename("joai")
+                # Write it to a file in the XML directory
+                with open(fPublish, encoding="utf-8", mode="w") as f:  
+                    f.write(sXmlText)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("VloItemPublish/custom_init")
+
+        # No need to return anything
+        return None
     
 
 class VloItemLoadXml(BasicPart):
     """Import an XML description of a collection"""
 
     MainModel = VloItem
-    template_name = "collection/coll_uploaded.html"
+    template_name = "reader/vloitem_uploaded.html"
 
     def add_to_context(self, context):
 
@@ -878,7 +991,7 @@ class VloItemLoadXml(BasicPart):
                 if oBack['status'] == "error":
                     self.arErr.append( oBack['msg'] )
                 else:
-                    context['collection'] = oBack['collection']
+                    context['vloitem'] = oBack['vloitem']
         except:
             msg = oErr.get_error_message()
             oErr.DoError("VloItemLoadXml/initializations")
@@ -899,18 +1012,7 @@ class VloItemLoadXml(BasicPart):
             # Get the file and read it
             data_file = instance.file
 
-            # Define the namespace
-            ns = {'vlo': 'http://www.clarin.eu/cmd/'}
-            # Read the XML the proper way, since we will need to modify it
-            tree = ElementTree.parse(data_file.file)
-            root = tree.getroot()
-            # get the CMD header
-            header_info = root.findall("vlo:Header", ns)
-
-            # Get the resource proxy list
-            lst_proxy = root.findall(".//vlo:ResourceProxy", ns)
-
-
+            # Use XmlToDict to parse (from XML to objects) and unparse (from objects to XML)
             doc = xmltodict.parse(data_file)
             oContent = doc.get("CMD")
             if not oContent is None:
@@ -937,31 +1039,65 @@ class VloItemLoadXml(BasicPart):
                         else:
                             lst_proxy.append(lResourceProxy)
 
+                        # Some initalisations
+                        bHasLandingpage = False
+                        bHasResource = False
+                        bNeedUpdate = False
+                        lst_proxy_update = []
+
+                        # Figure out landing page or resource reference
                         for oResourceProxy in lst_proxy:
                             oResType = oResourceProxy.get("ResourceType")
                             if isinstance(oResType, str):
                                 resource_type = oResType
                                 resource_mtype = "application/x-http"
+                                # Indicate that we need to replace the updated
+                                bNeedUpdate = True
                             else:
                                 resource_type = oResType.get("#text").lower()
                                 resource_mtype = oResType.get("@mimetype")
                             resource_ref = oResourceProxy.get("ResourceRef")
 
+                            # Keep track of the resource proxy definitions
+                            lst_proxy_update.append(dict(mimetype=resource_mtype, resourcetype=resource_type, resourceref=resource_ref))
+
                             # Process the resource
-                            if resource_type == "landingpage":
+                            if resource_type.lower() == "landingpage":
                                 lst_landingpage.append(resource_ref)
-                            elif resource_type == "searchpage":
+                                if resource_ref != "":
+                                    bHasLandingpage = True
+                            elif resource_type.lower() == "searchpage":
                                 lst_searchpage.append(resource_ref)
+                            elif resource_type.lower() == "resource":
+                                if resource_ref != "":
+                                    bHasResource = True
+
+                        # Do we need to update the existing list of proxies?
+                        if bNeedUpdate:
+                            # Update the existing list
+                            for idx, oResourceProxy in enumerate(lst_proxy):
+                                oUpdated = {}
+                                oUpdated['@mimetype'] = lst_proxy_update[idx]['mimetype']
+                                oUpdated['#text'] = lst_proxy_update[idx]['resourcetype']
+                                oResourceProxy['ResourceType'] = oUpdated
+
                         xx = isinstance(lResourceProxy, list)
-                # Before we proceed: we need to have a landingpage
-                bNoLandingPage = (lst_landingpage is None or len(lst_landingpage) == 0 or \
-                                  lst_landingpage[0] is None or lst_landingpage[0] == "")
+
+                # Before we proceed: we need to have at least one landingpage
+                bNoLandingPage = (not bHasLandingpage and not bHasResource)
                 if bNoLandingPage:
                     # Warn the user
                     oBack['status'] = 'error'
-                    oBack['msg'] = "The XML does not (correctly) specify a landingpage"
+                    oBack['msg'] = "The XML does not (correctly) specify either a landingpage or a resource"
                     return oBack
 
+            # Get the contents as text
+            sContent = xmltodict.unparse(doc, pretty=True)
+            # Store the contents into the VloItem 
+            instance.xmlcontent = sContent
+            # And save it
+            instance.save()
+            oBack['vloitem'] = instance
 
         except:
             msg = oErr.get_error_message()
@@ -979,190 +1115,4 @@ class VloItemLoadXml(BasicPart):
         # Return the object that has been created
         return oBack
 
-    def read_xml_ORG(self, instance):
-        """Import an XML description that is already suitable for the VLO, adapt it and add it to the DB"""
-
-        def get_shortest(lst_value):
-            shortest = None
-            for onevalue in lst_value:
-                # Keep track of what the shortest is (for title)
-                if shortest is None:
-                    shortest = onevalue
-                elif len(onevalue) < len(shortest):
-                    shortest = onevalue
-            return shortest
-
-        def add_field_values(obj, value, sObl, cls, fk, sField):
-            """"""
-            if "-n" in sObl:
-                # Potentially multiple values
-                lst_value = [ value ] if isinstance(value, str) else value
-                lst_current = [getattr(x, sField) for x in cls.objects.filter(**{"{}__id".format(fk): obj.id})]
-                for oneval in lst_value:
-                    if not oneval in lst_current:
-                        oNew = {}
-                        oNew[fk] = obj
-                        oNew[sField] = oneval
-                        cls.objects.create(**oNew)
-            else:
-                pass
-
-        def get_instance(oItem):
-            """kkk"""
-
-            bOverwriting = False
-            instance = None
-            try:
-                # Get to the identifier, which is the shortest title
-                identifier = get_shortest(oItem.get("title"))
-                if identifier is None or identifier == "":
-                    oErr.DoError("Collection/get_instance: no [identifier] provided")
-                else:
-                    # Retrieve the object
-                    instance = Collection.objects.filter(identifier=identifier).first()
-                    if instance is None:
-                        # This object doesn't yet exist: create it
-                        instance = Collection.objects.create(identifier=identifier)
-                    else:
-                        bOverWriting = True
-
-            except:
-                msg = oErr.get_error_message()
-                oErr.DoError("read_xml/get_instance")
-            return bOverwriting, instance
-
-        oErr = ErrHandle()
-        oBack = dict(status="ok", msg="", filename="")
-        iCollCount = 0
-        # Overall keeping track of read collections
-        lst_colls = []
-        field_header = ['MdCreator', 'MdSelfLink', 'MdProfile', 'MdCollectionDisplayName']
-        # field_coll = ['title', 'description', 'owner', 'genre', 'languageDisorder', 'domain', 'clarinCentre', 'version']
-        field_coll = [
-            {"name": "title",           "optionality": "1-n"},
-            {"name": "description",     "optionality": "0-1"},
-            {"name": "owner",           "optionality": "0-n"},
-            {"name": "genre",           "optionality": "0-n"},
-            {"name": "languageDisorder", "optionality": "0-n"},
-            {"name": "domain",          "optionality": "0-n"},
-            {"name": "clarinCentre",    "optionality": "0-1"},
-            {"name": "version",         "optionality": "0-1"},
-            ]
-
-        collection = None
-
-        try:
-            # Get some standard information
-            user = self.request.user
-            username = user.username
-            kwargs = {'user': user, 'username': username}
-
-
-            # Get the file and read it
-            data_file = instance.file
-
-            # Convert the XML immediately into a dictionary
-            doc = xmltodict.parse(data_file)
-            oCollection = doc.get("CMD")
-            if not oCollection is None:
-                # For debugging: get a string of the object
-                sCMD = json.dumps(oCollection, indent=2)
-
-                # get the header 
-                oHeader = oCollection.get('Header')
-                # Process the header information
-
-                # Get the resources
-                # NOTE: recognized are: LandingPage and SearchPage
-                oResources = oCollection.get('Resources')
-                lst_searchpage = []
-                lst_landingpage = []
-                if not oResources is None:
-                    # If there are any resources, process them
-                    oResourceProxyList = oResources.get("ResourceProxyList")
-                    if not oResourceProxyList is None:
-                        lst_proxy = []
-                        lResourceProxy = oResourceProxyList.get("ResourceProxy")
-                        if isinstance(lResourceProxy, list):
-                            lst_proxy = lResourceProxy
-                        else:
-                            lst_proxy.append(lResourceProxy)
-
-                        for oResourceProxy in lst_proxy:
-                            oResType = oResourceProxy.get("ResourceType")
-                            resource_type = oResType.get("#text").lower()
-                            resource_mtype = oResType.get("@mimetype")
-                            resource_ref = oResourceProxy.get("ResourceRef")
-
-                            # Process the resource
-                            if resource_type == "landingpage":
-                                lst_landingpage.append(resource_ref)
-                            elif resource_type == "searchpage":
-                                lst_searchpage.append(resource_ref)
-                        xx = isinstance(lResourceProxy, list)
-                # Before we proceed: we need to have a landingpage
-                bNoLandingPage = (lst_landingpage is None or len(lst_landingpage) == 0 or \
-                                  lst_landingpage[0] is None or lst_landingpage[0] == "")
-                if bNoLandingPage:
-                    # Warn the user
-                    oBack['status'] = 'error'
-                    oBack['msg'] = "The XML does not (correctly) specify a landingpage"
-                    return oBack
-
-                # Get the components
-                oComponents = oCollection.get("Components")
-
-                # Get a [Collection] instance based on the 'CorpusCollection' component
-                coll_info = oComponents.get("CorpusCollection")
-                bOverwriting, collection = Collection.get_instance(coll_info)
-                x = Collection.objects.all().order_by('id').last()
-                # issue #79: may not overwrite
-                if bOverwriting:
-                    html = []
-                    html.append("<p>Importing this XML is an attempt to overwrite the collection with identifier [{}].</p>".format(collection.identifier))
-                    html.append("<p>Overwriting is <b>not</b> allowed!</p>")
-                    html.append("<p>Your options:")
-                    html.append("<ul><li>Rename the identifier in the XML you are trying to import</li>")
-                    html.append("<li>Delete the existing [{}] and then import the new one</li></ul>".format(collection.identifier))
-                    msg = "\n".join(html)
-                    oBack['status'] = 'error'
-                    oBack['msg'] = msg
-
-                    # ========= IMPORTANT ============================
-                    # Immediately return this [oBack] to make sure it does not get distorted!!!
-                    return oBack
-
-                elif not collection is None:
-                    # Adapt the coll_info a little bit
-                    coll_info['landingpage'] = lst_landingpage
-                    coll_info['searchpage'] = lst_searchpage
-
-                    # Add any other information from [coll_info]
-                    params = dict(overwriting=bOverwriting)
-                    collection.custom_add(coll_info, params, **kwargs)
-
-                    oBack['collection'] = collection
-
-            else:
-                msg = "read_xml: unable to import the XML, since there is no <CMD>"
-                oErr.Status(msg)
-                oBack['status'] = 'error'
-                oBack['msg'] = msg
-
-        except:
-            msg = oErr.get_error_message()
-            # oBack['filename'] = filename
-            oBack['status'] = 'error'
-            oBack['msg'] = msg
-
-        # Double check if there were errors
-        if oBack['status'] == "error":
-            # Check if a collection has been made
-            if not collection is None:
-                # Since there were errors, it needs to be removed again
-                collection.delete()
-    
-        # Return the object that has been created
-        return oBack
-
-
+# ======= END ========
