@@ -876,6 +876,7 @@ class VloItemEdit(BasicDetails):
             oErr.DoError("get_pidbutton")
         return sBack
 
+
 class VloItemDetails(VloItemEdit):
     """Like VloItem Edit, but then html output"""
     rtype = "html"
