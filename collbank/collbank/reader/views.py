@@ -937,6 +937,53 @@ class VloItemRegister(VloItemDetails):
                     if selflink != currentlink:
                         oHeader['MdSelfLink'] = selflink
 
+
+                    # Also check if `ResourceProxy` has mimetype not empty
+                    oResources = oContent.get('Resources')
+                    if not oResources is None:
+                        # If there are any resources, process them
+                        oResourceProxyList = oResources.get("ResourceProxyList")
+                        if not oResourceProxyList is None:
+                            lst_proxy = []
+                            lResourceProxy = oResourceProxyList.get("ResourceProxy")
+                            if isinstance(lResourceProxy, list):
+                                lst_proxy = lResourceProxy
+                            else:
+                                lst_proxy.append(lResourceProxy)
+
+                            # Some initalisations
+                            bNeedUpdate = False
+                            lst_proxy_update = []
+
+                            # Figure out landing page or resource reference
+                            for oResourceProxy in lst_proxy:
+                                oResType = oResourceProxy.get("ResourceType")
+                                if isinstance(oResType, str):
+                                    resource_type = oResType
+                                    resource_mtype = "application/x-http"
+                                    # Indicate that we need to replace the updated
+                                    bNeedUpdate = True
+                                else:
+                                    resource_type = oResType.get("#text").lower()
+                                    resource_mtype = oResType.get("@mimetype")
+                                    if resource_mtype is None or resource_mtype == "":
+                                        resource_mtype = "application/x-http"
+                                        # Indicate that we need to replace the updated
+                                        bNeedUpdate = True
+                                resource_ref = oResourceProxy.get("ResourceRef")
+
+                                # Keep track of the resource proxy definitions
+                                lst_proxy_update.append(dict(mimetype=resource_mtype, resourcetype=resource_type, resourceref=resource_ref))
+
+                            # Do we need to update the existing list of proxies?
+                            if bNeedUpdate:
+                                # Update the existing list
+                                for idx, oResourceProxy in enumerate(lst_proxy):
+                                    oUpdated = {}
+                                    oUpdated['@mimetype'] = lst_proxy_update[idx]['mimetype']
+                                    oUpdated['#text'] = lst_proxy_update[idx]['resourcetype']
+                                    oResourceProxy['ResourceType'] = oUpdated
+
                 # Get the contents as text
                 sContent = xmltodict.unparse(doc, pretty=True)
                 # Store the contents into the VloItem 
@@ -1098,6 +1145,10 @@ class VloItemLoadXml(BasicPart):
                             else:
                                 resource_type = oResType.get("#text").lower()
                                 resource_mtype = oResType.get("@mimetype")
+                                if resource_mtype is None or resource_mtype == "":
+                                    resource_mtype = "application/x-http"
+                                    # Indicate that we need to replace the updated
+                                    bNeedUpdate = True
                             resource_ref = oResourceProxy.get("ResourceRef")
 
                             # Keep track of the resource proxy definitions

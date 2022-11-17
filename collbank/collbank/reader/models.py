@@ -443,7 +443,7 @@ class VloItem(models.Model):
         oErr = ErrHandle()
         try:
             # Check if a .vloname has been specified, when a .file is known
-            if not self.file is None and not self.file.name is None:
+            if not self.file is None and not self.file.name is None and self.file != "":
                 # Get what should be the VLONAME
                 vloname = Path(self.file.path).stem
                 if self.vloname is None or self.vloname != vloname:
