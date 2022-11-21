@@ -839,6 +839,10 @@ class Annotation(CollbankModel, models.Model):
             # And now call the standard custom_add() method
             obj.custom_add(oItem, oParams, **kwargs)
 
+            # Quick fix
+            if obj.mode == '0':
+                obj.mode = '1'
+
         except:
             msg = oErr.get_error_message()
             oErr.DoError("Annotation/get_instance")
