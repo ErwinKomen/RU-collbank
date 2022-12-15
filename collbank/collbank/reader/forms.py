@@ -60,9 +60,10 @@ class VloItemForm(forms.ModelForm):
         ATTRS_FOR_FORMS = {'class': 'form-control'};
 
         model = VloItem
-        fields = ['abbr', 'user', 'created', 'file']
+        fields = ['abbr', 'user', 'created', 'file', 'title']
         widgets={'abbr':    forms.TextInput(attrs={'style': 'width: 100%;', 'class': 'searching'}),
                  'created': forms.TextInput(attrs={'style': 'width: 100%;'}),
+                 'title': forms.TextInput(attrs={'style': 'width: 100%;'}),
                  'file':    forms.FileInput(attrs={'style': 'width: 100%;'})
                  }
 
@@ -74,6 +75,7 @@ class VloItemForm(forms.ModelForm):
         self.fields['user'].required = False
         self.fields['created'].required = False
         self.fields['file'].required = False
+        self.fields['title'].required = False
 
         # Get the instance
         if 'instance' in kwargs:

@@ -55,6 +55,7 @@ from collbank.basic.models import get_crpp_date, Status
 from collbank.reader.forms import UploadFileForm, UploadFilesForm, SourceInfoForm, VloItemForm
 from collbank.reader.models import get_current_datetime, SourceInfo, VloItem
 from collbank.collection.models import Collection, Title, Genre, Owner, Resource, Linguality
+from collbank.collection.adaptations import listview_adaptations
 
 # =================== This is imported by seeker/views.py ===============
 reader_uploads = [
@@ -793,6 +794,14 @@ class VloItemList(BasicList):
         {'name': 'Created', 'order': 'o=4', 'type': 'str', 'custom': 'created', 'linkdetails': True},
     ]
 
+    def get_context_data(self, **kwargs):
+        # ======== One-time adaptations ==============
+        listview_adaptations("vloitem_list")
+
+        response = super(VloItemList, self).get_context_data(**kwargs)
+
+        return response
+
     def get_field_value(self, instance, custom):
         sBack = ""
         sTitle = ""
@@ -823,17 +832,18 @@ class VloItemEdit(BasicDetails):
             # Define the main items to show and edit
             context['mainitems'] = [
                 # ============== HIDDEN ==========
-                {'type': 'plain', 'label': "User ID",       'value': instance.user.id,         'field_key': "user", 'empty': 'idonly'},
+                {'type': 'plain', 'label': "User ID",       'value': instance.user.id,      'field_key': "user", 'empty': 'idonly'},
                 # ================================
-                {'type': 'plain', 'label': "Abbreviation:", 'value': instance.get_abbr(),   'field_key': "abbr" },
-                {'type': 'plain', 'label': "File:",         'value': instance.get_file(),   'field_key': "file" },
-                {'type': 'plain', 'label': "VLO name:",     'value': instance.get_vloname()                     },
-                {'type': 'plain', 'label': "PID:",          'value': instance.get_pidname(viewonly=True)        },
-                {'type': 'plain', 'label': "Handle Link:",  'value': self.get_pidbutton(instance)               },
-                {'type': 'plain', 'label': "User name:",    'value': instance.get_username(),                   },
-                {'type': 'plain', 'label': "Created:",      'value': instance.get_created()                     },
-                {'type': 'plain', 'label': "Publication status:",   'value': instance.get_status()              },
-                {'type': 'plain', 'label': "Publication date:",     'value': instance.publishdate()             },
+                {'type': 'plain', 'label': "Abbreviation:", 'value': instance.get_abbr(),   'field_key': "abbr"  },
+                {'type': 'plain', 'label': "File:",         'value': instance.get_file(),   'field_key': "file"  },
+                {'type': 'plain', 'label': "Title:",        'value': instance.get_title(),  'field_key': "title" },
+                {'type': 'plain', 'label': "VLO name:",     'value': instance.get_vloname()                      },
+                {'type': 'plain', 'label': "PID:",          'value': instance.get_pidname(viewonly=True)         },
+                {'type': 'plain', 'label': "Handle Link:",  'value': self.get_pidbutton(instance)                },
+                {'type': 'plain', 'label': "User name:",    'value': instance.get_username(),                    },
+                {'type': 'plain', 'label': "Created:",      'value': instance.get_created()                      },
+                {'type': 'plain', 'label': "Publication status:",   'value': instance.get_status()               },
+                {'type': 'plain', 'label': "Publication date:",     'value': instance.publishdate()              },
                 ]
 
             # Is this userplus or superuser?
@@ -920,76 +930,7 @@ class VloItemRegister(VloItemDetails):
             pidname = instance.get_pidname()
 
             # Now that we have a pidname, we can fill in the handle 
-            selflink = instance.get_selflink()
-            if selflink != "":
-                # Yes, we have a selflink: process this internally
-                doc = xmltodict.parse(instance.xmlcontent)
-                oContent = doc.get("CMD")
-                if not oContent is None:
-                    # For debugging: get a string of the object
-                    sCMD = json.dumps(oContent, indent=2)
-
-                    # get the header 
-                    oHeader = oContent.get('Header')
-
-                    # Check the header's selflink information
-                    currentlink = oHeader.get("MdSelfLink", "")
-                    if selflink != currentlink:
-                        oHeader['MdSelfLink'] = selflink
-
-
-                    # Also check if `ResourceProxy` has mimetype not empty
-                    oResources = oContent.get('Resources')
-                    if not oResources is None:
-                        # If there are any resources, process them
-                        oResourceProxyList = oResources.get("ResourceProxyList")
-                        if not oResourceProxyList is None:
-                            lst_proxy = []
-                            lResourceProxy = oResourceProxyList.get("ResourceProxy")
-                            if isinstance(lResourceProxy, list):
-                                lst_proxy = lResourceProxy
-                            else:
-                                lst_proxy.append(lResourceProxy)
-
-                            # Some initalisations
-                            bNeedUpdate = False
-                            lst_proxy_update = []
-
-                            # Figure out landing page or resource reference
-                            for oResourceProxy in lst_proxy:
-                                oResType = oResourceProxy.get("ResourceType")
-                                if isinstance(oResType, str):
-                                    resource_type = oResType
-                                    resource_mtype = "application/x-http"
-                                    # Indicate that we need to replace the updated
-                                    bNeedUpdate = True
-                                else:
-                                    resource_type = oResType.get("#text").lower()
-                                    resource_mtype = oResType.get("@mimetype")
-                                    if resource_mtype is None or resource_mtype == "":
-                                        resource_mtype = "application/x-http"
-                                        # Indicate that we need to replace the updated
-                                        bNeedUpdate = True
-                                resource_ref = oResourceProxy.get("ResourceRef")
-
-                                # Keep track of the resource proxy definitions
-                                lst_proxy_update.append(dict(mimetype=resource_mtype, resourcetype=resource_type, resourceref=resource_ref))
-
-                            # Do we need to update the existing list of proxies?
-                            if bNeedUpdate:
-                                # Update the existing list
-                                for idx, oResourceProxy in enumerate(lst_proxy):
-                                    oUpdated = {}
-                                    oUpdated['@mimetype'] = lst_proxy_update[idx]['mimetype']
-                                    oUpdated['#text'] = lst_proxy_update[idx]['resourcetype']
-                                    oResourceProxy['ResourceType'] = oUpdated
-
-                # Get the contents as text
-                sContent = xmltodict.unparse(doc, pretty=True)
-                # Store the contents into the VloItem 
-                instance.xmlcontent = sContent
-                # And save it
-                instance.save()
+            sContent = instance.register()
 
         except:
             msg = oErr.get_error_message()
@@ -1023,19 +964,8 @@ class VloItemPublish(VloItemDetails):
                 return None
 
             # There is a PID name, so we may publish the lot
-            sXmlText = instance.xmlcontent
-            if not sXmlText is None and sXmlText != "":
-                # Get the full path to the registry file
-                fPublish = instance.get_publisfilename()
-                # Write it to a file in the XML directory
-                with open(fPublish, encoding="utf-8", mode="w") as f:  
-                    f.write(sXmlText)
+            instance.publish()
 
-                # Publish the .cmdi.xml
-                fPublish = instance.get_publisfilename("joai")
-                # Write it to a file in the XML directory
-                with open(fPublish, encoding="utf-8", mode="w") as f:  
-                    f.write(sXmlText)
         except:
             msg = oErr.get_error_message()
             oErr.DoError("VloItemPublish/custom_init")
@@ -1098,103 +1028,15 @@ class VloItemLoadXml(BasicPart):
             username = user.username
             kwargs = {'user': user, 'username': username}
 
-            # Get the file and read it
-            data_file = instance.file
+            # Perform the reading
+            sContent = instance.read_xml()
 
-            # Use XmlToDict to parse (from XML to objects) and unparse (from objects to XML)
-            doc = xmltodict.parse(data_file)
-            oContent = doc.get("CMD")
-            if not oContent is None:
-                # For debugging: get a string of the object
-                sCMD = json.dumps(oContent, indent=2)
-
-                # get the header 
-                oHeader = oContent.get('Header')
-                # Process the header information
-
-                # Get the resources
-                # NOTE: recognized are: LandingPage and SearchPage
-                oResources = oContent.get('Resources')
-                lst_searchpage = []
-                lst_landingpage = []
-                if not oResources is None:
-                    # If there are any resources, process them
-                    oResourceProxyList = oResources.get("ResourceProxyList")
-                    if not oResourceProxyList is None:
-                        lst_proxy = []
-                        lResourceProxy = oResourceProxyList.get("ResourceProxy")
-                        if isinstance(lResourceProxy, list):
-                            lst_proxy = lResourceProxy
-                        else:
-                            lst_proxy.append(lResourceProxy)
-
-                        # Some initalisations
-                        bHasLandingpage = False
-                        bHasResource = False
-                        bNeedUpdate = False
-                        lst_proxy_update = []
-
-                        # Figure out landing page or resource reference
-                        for oResourceProxy in lst_proxy:
-                            oResType = oResourceProxy.get("ResourceType")
-                            if isinstance(oResType, str):
-                                resource_type = oResType
-                                resource_mtype = "application/x-http"
-                                # Indicate that we need to replace the updated
-                                bNeedUpdate = True
-                            else:
-                                resource_type = oResType.get("#text").lower()
-                                resource_mtype = oResType.get("@mimetype")
-                                if resource_mtype is None or resource_mtype == "":
-                                    resource_mtype = "application/x-http"
-                                    # Indicate that we need to replace the updated
-                                    bNeedUpdate = True
-                            resource_ref = oResourceProxy.get("ResourceRef")
-
-                            # Keep track of the resource proxy definitions
-                            lst_proxy_update.append(dict(mimetype=resource_mtype, resourcetype=resource_type, resourceref=resource_ref))
-
-                            # Process the resource
-                            if resource_type.lower() == "landingpage":
-                                lst_landingpage.append(resource_ref)
-                                if resource_ref != "":
-                                    bHasLandingpage = True
-                            elif resource_type.lower() == "searchpage":
-                                lst_searchpage.append(resource_ref)
-                            elif resource_type.lower() == "resource":
-                                if resource_ref != "":
-                                    bHasResource = True
-
-                        # Do we need to update the existing list of proxies?
-                        if bNeedUpdate:
-                            # Update the existing list
-                            for idx, oResourceProxy in enumerate(lst_proxy):
-                                oUpdated = {}
-                                oUpdated['@mimetype'] = lst_proxy_update[idx]['mimetype']
-                                oUpdated['#text'] = lst_proxy_update[idx]['resourcetype']
-                                oResourceProxy['ResourceType'] = oUpdated
-
-                        xx = isinstance(lResourceProxy, list)
-
-                # Before we proceed: we need to have at least one landingpage
-                bNoLandingPage = (not bHasLandingpage and not bHasResource)
-                if bNoLandingPage:
-                    # Warn the user
-                    oBack['status'] = 'error'
-                    oBack['msg'] = "The XML does not (correctly) specify either a landingpage or a resource"
-                    return oBack
-
-            # Get the contents as text
-            sContent = xmltodict.unparse(doc, pretty=True)
-            # Store the contents into the VloItem 
-            instance.xmlcontent = sContent
-            # And save it
-            instance.save()
+            # What is returned, that is just the VloItem instance
             oBack['vloitem'] = instance
 
         except:
             msg = oErr.get_error_message()
-            # oBack['filename'] = filename
+
             oBack['status'] = 'error'
             oBack['msg'] = msg
 

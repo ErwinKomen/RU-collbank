@@ -842,6 +842,7 @@ class Annotation(CollbankModel, models.Model):
             # Quick fix
             if obj.mode == '0':
                 obj.mode = '1'
+                obj.save()
 
         except:
             msg = oErr.get_error_message()

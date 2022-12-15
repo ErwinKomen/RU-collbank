@@ -21,10 +21,12 @@ from collbank.collection.models import FieldChoice, Collection, Resource, \
     Linguality, LingualityType, LingualityNativeness, LingualityAgeGroup, LingualityStatus, \
     LingualityVariant, MultilingualityType, MediaFormat, Organization, Person, \
     LanguageIso, LanguageName, Language, CountryIso
+from collbank.reader.models import VloItem
 
 
 adaptation_list = {
-    "collection_list": ["resource_empty", "language_renew", "langname_add", "country_renew"] 
+    "collection_list": ["resource_empty", "language_renew", "langname_add", "country_renew"],
+    "vloitem_list": ["vloitem_id", "vloitem_publish"]
     }
 
 def listview_adaptations(lv):
@@ -48,7 +50,7 @@ def listview_adaptations(lv):
         msg = oErr.get_error_message()
         oErr.DoError("listview_adaptations")
 
-# =========== Part of manuscript_list ==================
+# =========== Part of collection ==================
 
 def adapt_resource_empty():
     oErr = ErrHandle()
@@ -263,4 +265,62 @@ def adapt_langname_add():
     return bResult, msg
 
 
+# =========== Part of vloitem ======================
+
+def adapt_vloitem_id():
+    """Re-calculate the XMLs, adding @id to ResourceProxy items"""
+
+    oErr = ErrHandle()
+    bResult = True
+    msg = ""
+
+    try:
+        qs = VloItem.objects.all()
+        for obj in qs:
+            sContent = obj.read_xml()
+    except:
+        bResult = False
+        msg = oErr.get_error_message()
+        oErr.DoError("adapt_vloitem_id")
+    return bResult, msg
+
+def adapt_vloitem_publish():
+    """Re-publish all VloItem XMLs"""
+
+    oErr = ErrHandle()
+    bResult = True
+    msg = ""
+
+    try:
+        qs = VloItem.objects.all()
+        lst_publish = []
+        lst_skip = []
+        for obj in qs:
+            # Check if this is a 'finished' one that allows for publication
+            if not obj.file is None and obj.file.name != "":
+                # Perform reading
+                sContent = obj.read_xml()
+                # Perform registering
+                if sContent != "":
+                    sContent = obj.register()
+                    # Perform publishing
+                    if sContent != "":
+                        sContent = obj.publish()
+                        if sContent != "":
+                            # Add to the list of published items
+                            lst_publish.append(obj.id)
+                        else:
+                            lst_skip.append(obj.id)
+                    else:
+                        lst_skip.append(obj.id)
+                else:
+                    lst_skip.append(obj.id)
+        if len(lst_skip) > 0:
+            bResult = False
+            msg = "vloitem_publish skipped: {}".format(json.dumps(lst_skip))
+    except:
+        bResult = False
+        msg = oErr.get_error_message()
+        oErr.DoError("adapt_vloitem_publish")
+    return bResult, msg
 
