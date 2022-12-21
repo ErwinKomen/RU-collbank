@@ -546,6 +546,8 @@ class VloItem(models.Model):
 
         oErr = ErrHandle()
         sContent = ""
+        CMD_VERSION = "1.1"
+
         try:
             instance = self
 
@@ -558,6 +560,11 @@ class VloItem(models.Model):
                 if not oContent is None:
                     # For debugging: get a string of the object
                     sCMD = json.dumps(oContent, indent=2)
+
+                    # Check for attribute CMDVersion
+                    sCmdVersion = oContent.get('@CMDVersion', '')
+                    if sCmdVersion == "":
+                        oContent['@CMDVersion'] = CMD_VERSION
 
                     # get the header 
                     oHeader = oContent.get('Header')
@@ -622,6 +629,9 @@ class VloItem(models.Model):
                                 if sResProxyId == "" or sResProxyId != res_proxy_id:
                                     oResourceProxy['@id'] = res_proxy_id
 
+                                # Check for start with upper case
+                                if resource_type == "resource":
+                                    resource_type = "Resource"
 
                                 # Keep track of the resource proxy definitions
                                 lst_proxy_update.append(dict(
