@@ -34,6 +34,7 @@ from collbank.settings import APP_PREFIX, WSGI_FILE, STATIC_ROOT, WRITABLE_DIR, 
 from collbank.collection.admin import CollectionAdmin
 from collbank.collection.forms import *
 from collbank.collection.adaptations import listview_adaptations
+from collbank.basic.utils import ErrHandle
 
 # Local variables
 XSI_CMD = "http://www.clarin.eu/cmd/"
@@ -434,13 +435,21 @@ def get_language_code_name(lng_obj):
     return (sLanguage, code)
 
 def getSchema():
-    # Get the XSD file into an LXML structure
-    # fSchema = os.path.abspath(os.path.join(STATIC_ROOT, "collection", "xsd", "CorpusCollection.xsd.txt"))
-    fSchema = os.path.abspath(os.path.join(WRITABLE_DIR, "xsd", "CorpusCollection.xsd.txt"))
-    with open(fSchema, encoding="utf-8", mode="r") as f:  
-        sText = f.read()                        
-        # doc = etree.parse(f)
+    
+    oErr = ErrHandle()
+    try:
+        # Get the XSD file into an LXML structure
+        fSchema = os.path.abspath(os.path.join(WRITABLE_DIR, "xsd", "CorpusCollection.xsd.txt"))
+        #with open(fSchema, encoding="utf-8", mode="r") as f:  
+        #    sText = f.read()                        
+        #    # doc = etree.parse(f)
+        with open(fSchema, mode="rb") as f:  
+            sText = f.read()                        
         doc = etree.XML(sText)                                                    
+    except:
+        msg = oErr.get_error_message()
+        oErr.DoError("getSchema")
+        return None
     
     # Load the schema
     try:                                                                        
