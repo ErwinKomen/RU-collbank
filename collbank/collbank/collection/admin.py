@@ -1926,7 +1926,7 @@ class CollectionAdmin(nested_admin.NestedModelAdmin):
 
     def response_change(self, request, obj):
         # Figure out where to return to
-        url = reverse('coll_detail', kwargs={'pk': obj.id})
+        url = reverse('coll_details', kwargs={'pk': obj.id})
         # Return there
         return redirect(url)
 

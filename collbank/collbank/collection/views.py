@@ -35,6 +35,8 @@ from collbank.collection.admin import CollectionAdmin
 from collbank.collection.forms import *
 from collbank.collection.adaptations import listview_adaptations
 
+from collbank.basic.views import BasicDetails, BasicList
+
 # Local variables
 XSI_CMD = "http://www.clarin.eu/cmd/"
 # Initial version in Radboud-TSG (now extinct)
@@ -994,13 +996,13 @@ class CollectionDetailView(DetailView):
     model = Collection
     export_xml = True
     context_object_name = 'collection'
-    template_name = 'collection/coll_detail.html'
+    template_name = 'collection/coll_details.html'
     slug_field = 'pidname'
     slug_field = 'get_xmlfilename'
     
     def get(self, request, *args, **kwargs):
         context = {}
-        self.template_name = 'collection/coll_detail.html'
+        self.template_name = 'collection/coll_details.html'
         # If this is 'registry' then get the id
         if 'type' in kwargs and kwargs['type'] == 'registry':
             # Find out which instance this is
@@ -1410,3 +1412,84 @@ class CollectionDetailView(DetailView):
 
         # Return the result
         return response
+
+
+# ============ Additional views for viewing the collections ====================
+
+class PidEdit(BasicDetails):
+    """Details of a PID"""
+
+    model = Collection
+    mForm = PidForm
+    prefix = "pid"
+    title = "PID"
+    basic_name = "pid"
+    permission = "readonly"
+    do_not_save = True
+    no_delete = True
+    mainitems = []
+
+    def add_to_context(self, context, instance):
+        """Add to the existing context"""
+
+        # Define the main items to show and edit
+        context['mainitems'] = [
+            {'type': 'plain', 'label': "Internal id",   'value': instance.id},
+            {'type': 'plain', 'label': "Identifier",    'value': instance.identifier},
+            {'type': 'plain', 'label': "PID name:",     'value': instance.pidname},
+            {'type': 'plain', 'label': "URL",           'value': instance.url},
+            ]
+        # Return the context we have made
+        return context
+
+
+class PidDetails(PidEdit):
+    """Like Pid Edit, but then html output"""
+    rtype = "html"
+
+
+class PidList(BasicList):
+    """List particular information from all collection info objects"""
+
+    model = Collection
+    listform = PidForm
+    prefix = "pid"
+    basic_name = "pid"
+    plural_name = "PIDs"
+    sg_name = "PID"
+    new_button = False
+    order_cols = ['id', 'identifier', 'pidname', 'url']  
+    order_default = order_cols
+    order_heads = [
+        {'name': 'ID',              'order': 'o=1', 'type': 'int', 'field': 'id',           'linkdetails': True},
+        {'name': 'Identifier',      'order': 'o=2', 'type': 'str', 'field': 'identifier',   'linkdetails': True, 'allowwrap': True, 'main': True},
+        {'name': 'PID name',        'order': 'o=3', 'type': 'str', 'custom':'pidname'},
+        {'name': 'URL',             'order': 'o=4', 'type': 'str', 'custom': 'url'},
+    ]
+
+    def get_context_data(self, **kwargs):
+        # ======== One-time adaptations ==============
+        listview_adaptations("pid_list")
+
+        # Get the standard context
+        context = super(PidList, self).get_context_data(**kwargs)
+
+        # Return the combined context
+        return context
+
+    def get_field_value(self, instance, custom):
+        sBack = ""
+        sTitle = ""
+        oErr = ErrHandle()
+        try:
+            if custom == "pidname":
+                sBack = instance.get_pidfull(plain=False)
+            elif custom == "url":
+                # Get the URL in a callable way
+                sBack = instance.get_url()
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("PidList/get_field_value")
+
+        return sBack, sTitle
+

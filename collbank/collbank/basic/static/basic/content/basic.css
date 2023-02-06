@@ -124,3 +124,37 @@ td a.nostyle {
 }
 
 
+span.badge.signature.gr {
+    background-color: lightblue;
+}
+
+span.badge.signature.cl {
+    background-color: lightgreen;
+}
+
+span.badge.signature.ot, span.badge.signature.eqset {
+    background-color: lightgoldenrodyellow;
+}
+
+span.badge.signature {
+    background-color: lightgray;
+    color: darkblue;
+    font-size: 85%;
+    padding: 2px 5px;
+    font-weight: normal;
+    border-radius: 5px;
+    margin: 1px;
+}
+
+span.badge.signature:hover {
+    color: whitesmoke;
+    background-color: darkblue;
+    cursor: pointer;
+}
+
+
+.bi-filetype-xls {
+    position: relative;
+    top: 3px;
+}
+

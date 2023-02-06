@@ -21,6 +21,7 @@ import os, time
 from collbank.settings import REGISTRY_URL, REGISTRY_DIR, PUBLISH_DIR
 from collbank.basic.utils import ErrHandle
 from collbank.basic.views import get_current_datetime
+from collbank.basic.models import Custom
 
 
 MAX_IDENTIFIER_LEN = 30
@@ -3084,7 +3085,7 @@ class ExtColl(models.Model):
         return self.identifier
 
 
-class Collection(models.Model, CollbankModel):
+class Collection(models.Model, CollbankModel, Custom):
     """Characteristics of the collection as a whole"""
 
     # ============ INTERNAL FIELDS ================================
@@ -3163,6 +3164,8 @@ class Collection(models.Model, CollbankModel):
     specification = [
         {'name': 'Registry identifier', 'type': 'field', 'path': 'pidname',     'readonly': True},
         {'name': 'Url',                 'type': 'field', 'path': 'url',         'readonly': True},  # project/url
+        {'name': 'Identifier',          'type': 'field', 'path': 'identifier',  'readonly': True},  # 
+        {'name': 'PID link',            'type': 'func',  'path': 'pidlink'},
         {'name': 'Landing page',        'type': 'field', 'path': 'landingPage'},                    # ResourceProxy
         {'name': 'Search page',         'type': 'field', 'path': 'searchPage'},                     # ResourceProxy
 
@@ -3232,6 +3235,23 @@ class Collection(models.Model, CollbankModel):
             self.save()
         # Return positively
         return True
+
+    def custom_get(self, path, **kwargs):
+        sBack = ""
+        oErr = ErrHandle()
+        try:
+            profile = kwargs.get("profile")
+            username = kwargs.get("username")
+            team_group = kwargs.get("team_group")
+
+            # Use if - elif - else to check the *path* defined in *specification*
+            if path == "pidlink":
+                sBack = self.get_pidfull()
+
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Collection/custom_get")
+        return sBack
 
     def do_identifier(self):
         # This function is used in [CollectionAdmin] in list_display
@@ -3340,10 +3360,23 @@ class Collection(models.Model, CollbankModel):
             print("get_pidname error:", sys.exc_info()[0])
             return ""
 
-    def get_pidfull(self):
+    def get_pidfull(self, plain=True):
+        """Get an HTML representation of the PID name.
+        
+        Include a link and provide a shield, if plain is False
+        """
+
         sBack = ""
-        if self.pidname != None:
-            sBack = "http://hdl.handle.net/21.11114/{}".format(self.pidname)
+        oErr = ErrHandle()
+        try:
+            if self.pidname != None:
+                sBack = "http://hdl.handle.net/21.11114/{}".format(self.pidname)
+                if not plain:
+                    # Create a good HTML representation of this
+                    sBack = "<span class='badge signature gr'><a href='{}'>{}</a></span>".format(sBack, self.pidname)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("get_pidfull")
         return sBack
 
     def get_publisfilename(self, sType=""):
@@ -3407,6 +3440,19 @@ class Collection(models.Model, CollbankModel):
     get_title.short_description = 'Titles (not sortable)'
     # This works, but sorting on a non-f
     # get_title.admin_order_field = 'identifier'
+
+    def get_url(self):
+        """Get the URL in a callable way"""
+
+        sBack = "-"
+        oErr = ErrHandle()
+        try:
+            if not self.url is None and self.url != "":
+                sBack = "<span class='badge signature cl'><a href='{}'>{}</a></span>".format(self.url, self.url)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("get_url")
+        return sBack
 
     def get_xmlfilename(self):
         """Create the filename for the XML file for this item"""

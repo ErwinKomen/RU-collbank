@@ -41,14 +41,20 @@ urlpatterns = [
     url(r'^definitions$', RedirectView.as_view(url='/'+APP_PREFIX+'admin/'), name='definitions'),
 
     # ------------ Corpus collection handling and viewing --------------------------------------------
-    url(r'^collection/add', RedirectView.as_view(url='/'+APP_PREFIX+'admin/collection/collection/add'), name='add'),
-    url(r'^collection/view/(?P<pk>\d+)$', CollectionDetailView.as_view(), name='coll_detail'),
+    url(r'^collection/add', RedirectView.as_view(url='/'+APP_PREFIX+'admin/collection/collection/add'), name='coll_add'),
+    url(r'^collection/view/(?P<pk>\d+)$', CollectionDetailView.as_view(), name='coll_details'),
     url(r'^collection/export/(?P<pk>\d+)$', CollectionDetailView.as_view(),  {'type': 'output'}, name='output'),
     url(r'^collection/handle/(?P<pk>\d+)$', CollectionDetailView.as_view(),  {'type': 'handle'}, name='handle'),
     url(r'^collection/publish/(?P<pk>\d+)$', CollectionDetailView.as_view(),  {'type': 'publish'}, name='publish'),
     url(r'^collection/evaluate/(?P<pk>\d+)$', CollectionDetailView.as_view(),  {'type': 'evaluate'}, name='evaluate'),
     url(r'^overview/$', CollectionListView.as_view(), name='overview'),
     url(r'^admin/collection/collection/$', RedirectView.as_view(pattern_name='overview'), name='collectionlist'),
+
+    # ------------ Basic app collection views --------------------------------------------------------
+    url(r'^pid/list', PidList.as_view(), name='pid_list'),
+    url(r'^pid/details(?:/(?P<pk>\d+))?/$', PidDetails.as_view(), name='pid_details'),
+    url(r'^pid/edit(?:/(?P<pk>\d+))?/$', PidEdit.as_view(), name='pid_edit'),
+
 
     # -------------- Additional calls supporting the above -------------------------------------------
     url(r'^external/list', RedirectView.as_view(url='/'+APP_PREFIX+'admin/collection/extcoll'), name='extcoll_list'),

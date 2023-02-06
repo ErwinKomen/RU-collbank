@@ -26,7 +26,8 @@ from collbank.reader.models import VloItem
 
 adaptation_list = {
     "collection_list": ["resource_empty", "language_renew", "langname_add", "country_renew"],
-    "vloitem_list": ["vloitem_id", "vloitem_publish"]
+    "vloitem_list": ["vloitem_id", "vloitem_publish"],
+    "pid_list": []
     }
 
 def listview_adaptations(lv):

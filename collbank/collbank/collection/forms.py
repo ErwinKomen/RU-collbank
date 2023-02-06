@@ -38,3 +38,18 @@ class CollectionForm(forms.ModelForm):
         labels = {'identifer': _('Identifier'), }
         help_texts = { 'identifer': _('Enter a short but unique identifier of this collection.'), }
 
+
+class PidForm(forms.ModelForm):
+    """Form for the PID list- and details view"""
+
+    class Meta:
+        model = Collection
+        fields = ['id', 'identifier', 'pidname', 'url']
+
+    def __init__(self, *args, **kwargs):
+        # Start by executing the standard handling
+        super(PidForm, self).__init__(*args, **kwargs)
+        # Make sure to set required and optional fields
+        self.fields['identifier'].required = False
+        self.fields['pidname'].required = False
+        self.fields['url'].required = False

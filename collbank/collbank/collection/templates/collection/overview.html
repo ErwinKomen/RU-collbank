@@ -36,7 +36,7 @@
       <div id="content-main">
         <ul class="object-tools">
           {% if user.is_authenticated and is_app_editor %} 
-          <li><a class="addlink" href="{% url 'add' %}">Add a collection record</a></li>
+          <li><a class="addlink" href="{% url 'coll_add' %}">Add a collection record</a></li>
           {% endif %}
         </ul>
       </div>
@@ -62,11 +62,11 @@
         {% for coll in overview_list %}
           <tr>
             <td>{{coll.id}}</td>
-            <td><a href="{% url 'coll_detail' pk=coll.pk %}">{{coll.identifier}}</a></td>
+            <td><a href="{% url 'coll_details' pk=coll.pk %}">{{coll.identifier}}</a></td>
             <td>{{coll.description}}
               {% if user.is_authenticated %}
                 <span class="coll-xml">
-                  <a class="btn btn-default btn-xs" title="view" href="{% url 'coll_detail' coll.pk %}">
+                  <a class="btn btn-default btn-xs" title="view" href="{% url 'coll_details' coll.pk %}">
                     <span class="glyphicon glyphicon-search" aria-hidden="true"></span>
                   </a>
                 </span>
