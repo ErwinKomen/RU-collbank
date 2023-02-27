@@ -25,7 +25,8 @@ from collbank.reader.models import VloItem
 
 
 adaptation_list = {
-    "collection_list": ["resource_empty", "language_renew", "langname_add", "country_renew"],
+    "collection_list": ["resource_empty", "language_renew", "langname_add", "country_renew",
+                        "modality_strings"],
     "vloitem_list": ["vloitem_id", "vloitem_publish"],
     "pid_list": []
     }
@@ -264,6 +265,76 @@ def adapt_langname_add():
         msg = oErr.get_error_message()
         oErr.DoError("adapt_langname_add")
     return bResult, msg
+
+def adapt_modality_strings():
+    """Check modalities and change string to number"""
+
+    oErr = ErrHandle()
+    bResult = True
+    msg = ""
+    RESOURCE_MODALITY = "resource.modality"
+
+    try:
+        # Conversion from modality name to modality machine_value
+        dict_modality = {}
+
+        # Walk through the Modality table
+        qs = Modality.objects.all()
+        for obj in qs:
+            # Check the value here
+            sName = obj.name.lower()
+            # Check if this name matches a number
+            if re.fullmatch(r'-?\d+', sName) is None:
+                # This is not a number
+                # Check if this is found in FieldChoice
+                fieldchoice = FieldChoice.objects.filter(field__iexact=RESOURCE_MODALITY, english_name__iexact=sName).first()
+                if fieldchoice is None:
+                    # Calculate highest currently occurring value
+                    modalities = FieldChoice.objects.filter(field__iexact=RESOURCE_MODALITY)
+                    highest_machine_value = max([field_choice.machine_value for field_choice in modalities])
+                    # The automatic machine value we calculate is 1 higher
+                    machine_value= highest_machine_value + 1
+                    # Create the new fieldchoice
+                    fieldchoice = FieldChoice.objects.create(
+                        field=RESOURCE_MODALITY, english_name=sName, dutch_name=sName, machine_value=machine_value)
+                    # Set it in the Modality entry
+                    obj.name = str(machine_value)
+                    obj.save()
+                else:
+                    # We know the fieldchoice: get its machine_value
+                    machine_value = fieldchoice.machine_value
+                    # Set it in the Modality entry
+                    obj.name = str(machine_value)
+                    obj.save()
+
+        # Determine what file to take
+        code_file = os.path.abspath(os.path.join(MEDIA_DIR, "collbank", "CountryCodes.json"))
+        if os.path.exists(code_file):
+            # Read the JSON into a list
+            with open(code_file, "r", encoding="utf-8") as f:
+                lst_country = json.load(f)
+
+            # Process all the countries
+            for oCountry in lst_country:
+                # Get the parameters
+                alpha2 = oCountry.get("alpha2Code")
+                alpha3 = oCountry.get("alpha3Code")
+                numeric = oCountry.get("numeric")
+                english = oCountry.get("englishShortName")
+                french = oCountry.get("frenchShortName")
+
+                # Create a record if the alpha2 is not yet there
+                obj = CountryIso.objects.filter(alpha2=alpha2).first()
+                if obj is None:
+                    obj = CountryIso.objects.create(alpha2=alpha2, alpha3=alpha3, numeric=numeric, english=english, french=french)
+        
+    except:
+        bResult = False
+        msg = oErr.get_error_message()
+        oErr.DoError("adapt_country_renew")
+    return bResult, msg
+
+
 
 
 # =========== Part of vloitem ======================

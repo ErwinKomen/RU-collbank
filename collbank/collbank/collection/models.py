@@ -525,6 +525,8 @@ class CollbankModel(object):
                                         setattr(obj, alternative, value)
                                         # Make sure that we set the fieldchoice field to 'other'
                                         value = choice_value(fieldchoice, "other")
+                                    else:
+                                        value = iBack
                                 else:
                                     value = iBack
 
