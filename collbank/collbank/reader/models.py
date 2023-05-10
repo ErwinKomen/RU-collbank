@@ -471,7 +471,14 @@ class VloItem(models.Model):
                         oHeader['MdSelfLink'] = selflink
 
                 # Check the header's <title> information
-                title_xml = oHeader.get("Title", "")
+                # OLD: title_xml = oHeader.get("Title", "")
+                # Get the title from Components OralHistoryInterviewCRF
+                title_xml = ""
+                oComponents = oContent.get("Components")
+                if not oComponents is None:
+                    oCRF = oComponents.get("OralHistoryInterviewCRF")
+                    if not oCRF is None:
+                        title_xml = oCRF.get("Title", "")
                 title_self = "" if instance.title is None else instance.title
                 if title_self == "" and title_xml != "":
                     # Copy the title from XML to the object
@@ -482,7 +489,8 @@ class VloItem(models.Model):
                     # Copy the title from Self to XML
                     print("VloItemRegister: copied <title> from database to XML")
                     title_xml = title_self
-                    oHeader['Title'] = title_xml
+                    # OLD: oHeader['Title'] = title_xml
+                    oCRF['Title'] = title_self
 
                 # Also check if `ResourceProxy` has mimetype not empty
                 oResources = oContent.get('Resources')
