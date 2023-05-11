@@ -1,6 +1,7 @@
 """Models for the READER app.
 
 """
+from typing import ByteString
 from django.contrib.auth.models import User, Group
 from django.db.models import Q
 from django.db import models, transaction
@@ -8,13 +9,14 @@ from django.utils import timezone
 from datetime import datetime
 from pathlib import Path
 import xmltodict
+import lxml.etree as ET
 import os
 import json
 
 
 from collbank.basic.models import LONG_STRING
 from collbank.basic.utils import ErrHandle
-from collbank.collection.models import PidService, PIDSERVICE_NAME, MAX_STRING_LEN, MAX_NAME_LEN
+from collbank.collection.models import PidService, PIDSERVICE_NAME, MAX_STRING_LEN, MAX_NAME_LEN, Resource
 from collbank.settings import MEDIA_ROOT, REGISTRY_URL, REGISTRY_DIR, PUBLISH_DIR
 
 def get_current_datetime():
@@ -439,7 +441,163 @@ class VloItem(models.Model):
         return sContent
 
     def repair_xml(self, sContent, selflink = None):
-        """Read the XML from file/string, repair it, and return it as string again"""
+        """Read the XML from file/string, repair it, and return it as string again
+        
+        This uses the [lxml] approach, which is stricter than [xmltodict]
+        """
+
+        def get_first(elStart, sFind, NS):
+            items = elStart.findall(sFind, NS)
+            if len(items) == 0:
+                item = None
+            else:
+                item = items[0]
+            return item
+
+        def get_first_node_value(elStart, sFind, NS):
+            items = elStart.findall(sFind, NS)
+            if len(items) == 0:
+                sBack = ""
+            else:
+                sBack = items[0].text
+            return sBack
+
+        oErr = ErrHandle()
+        CMD_VERSION = "1.1"
+
+        try:
+            # We use 'instance' in this method, but it actually is 'self'
+            instance = self
+
+            NS_find = {None: 'http://www.clarin.eu/cmd/'}
+            NS_xpath = {'a': 'http://www.clarin.eu/cmd/'}
+
+            # NOTE: the difference of working with .findall versus .xpath
+            #   cmd_item = root.findall("./child::Header", {None: 'http://www.clarin.eu/cmd/'})
+            #   cmd_item = root.xpath("./a:Header", namespaces={'a': 'http://www.clarin.eu/cmd/'})
+
+
+            # This either reads a string or file and parses it
+            parser = ET.ETCompatXMLParser()
+            root = None
+            if isinstance(sContent,bytes):
+                root = ET.fromstring(sContent.decode("utf-8"), parser)
+            elif isinstance(sContent,str):
+                root = ET.fromstring(sContent, parser)
+            else:
+                xmldoc = ET.parse(sContent, parser)
+                # Get to the root (which is the <CMD> element)
+                root = xmldoc.getroot()
+            
+            # Get to the <CMD> element
+            if not root is None:
+                # Check for attribute CMDVersion
+                sCmdVersion = root.attrib.get("CMDVersion", "")
+                if sCmdVersion == "":
+                    root.attrib['CMDVersion'] = CMD_VERSION
+
+                # get the header 
+                header = get_first(root, "Header", NS_find)
+
+                # Check the header's selflink information
+                if not selflink is None:
+                    currentlink = get_first_node_value(header, "MdSelfLink", NS_find)
+                    if selflink != currentlink:
+                        # Add this node as child
+                        newlink = ET.Element("MdSelfLink", nsmap = NS_find)
+                        newlink.text = selflink
+                        header.append(newlink)
+
+                # Get the title from Components OralHistoryInterviewCRF
+                title_xml = ""
+                components = get_first(root, "Components", NS_find)
+                if not components is None:
+                    crf = get_first(components, "OralHistoryInterviewCRF", NS_find)
+                    if not crf is None:
+                        title_xml = crf.attrib.get("Title", "")
+                        title_self = "" if instance.title is None else instance.title
+
+                        # See what needs to happen
+                        if title_self == "" and title_xml != "":
+                            # Copy the title from XML to the object
+                            print("VloItemRegister: copied <title> from XML to database")
+                            instance.title = title_xml
+                            instance.save()
+                        elif title_self != "" and title_xml == "":
+                            # Copy the title from Self to XML
+                            print("VloItemRegister: copied <title> from database to XML")
+                            title_xml = title_self
+                            # The Title must be the first element
+                            newtitle = ET.Element("Title", nsmap = NS_find)
+                            newtitle.text = title_self
+                            crf.insert(0, newtitle)
+
+                # Returning to the header, get the <Resources> over there
+                resources = get_first(root, "Resources", NS_find)
+                if not resources is None:
+                    # If there are any resources, process them
+                    resourceProxyList = get_first(resources, "ResourceProxyList", NS_find)
+                    if not resourceProxyList is None:
+                        lst_proxy = resourceProxyList.findall("ResourceProxy", NS_find)
+
+                        # Some initalisations
+                        bNeedUpdate = False
+                        lst_proxy_update = []
+
+                        # Figure out landing page or resource reference
+                        for oResourceProxy in lst_proxy:
+                            oResType = get_first(oResourceProxy, "ResourceType", NS_find)
+                            # NOTE: do *NOT* turn this into lower case
+                            resource_type = oResType.text
+                            resource_mtype = oResType.attrib.get("mimetype", "")
+                            if resource_mtype == "":
+                                resource_mtype = "application/x-http"
+                                # Indicate that we need to replace the updated
+                                bNeedUpdate = True
+                            resource_ref = get_first(oResourceProxy, "ResourceRef", NS_find)
+
+                            # Calculate the ID for this ResourceProxy
+                            rtype = VloItem.restype_abbr.get(resource_type.lower(), "oth")
+                            res_proxy_id = "{}_{}metadata_{:05d}".format(rtype, instance.abbr, instance.id)
+
+                            sResProxyId = oResourceProxy.attrib.get("id", "")
+                            if sResProxyId == "" or sResProxyId != res_proxy_id:
+                                oResourceProxy.attrib['id'] = res_proxy_id
+
+                            # Make sure the resource type is in the right case
+                            if resource_type != VloItem.restype_full.get(resource_type.lower()):
+                                resource_type = VloItem.restype_full.get(resource_type.lower(), "Other")
+                                # Indicate that we need to replace the updated
+                                bNeedUpdate = True
+
+                            # Keep track of the resource proxy definitions
+                            lst_proxy_update.append(dict(
+                                mimetype=resource_mtype, 
+                                resourcetype=resource_type, 
+                                resourceref=resource_ref,
+                                id=res_proxy_id))
+
+                        # Do we need to update the existing list of proxies?
+                        if bNeedUpdate:
+                            # Update the existing list
+                            for idx, oResourceProxy in enumerate(lst_proxy):
+                                res_type = get_first(oResourceProxy, "ResourceType", NS_find)
+                                res_type.attrib['mimetype'] = lst_proxy_update[idx]['mimetype']
+                                res_type.text = lst_proxy_update[idx]['resourcetype']
+
+
+            # Get the contents as text
+            sContent = ET.tostring(root, pretty_print=True).decode("utf-8")
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("VloItem/repair_xml")
+        return sContent
+
+    def repair_xml_dict(self, sContent, selflink = None):
+        """Read the XML from file/string, repair it, and return it as string again
+        
+        This uses the [xmltodict] approach, which has a limitation in ordering
+        """
 
         oErr = ErrHandle()
         CMD_VERSION = "1.1"
@@ -560,7 +718,7 @@ class VloItem(models.Model):
             sContent = xmltodict.unparse(doc, pretty=True)
         except:
             msg = oErr.get_error_message()
-            oErr.DoError("VloItem/repair_xml")
+            oErr.DoError("VloItem/repair_xml_dict")
         return sContent
 
     def read_xml(self):
