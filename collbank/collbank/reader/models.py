@@ -514,6 +514,7 @@ class VloItem(models.Model):
                 if not components is None:
                     crf = get_first(components, "OralHistoryInterviewCRF", NS_find)
                     if not crf is None:
+                        ID_element = get_first(crf, "ID", NS_find)
                         title_xml = crf.attrib.get("Title", "")
                         title_self = "" if instance.title is None else instance.title
 
@@ -530,7 +531,13 @@ class VloItem(models.Model):
                             # The Title must be the first element
                             newtitle = ET.Element("Title", nsmap = NS_find)
                             newtitle.text = title_self
-                            crf.insert(0, newtitle)
+
+                            if ID_element is None:
+                                # Insert it as the first child of CRF
+                                crf.insert(0, newtitle)
+                            else:
+                                # Insert it as the second child of CRF, after the ID field
+                                crf.insert(1, newtitle)
 
                 # Returning to the header, get the <Resources> over there
                 resources = get_first(root, "Resources", NS_find)
