@@ -335,8 +335,6 @@ def adapt_modality_strings():
     return bResult, msg
 
 
-
-
 # =========== Part of vloitem ======================
 
 def adapt_vloitem_id():

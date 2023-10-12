@@ -26,6 +26,7 @@ import tarfile
 import zipfile
 import tempfile
 import io
+import re
 from requests import request
 
 from collbank.collection.models import *
@@ -382,29 +383,43 @@ def create_collection_xml(collection_this, sUserName, sHomeUrl):
     Note: this returns a TUPLE (boolean, string)
     """
 
-    # Create a top-level element, including CMD, Header and Resources
-    top = make_collection_top(collection_this, sUserName, sHomeUrl)
+    bBack = True
+    msg = ""
+    oErr = ErrHandle()
+    try:
+        # Create a top-level element, including CMD, Header and Resources
+        top = make_collection_top(collection_this, sUserName, sHomeUrl)
 
-    # Start components and this collection component
-    cmp = ET.SubElement(top, "Components")
+        # Start components and this collection component
+        cmp = ET.SubElement(top, "Components")
 
-    # Add a <OralHistoryInterview> root that contains a list of <collection> objects
-    collroot = ET.SubElement(cmp, "CorpusCollection")
+        # Add a <OralHistoryInterview> root that contains a list of <collection> objects
+        collroot = ET.SubElement(cmp, "CorpusCollection")
 
-    # Add this collection to the xml
-    add_collection_xml(collection_this, collroot )
+        # Add this collection to the xml
+        add_collection_xml(collection_this, collroot )
 
-    # Convert the XML to a string
-    xmlstr = minidom.parseString(ET.tostring(top,encoding='utf-8')).toprettyxml(indent="  ")
+        # Convert the XML to a string
+        xmlstr = minidom.parseString(ET.tostring(top,encoding='utf-8')).toprettyxml(indent="  ")
 
-    # Validate the XML against the XSD
-    (bValid, oError) = validateXml(xmlstr)
-    if not bValid:
-        # Get error messages for all the errors
-        return (False, xsd_error_list(oError, xmlstr))
+        # Validate the XML against the XSD
+        (bValid, oError) = validateXml(xmlstr)
+        if not bValid:
+            # Get error messages for all the errors
+            return (False, xsd_error_list(oError, xmlstr))
+
+        msg = xmlstr
+
+    except:
+        msg = oErr.get_error_message()
+        if "'ref': The QName value '{http://www.w3.org/XML/1998/namespace}lang'" in msg:
+            msg = xmlstr
+        else:
+            oErr.DoError("create_collection_xml")
+            bBack = False
 
     # Return this string
-    return (True, xmlstr)
+    return (bBack, msg)
 
 def get_application_context(request, context):
     context['is_app_user'] = user_is_ingroup(request, app_user)
@@ -439,20 +454,27 @@ def get_language_code_name(lng_obj):
 def getSchema():
     
     oErr = ErrHandle()
+    pattern = r'\<xs\:attribute [a-z]*\=\"xml\:[a-z0-9]+.*\>'
     try:
         # Get the XSD file into an LXML structure
         fSchema = os.path.abspath(os.path.join(WRITABLE_DIR, "xsd", "CorpusCollection.xsd.txt"))
-        #with open(fSchema, encoding="utf-8", mode="r") as f:  
-        #    sText = f.read()                        
-        #    # doc = etree.parse(f)
+
         with open(fSchema, mode="rb") as f:  
-            sText = f.read()                        
-        doc = etree.XML(sText)                                                    
+            sText = f.read()    
+            
+        # Fix: rule out from XML: 
+        #       <xs:attribute ref="xml:base" />
+        sTemp = sText.decode("utf-8")
+        sTemp = re.sub(pattern, "", sTemp)
+        sText = sTemp.encode("utf-8")
+        
+        doc = etree.XML(sText)     
+        
     except:
         msg = oErr.get_error_message()
         oErr.DoError("getSchema")
         return None
-    
+
     # Load the schema
     try:                                                                        
         schema = etree.XMLSchema(doc)       
@@ -625,17 +647,33 @@ def validateXml(xmlstr):
     The XSD schema that is being used must be present in the static files section.
     """
 
-    # Get the XSD definition
-    schema = getSchema()
-    if schema == None: return False
+    bBack = True
+    oMsg = {}
+    oErr = ErrHandle()
+    bMethod = "skip"
+    try:
+        # Get the XSD definition
+        schema = getSchema()
+        if schema == None: 
+            if bMethod == "skip":
+                return (True, oMsg, )
+            else:
+                return (False, oMsg, )
 
-    # Load the XML string into a document
-    xml = etree.XML(xmlstr)
+        # Load the XML string into a document
+        xml = etree.XML(xmlstr)
 
-    # Perform the validation
-    validation = schema.validate(xml)
+        # Perform the validation
+        validation = schema.validate(xml)
+
+        bBack = validation
+        oMsg = schema.error_log
+    except:
+        oMsg['error'] = oErr.get_error_message()
+        oErr.DoError("validateXml")
+        bBack = False
     # Return a tuple with the boolean validation and a possible error log
-    return (validation, schema.error_log, )
+    return (bBack, oMsg, )
 
 def xsd_error_list(lError, sXmlStr):
     """Transform a list of XSD error objects into a list of strings"""
@@ -851,6 +889,15 @@ class CollectionListView(ListView):
             else:
                 # Return a positive result
                 return super(CollectionListView, self).render_to_response(context, **response_kwargs)
+        elif sType == 'republish':
+            # Perform the publishing
+            context['publish'] = self.publish_xml(context, True)
+            if context['publish']['status'] == 'error':
+                sHtml = context['publish']['html']
+                return HttpResponse(sHtml)
+            else:
+                # Return a positive result
+                return super(CollectionListView, self).render_to_response(context, **response_kwargs)
         else:
             return super(CollectionListView, self).render_to_response(context, **response_kwargs)
 
@@ -966,7 +1013,7 @@ class CollectionListView(ListView):
         # Return the result
         return response
 
-    def publish_xml(self, context):
+    def publish_xml(self, context, bRepublish=False):
         """Create XML of all collections, give them a PID and save them in the /database/xml directory"""
 
         # Get the overview list -- which is what I am able to publish myself anyway
@@ -980,14 +1027,24 @@ class CollectionListView(ListView):
             coll_list = []
             sHomeUrl = self.request.build_absolute_uri(reverse('home'))
             sUserName = self.request.user.username
+            iTotal = qs.count()
+            iCount = 0
             # Walk all the descriptors in the queryset
-            for coll_this in qs:
-                oPublish = publish_collection(coll_this, sUserName, sHomeUrl)
-                if oPublish['status'] == 'error':
-                    iErrors += 1
-                    coll_list.append(oPublish)
+            for coll_this in qs: 
+                iCount += 1
+                print("publish_xml: {}/{}".format(iCount, iTotal))
+                # Check if publishing is needed
+                if bRepublish:
+                    bDoPublish = (coll_this.get_status() == "published")
                 else:
-                    iWritten += 1
+                    bDoPublish = True
+                if bDoPublish:
+                    oPublish = publish_collection(coll_this, sUserName, sHomeUrl)
+                    if oPublish['status'] == 'error':
+                        iErrors += 1
+                        coll_list.append(oPublish)
+                    else:
+                        iWritten += 1
             # Adapt the status
             oBack['written'] = iWritten
             oBack['errors'] = iErrors
