@@ -44,7 +44,7 @@ XSI_CMD = "http://www.clarin.eu/cmd/"
 # XSD_ID = "clarin.eu:cr1:p_1459844210473"
 # Draft publication version:
 XSD_ID = "clarin.eu:cr1:p_1493735943947"
-XSI_XSD = "https://catalog.clarin.eu/ds/ComponentRegistry/rest/registry/1.1/profiles/" + XSD_ID + "/xsd/"
+XSI_XSD = "https://catalog.clarin.eu/ds/ComponentRegistry/rest/registry/1.x/profiles/" + XSD_ID + "/xsd/"
 
 app_user = "RegistryUser"
 app_editor = "RegistryEditor"
