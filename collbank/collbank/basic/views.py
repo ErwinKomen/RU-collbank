@@ -110,6 +110,10 @@ def user_is_superuser(request):
             bFound = user.is_superuser
     return bFound
 
+def user_is_moderator(request):
+    bFound = user_is_superuser(request) or user_is_ingroup(app_moderator)
+    return bFound
+
 def get_breadcrumbs(request, name, is_menu, lst_crumb=[], **kwargs):
     """Process one visit and return updated breadcrumbs"""
 

@@ -36,6 +36,7 @@ from collbank.collection.admin import CollectionAdmin
 from collbank.collection.forms import *
 from collbank.collection.adaptations import listview_adaptations
 from collbank.basic.utils import ErrHandle
+from collbank.collection.services import get_oai_status
 
 from collbank.basic.views import BasicDetails, BasicList
 
@@ -49,6 +50,7 @@ XSI_XSD = "https://catalog.clarin.eu/ds/ComponentRegistry/rest/registry/1.x/prof
 
 app_user = "RegistryUser"
 app_editor = "RegistryEditor"
+app_moderator = "RegistryModerator"
 bDebug = False
 
 # General help functions
@@ -424,6 +426,7 @@ def create_collection_xml(collection_this, sUserName, sHomeUrl):
 def get_application_context(request, context):
     context['is_app_user'] = user_is_ingroup(request, app_user)
     context['is_app_editor'] = user_is_ingroup(request, app_editor)
+    context['is_app_moderator'] = user_is_ingroup(request, app_moderator) or user_is_superuser(request)
     return context
 
 def get_country(cntryCode):
@@ -719,12 +722,30 @@ def xsd_error_as_simple_string(error):
 
 def home(request):
     """Renders the home page."""
-    assert isinstance(request, HttpRequest)
-    # Make the response
-    context = dict(title="RU-CollBank",
-                   year=datetime.now().year)
-    context = get_application_context(request, context)
-    response= render(request,'collection/index.html', context=context)
+
+    oErr = ErrHandle()
+    try:
+        assert isinstance(request, HttpRequest)
+        # Make the response
+        context = dict(title="RU-CollBank",
+                       year=datetime.now().year)
+        # Extend the context in the usual manner
+        context = get_application_context(request, context)
+
+        # Try to find out whether the OAI interface works
+        oOAI = get_oai_status()
+        if not oOAI is None:
+            context['oai_status'] = oOAI['msg']
+        else:
+            context['oai_status'] = "No response from OAI"
+
+
+        # Create a response
+        response= render(request,'collection/index.html', context=context)
+
+    except:
+        msg = oErr.get_error_message()
+        oErr.DoError("views/home")
 
     # Return the response
     return response    

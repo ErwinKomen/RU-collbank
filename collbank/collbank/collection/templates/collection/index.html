@@ -19,6 +19,12 @@
           Those that have been asked to cooperate in adding content can request access.
         </p>
         <p><a class="btn btn-default" href="mailto:henk.vandenheuvel@ru.nl">Request access &raquo;</a></p>
+
+      {% if is_app_moderator %}
+        <h2>OAI status</h2>
+        <p>{{oai_status}}</p>
+      {% endif %}
+
     </div>
     <div class="col-md-6">
         <h2>Define collections</h2>
@@ -31,7 +37,9 @@
            This page can be used by those who are more interested in a bottom-up approach to entering the necessary data.
         </p>
         <p><a class="btn btn-default" href="mailto:erwin.komen@ru.nl">Request assistance &raquo;</a></p>
+
     </div>
+
 </div>
 
 {% endblock %}

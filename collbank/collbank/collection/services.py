@@ -1,67 +1,64 @@
+"""
+Remote services for the CollBank application
+This is mainly aimed at questioning the OAI interface
+"""
+
 import requests
-#from requests.auth import HTTPBasicAuth
-#from collbank.collection.models import PidService
+import os
+import json
+import lxml
+import requests
+import sys
+import time
+from lxml import etree
 
-#PIDSERVICE_NAME = "gwdg"
+# From own application
+from collbank.basic.views import ErrHandle
 
+OAI_HOME = 'http://localhost:8080/oai'
 
-#def epic_authenticate(oReq):
-#    """Authenticate with the ePIC API"""
+def get_oai_status():
+    """Mimic reading the OAI interface, asking for a list of available metadata records"""
 
-#    # Default reply
-#    oBack = {'status': 'error', 'msg': ''}
-#    # Get the correct service
-#    pidservice = PidService.objects.filter(PIDSERVICE_NAME)
-#    if pidservice == None:
-#        oBack['msg'] = 'Could not find ePIC service'
-#        return oBack
-#    # We have the information to our disposal
-#    url = pidservice.url
-#    user = pidservice.user
-#    ww = pidservice.passwd
-#    # Issue the request
-#    r = requests.get(url, auth=(user,ww))
-#    # Check the reply we got
-#    if r.status_code == 200:
-#        # Authentication worked
-#        oBack['status'] = 'ok'
-#    else:
-#        # Authentication did not work
-#        oBack['msg'] = "The authentication request returned code {}".format(r.status_code)
-#    return oBack
+    oErr = ErrHandle()
+    # Default reply
+    oBack = {}
+    try:
+        # Figure out what the URL is going to be 
+        url = OAI_HOME + "/provider?verb=ListIdentifiers&metadataPrefix=cmdi"
+        r = None
+        try:
+            r = requests.get(url, timeout=2)
+        except:
+            # Getting an exception here probably means that the back-end is not reachable (down)
+            oBack['status'] = 'error'
+            oBack['msg'] = "get_oai_status(): The back-end server (oai) cannot be reached. Is it running? {}".format(
+                oErr.get_error_message())
+        else:
+            if r.status_code == 200:
+                # Success
+                reply = r.text.replace("\t", " ")
+                # Try to interpret this as an XML
+                docroot = etree.XML(reply.encode('utf-8'))
 
+                # Clean up the namespace
+                for elem in docroot.getiterator():
+                    if not (isinstance(elem, etree._Comment) or isinstance(elem, etree._ProcessingInstruction)):
+                        elem.tag = etree.QName(elem).localname
+                etree.cleanup_namespaces(docroot)
 
-#PIDSERVICE_URL="THE_SERVICE_URL_WITH_PREFIX"
-#PIDSERVICE_USER="YOURUSERNAME"
-#PIDSERVICE_PASSWD="YOURPASSWORD"
-#DATAURL=''
-#URL_TO_OPEN=PIDSERVICE_URL
+                # Get all the <identifier> elements under <ListIdentifiers>
+                identifiers = docroot.xpath("//ListIdentifiers/header/identifier")
+                msg = "{} identifiers found".format(len(identifiers))
+                oBack['msg'] = msg
 
-## create a password manager
-#password_mgr = urllib2.HTTPPasswordMgrWithDefaultRealm()
+    except:
+        msg = oErr.get_error_message()
+        oErr.DoError("get_oai_status")
+        oBack['status'] = "error"
+        oBack['msg'] = msg
 
-## Add the username and password.
-#password_mgr.add_password(None, PIDSERVICE_URL, PIDSERVICE_USER, PIDSERVICE_PASSWD)
+    # Return the correct object
+    return oBack
 
-#handler = urllib2.HTTPBasicAuthHandler(password_mgr)
-
-## create "opener" (OpenerDirector instance)
-#opener = urllib2.build_opener(handler)
-
-## use the opener to fetch a URL
-#opener.open(PIDSERVICE_URL)
-
-## Install the opener.
-## Now all calls to urllib2.urlopen use the created opener.
-#urllib2.install_opener(opener)
-
-#REQUESTDATA = urllib2.Request(URL_TO_OPEN)
-#try:
-#    DATAURL = urllib2.urlopen(REQUESTDATA)
-#except urllib2.URLError, e:
-#    if e.code == 401:
-#         print("401-Authentication failed")
-
-#if DATAURL:
-#    # Getting the code
-#    print("This gets the code: {}".format(DATAURL.code))
+    
