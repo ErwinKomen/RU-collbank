@@ -38,6 +38,8 @@ urlpatterns = [
     url(r'^about',    collbank.collection.views.about,   name='about'),
     url(r'^nlogin',   collbank.collection.views.nlogin,  name='nlogin'),
 
+    url(r'^reindex',  collbank.collection.views.oai_reset,  name='reindex'),
+
     url(r'^definitions$', RedirectView.as_view(url='/'+APP_PREFIX+'admin/'), name='definitions'),
 
     # ------------ Corpus collection handling and viewing --------------------------------------------

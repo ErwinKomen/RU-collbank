@@ -7,7 +7,7 @@ from django.contrib.auth import login, authenticate
 from django.contrib.auth.models import Group, User
 from django.urls import reverse
 from django.db.models.functions import Lower
-from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
+from django.http import HttpRequest, HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, render, redirect
 from django.template import RequestContext, loader
 from django.utils import timezone
@@ -36,7 +36,7 @@ from collbank.collection.admin import CollectionAdmin
 from collbank.collection.forms import *
 from collbank.collection.adaptations import listview_adaptations
 from collbank.basic.utils import ErrHandle
-from collbank.collection.services import get_oai_status
+from collbank.collection.services import get_oai_status, reindex_oai
 
 from collbank.basic.views import BasicDetails, BasicList
 
@@ -878,6 +878,24 @@ def subtype_choices(request):
         # rturn empty-handedly
         sOut = "{}"
     return HttpResponse(sOut)
+
+def oai_reset(request):
+    """Try to reset the OAI"""
+
+    oResult = dict(status="ok")
+    if request.user.is_authenticated:
+        if request.method == "POST":
+            # Perform the reset
+            oResult = reindex_oai()
+        else:
+            oResult['status'] = "error"
+            oResult['msg'] = "Need POST"
+    else:
+        oResult['status'] = "error"
+        oResult['msg'] = "Not authenticated"
+    # Return the information
+    return JsonResponse(oResult)
+
 
 
 # ============= Application specific Views ==================================

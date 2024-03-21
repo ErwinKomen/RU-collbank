@@ -23,6 +23,25 @@
       {% if is_app_moderator %}
         <h2>OAI status</h2>
         <p>{{oai_status}}</p>
+
+        <div>
+          <form>
+            {% csrf_token %}
+            <div class="hidden">
+              <input name="command" value="reindexCollection" type="hidden">
+              <input name="key" value="1650874903819" type="hidden">
+              <input name="indexAll" value="false" type="hidden">
+              <input name="displayName" value="CollBank" type="hidden">
+              <input name="button" value="Reindex" type="hidden">
+            </div>
+            <span>If necessary: touch CMDI files and re-index the OAI interface. </span>
+            <a role="button" class="btn btn-danger"
+               resultid="#oai_result"
+               targeturl="{% url 'reindex' %}"
+               onclick="ru.collbank.do_reindex(this);">Re-index</a>
+          </form>
+        </div>
+        <div id="oai_result" style="color: darkred; background-color: lightblue;"></div>
       {% endif %}
 
     </div>

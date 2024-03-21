@@ -1,4 +1,4 @@
-﻿var django = {
+var django = {
   "jQuery": jQuery.noConflict(true)
 };
 var jQuery = django.jQuery;
@@ -212,7 +212,58 @@ var ru = (function ($, ru) {
               break;
           }
         });
+      },
+
+      /**
+       * reindex
+       *   Call a reindex
+       */
+      do_reindex: function (elStart) {
+        var elTarget = null,
+            frm = null,
+            targeturl = null,
+            data = null;
+
+        // Get the resultid and the targeturl
+        elTarget = $(elStart).attr("resultid");
+        targeturl = $(elStart).attr("targeturl");
+
+        // Show the user what is going on
+        $(elTarget).html("Starting to touch and re-index...");
+
+        // Get the form and the data
+        frm = $(elStart).closest("form");
+        data = frm.serializeArray();
+
+        // Call 
+        $.post(targeturl, data, function (response) {
+          // Action depends on the response
+          if (response === undefined || response === null || !("status" in response)) {
+            private_methods.errMsg("No status returned");
+          } else {
+            switch (response.status) {
+              case "ready":
+              case "ok":
+                if ("msg" in response) {
+                  // Show the HTML in the targetid
+                  $(elTarget).html(response['msg']);
+                }
+                // In all cases: open the target
+                $(elTarget).removeClass("hidden");
+                break;
+              case "error":
+                if ("msg" in response) {
+                  $(elTarget).html("ERROR: " + response['msg']);
+                } else {
+                  $(elTarget).html("ERROR: (unknown)");
+                }
+                break;
+            }
+          }
+        });
       }
+
+
     };
   }($, ru.config));
 
