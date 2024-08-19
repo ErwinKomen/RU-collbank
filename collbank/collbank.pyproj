@@ -4,7 +4,7 @@
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
     <Name>collbank</Name>
     <RootNamespace>collbank</RootNamespace>
-    <InterpreterId>MSBuild|collbank2|$(MSBuildProjectFullPath)</InterpreterId>
+    <InterpreterId>MSBuild|collbank39|$(MSBuildProjectFullPath)</InterpreterId>
     <WebBrowserPort>6505</WebBrowserPort>
     <SuppressConfigureTestFrameworkPrompt>true</SuppressConfigureTestFrameworkPrompt>
     <SuppressPackageInstallationPrompt>True</SuppressPackageInstallationPrompt>
@@ -35,10 +35,6 @@
   <ItemGroup>
     <Compile Include="collbank\basic\admin.py" />
     <Compile Include="collbank\basic\apps.py" />
-    <Compile Include="collbank\basic\migrations\0001_initial.py" />
-    <Compile Include="collbank\basic\migrations\0002_auto_20210510_1054.py" />
-    <Compile Include="collbank\basic\migrations\0003_usersearch_count.py" />
-    <Compile Include="collbank\basic\migrations\__init__.py" />
     <Compile Include="collbank\basic\models.py" />
     <Compile Include="collbank\basic\tests.py" />
     <Compile Include="collbank\basic\utils.py" />
@@ -53,7 +49,6 @@
     <Compile Include="collbank\collection\forms.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="collbank\collection\migrations\__init__.py" />
     <Compile Include="collbank\collection\models.py" />
     <Compile Include="collbank\collection\services.py">
       <SubType>Code</SubType>
@@ -80,8 +75,6 @@
   <ItemGroup>
     <Folder Include="collbank\" />
     <Folder Include="collbank\basic\" />
-    <Folder Include="collbank\basic\migrations\" />
-    <Folder Include="collbank\basic\migrations\__pycache__\" />
     <Folder Include="collbank\basic\static\" />
     <Folder Include="collbank\basic\static\basic\" />
     <Folder Include="collbank\basic\static\basic\content\" />
@@ -91,7 +84,6 @@
     <Folder Include="collbank\basic\templates\basic\" />
     <Folder Include="collbank\basic\__pycache__\" />
     <Folder Include="collbank\collection\" />
-    <Folder Include="collbank\collection\migrations\" />
     <Folder Include="collbank\collection\fixtures\" />
     <Folder Include="collbank\collection\static\" />
     <Folder Include="collbank\collection\static\collection\" />
@@ -106,42 +98,9 @@
     <Folder Include="collbank\reader\templates\reader\" />
     <Folder Include="collbank\templates\" />
     <Folder Include="collbank\templates\admin\" />
-    <Folder Include="static\" />
-    <Folder Include="static\admin\" />
-    <Folder Include="static\admin\css\" />
-    <Folder Include="static\admin\fonts\" />
-    <Folder Include="static\admin\img\" />
-    <Folder Include="static\admin\img\gis\" />
-    <Folder Include="static\admin\js\" />
-    <Folder Include="static\admin\js\admin\" />
-    <Folder Include="static\admin\js\vendor\" />
-    <Folder Include="static\admin\js\vendor\jquery\" />
-    <Folder Include="static\admin\js\vendor\xregexp\" />
-    <Folder Include="static\collection\" />
-    <Folder Include="static\collection\content\" />
-    <Folder Include="static\collection\fonts\" />
-    <Folder Include="static\collection\scripts\" />
-    <Folder Include="static\nested_admin\" />
-    <Folder Include="static\nested_admin\dist\" />
-    <Folder Include="static\nested_admin\src\" />
-    <Folder Include="static\nested_admin\src\nested-admin\" />
-    <Folder Include="static\nested_admin\src\vendor\" />
-    <Folder Include="static\nested_admin\src\vendor\browser-pack\" />
   </ItemGroup>
   <ItemGroup>
     <Content Include=".editorconfig" />
-    <Content Include="collbank\basic\migrations\__pycache__\0001_initial.cpython-35.pyc" />
-    <Content Include="collbank\basic\migrations\__pycache__\0001_initial.cpython-36.pyc" />
-    <Content Include="collbank\basic\migrations\__pycache__\0001_initial.cpython-37.pyc" />
-    <Content Include="collbank\basic\migrations\__pycache__\0002_auto_20210510_1054.cpython-35.pyc" />
-    <Content Include="collbank\basic\migrations\__pycache__\0002_auto_20210510_1054.cpython-36.pyc" />
-    <Content Include="collbank\basic\migrations\__pycache__\0002_auto_20210510_1054.cpython-37.pyc" />
-    <Content Include="collbank\basic\migrations\__pycache__\0003_usersearch_count.cpython-35.pyc" />
-    <Content Include="collbank\basic\migrations\__pycache__\0003_usersearch_count.cpython-36.pyc" />
-    <Content Include="collbank\basic\migrations\__pycache__\0003_usersearch_count.cpython-37.pyc" />
-    <Content Include="collbank\basic\migrations\__pycache__\__init__.cpython-35.pyc" />
-    <Content Include="collbank\basic\migrations\__pycache__\__init__.cpython-36.pyc" />
-    <Content Include="collbank\basic\migrations\__pycache__\__init__.cpython-37.pyc" />
     <Content Include="collbank\basic\static\basic\content\basic.css" />
     <Content Include="collbank\basic\static\basic\content\font-awesome.min.css" />
     <Content Include="collbank\basic\static\basic\fonts\fontawesome-webfont.eot" />
@@ -192,110 +151,19 @@
     <Content Include="collbank\collection\static\collection\fonts\glyphicons-halflings-regular.svg" />
     <Content Include="collbank\collection\static\collection\fonts\glyphicons-halflings-regular.ttf" />
     <Content Include="collbank\collection\static\collection\fonts\glyphicons-halflings-regular.woff" />
-    <None Include="static\collection\scripts\_references.js" />
     <Content Include="collbank\collection\templates\collection\coll_item.html" />
+    <Content Include="collbank\collection\templates\collection\coll_uploaded.html" />
     <Content Include="collbank\collection\templates\collection\nlogin.html" />
     <Content Include="collbank\collection\templates\collection\signup.html" />
+    <None Include="collbank\collection\templates\collection\temporary.xsd.txt">
+      <SubType>Code</SubType>
+    </None>
+    <Content Include="collbank\reader\templates\reader\vloitem_uploaded.html" />
     <Content Include="collbank\reader\templates\reader\index.html" />
+    <Content Include="collbank\reader\templates\reader\upload_vlo.html" />
+    <Content Include="collbank\reader\templates\reader\upload_file.html" />
     <Content Include="collbank\templates\breadcrumb_list.html" />
-    <Content Include="static\admin\css\base.css" />
-    <Content Include="static\admin\css\changelists.css" />
-    <Content Include="static\admin\css\dashboard.css" />
-    <Content Include="static\admin\css\fonts.css" />
-    <Content Include="static\admin\css\forms.css" />
-    <Content Include="static\admin\css\login.css" />
-    <Content Include="static\admin\css\rtl.css" />
-    <Content Include="static\admin\css\widgets.css" />
-    <Content Include="static\admin\fonts\LICENSE.txt" />
-    <Content Include="static\admin\fonts\README.txt" />
-    <Content Include="static\admin\fonts\Roboto-Bold-webfont.woff" />
-    <Content Include="static\admin\fonts\Roboto-Light-webfont.woff" />
-    <Content Include="static\admin\fonts\Roboto-Regular-webfont.woff" />
-    <Content Include="static\admin\img\calendar-icons.svg" />
-    <Content Include="static\admin\img\gis\move_vertex_off.svg" />
-    <Content Include="static\admin\img\gis\move_vertex_on.svg" />
-    <Content Include="static\admin\img\icon-addlink.svg" />
-    <Content Include="static\admin\img\icon-alert.svg" />
-    <Content Include="static\admin\img\icon-calendar.svg" />
-    <Content Include="static\admin\img\icon-changelink.svg" />
-    <Content Include="static\admin\img\icon-clock.svg" />
-    <Content Include="static\admin\img\icon-deletelink.svg" />
-    <Content Include="static\admin\img\icon-no.svg" />
-    <Content Include="static\admin\img\icon-unknown-alt.svg" />
-    <Content Include="static\admin\img\icon-unknown.svg" />
-    <Content Include="static\admin\img\icon-yes.svg" />
-    <Content Include="static\admin\img\inline-delete.svg" />
-    <Content Include="static\admin\img\LICENSE" />
-    <Content Include="static\admin\img\README.txt" />
-    <Content Include="static\admin\img\search.svg" />
-    <Content Include="static\admin\img\selector-icons.svg" />
-    <Content Include="static\admin\img\sorting-icons.svg" />
-    <Content Include="static\admin\img\tooltag-add.svg" />
-    <Content Include="static\admin\img\tooltag-arrowright.svg" />
-    <Content Include="static\admin\js\actions.js" />
-    <Content Include="static\admin\js\actions.min.js" />
-    <Content Include="static\admin\js\admin\DateTimeShortcuts.js" />
-    <Content Include="static\admin\js\admin\RelatedObjectLookups.js" />
-    <Content Include="static\admin\js\calendar.js" />
-    <Content Include="static\admin\js\collapse.js" />
-    <Content Include="static\admin\js\collapse.min.js" />
-    <Content Include="static\admin\js\core.js" />
-    <Content Include="static\admin\js\inlines.js" />
-    <Content Include="static\admin\js\inlines.min.js" />
-    <Content Include="static\admin\js\jquery.init.js" />
-    <Content Include="static\admin\js\prepopulate.js" />
-    <Content Include="static\admin\js\prepopulate.min.js" />
-    <Content Include="static\admin\js\SelectBox.js" />
-    <Content Include="static\admin\js\SelectFilter2.js" />
-    <Content Include="static\admin\js\timeparse.js" />
-    <Content Include="static\admin\js\urlify.js" />
-    <Content Include="static\admin\js\vendor\jquery\jquery.js" />
-    <Content Include="static\admin\js\vendor\jquery\jquery.min.js" />
-    <Content Include="static\admin\js\vendor\jquery\LICENSE-JQUERY.txt" />
-    <Content Include="static\admin\js\vendor\xregexp\LICENSE-XREGEXP.txt" />
-    <Content Include="static\admin\js\vendor\xregexp\xregexp.min.js" />
-    <Content Include="static\collection\content\bootstrap.css" />
-    <Content Include="static\collection\content\bootstrap.min.css" />
-    <Content Include="static\collection\content\site.css" />
-    <Content Include="static\collection\fonts\glyphicons-halflings-regular.eot" />
-    <Content Include="static\collection\fonts\glyphicons-halflings-regular.svg" />
-    <Content Include="static\collection\fonts\glyphicons-halflings-regular.ttf" />
-    <Content Include="static\collection\fonts\glyphicons-halflings-regular.woff" />
-    <Content Include="static\collection\scripts\bootstrap.js" />
-    <Content Include="static\collection\scripts\bootstrap.min.js" />
-    <Content Include="static\collection\scripts\collbank.js" />
-    <None Include="static\collection\scripts\jquery.validate-vsdoc.js" />
-    <None Include="static\collection\scripts\jquery-1.10.2.intellisense.js" />
-    <Content Include="static\collection\scripts\jquery-1.10.2.js" />
-    <Content Include="static\collection\scripts\jquery-1.10.2.min.js" />
-    <Content Include="static\collection\scripts\jquery-1.10.2.min.map" />
-    <Content Include="static\collection\scripts\jquery.validate.js" />
-    <Content Include="static\collection\scripts\jquery.validate.min.js" />
-    <Content Include="static\collection\scripts\jquery.validate.unobtrusive.js" />
-    <Content Include="static\collection\scripts\jquery.validate.unobtrusive.min.js" />
-    <Content Include="static\collection\scripts\modernizr-2.6.2.js" />
-    <Content Include="static\collection\scripts\respond.js" />
-    <Content Include="static\collection\scripts\respond.min.js" />
-    <Content Include="static\nested_admin\dist\nested_admin.css" />
-    <Content Include="static\nested_admin\dist\nested_admin.css.map" />
-    <Content Include="static\nested_admin\dist\nested_admin.js" />
-    <Content Include="static\nested_admin\dist\nested_admin.js.map" />
-    <Content Include="static\nested_admin\dist\nested_admin.min.css" />
-    <Content Include="static\nested_admin\dist\nested_admin.min.css.map" />
-    <Content Include="static\nested_admin\dist\nested_admin.min.js" />
-    <Content Include="static\nested_admin\dist\nested_admin.min.js.map" />
-    <Content Include="static\nested_admin\src\drag-handle.png" />
-    <Content Include="static\nested_admin\src\nested-admin\jquery.djangoformset.js" />
-    <Content Include="static\nested_admin\src\nested-admin\jquery.djnutils.js" />
-    <Content Include="static\nested_admin\src\nested-admin\jquery.ui.djnsortable.js" />
-    <Content Include="static\nested_admin\src\nested-admin\jquery.ui.nestedsortable.js" />
-    <Content Include="static\nested_admin\src\nested-admin\regexquote.js" />
-    <Content Include="static\nested_admin\src\nested-admin\sortable.js" />
-    <Content Include="static\nested_admin\src\nested-admin\utils.js" />
-    <Content Include="static\nested_admin\src\nested_admin.js" />
-    <Content Include="static\nested_admin\src\nested_admin.scss" />
-    <Content Include="static\nested_admin\src\vendor\browser-pack\_prelude.js" />
-    <None Include="collbank\collection\static\collection\scripts\_references.js" />
+    <Content Include="collbank\templates\nlogin.html" />
     <Content Include="collbank\collection\static\collection\scripts\bootstrap.js" />
     <Content Include="collbank\collection\static\collection\scripts\bootstrap.min.js" />
     <None Include="collbank\collection\static\collection\scripts\jquery.validate-vsdoc.js" />
@@ -312,7 +180,7 @@
     <Content Include="collbank\collection\static\collection\scripts\respond.js" />
     <Content Include="collbank\collection\static\collection\scripts\respond.min.js" />
     <Content Include="collbank\collection\templates\collection\about.html" />
-    <Content Include="collbank\collection\templates\collection\coll_detail.html" />
+    <Content Include="collbank\collection\templates\collection\coll_details.html" />
     <Content Include="collbank\collection\templates\collection\contact.html" />
     <Content Include="collbank\collection\templates\collection\index.html" />
     <Content Include="collbank\templates\layout.html" />
@@ -329,6 +197,15 @@
       <Id>collbank2</Id>
       <Version>3.7</Version>
       <Description>collbank2 (Python 3.7 (64-bit))</Description>
+      <InterpreterPath>Scripts\python.exe</InterpreterPath>
+      <WindowsInterpreterPath>Scripts\pythonw.exe</WindowsInterpreterPath>
+      <PathEnvironmentVariable>PYTHONPATH</PathEnvironmentVariable>
+      <Architecture>X64</Architecture>
+    </Interpreter>
+    <Interpreter Include="..\..\..\..\..\env\collbank39\">
+      <Id>collbank39</Id>
+      <Version>3.9</Version>
+      <Description>collbank39 (Python 3.9 (64-bit))</Description>
       <InterpreterPath>Scripts\python.exe</InterpreterPath>
       <WindowsInterpreterPath>Scripts\pythonw.exe</WindowsInterpreterPath>
       <PathEnvironmentVariable>PYTHONPATH</PathEnvironmentVariable>
