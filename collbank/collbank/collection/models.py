@@ -267,9 +267,15 @@ def get_help(field):
 # ========================= HELPER MODELS ==============================
 
 class PidService(models.Model):
+    """Service to create, change or get identifiers (handles)"""
+
+    # [1] Name of the service
     name = models.CharField("The name of this ePIC service", max_length=MAX_NAME_LEN)
+    # [1] URL of the service, including obligatory prefix
     url = models.CharField("The service URL with prefix", max_length=MAX_STRING_LEN)
+    # [1] username to this service
     user = models.CharField("The user name", max_length=MAX_NAME_LEN)
+    # [1] password to this service
     passwd = models.CharField("The password", max_length=MAX_STRING_LEN)
 
     def authenticate(self):
