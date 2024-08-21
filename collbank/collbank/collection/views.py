@@ -769,6 +769,10 @@ def about(request):
                    year=datetime.now().year)
     context = get_application_context(request, context)
 
+    # Add help items
+    helpitems = HelpItem.objects.all()
+    context['helpitems'] = helpitems
+
     response = render(request, 'collection/about.html', context)
     return response
 

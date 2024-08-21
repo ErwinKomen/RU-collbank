@@ -17,6 +17,7 @@ import copy  # (1) use python copy
 import json
 import sys
 import os, time
+import markdown
 
 from collbank.settings import REGISTRY_URL, REGISTRY_DIR, PUBLISH_DIR
 from collbank.basic.utils import ErrHandle
@@ -641,6 +642,36 @@ class CollbankModel(object):
             oErr.DoError("CollbankModel/custom_add")
         return obj
 
+
+class HelpItem(models.Model):
+    """A help item that can be shown in the collbank/about page"""
+
+    # [1] obligatory tag
+    tag = models.CharField("HTML tag",max_length=MAX_NAME_LEN)
+    # [1] There must be a title
+    title = models.CharField("Title",max_length=MAX_STRING_LEN, default="SPECIFY title")
+    # [0-1] The content can be specified later
+    content = models.TextField("Markdown content", blank=True, null=True)
+
+    def __str__(self):
+        return self.tag
+
+    def save(self, **kwargs):
+        # Double check whether obligatory fields are there
+        if self.tag is None:
+            self.tag = "html_tag_{}".format( HelpItem.objects.count() + 1)
+        # Perform the actual saving
+        response = super(HelpItem, self).save(**kwargs)
+        # Return results
+        return response
+
+    def get_content_markdown(self):
+        """Show the content via markdown"""
+
+        sBack = ""
+        if not self.content is None:
+            sBack = markdown.markdown(self.content)
+        return sBack
 
 
 # ========================= COLLECTION MODELS ==========================

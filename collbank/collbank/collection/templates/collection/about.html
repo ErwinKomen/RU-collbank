@@ -5,6 +5,32 @@
 <h2>{{ title }}.</h2>
 <h3>{{ message }}</h3>
 
-<p>The RU-Collbank application has been developed by the Technical Support Group of the Humanities Lab at the Radboud University Nijmegen under supervision of Henk van den Heuvel.</p>
+<p>The RU-Collbank application has been developed by the Technical Support Group of the Humanities Lab 
+  at the Radboud University Nijmegen under supervision of Henk van den Heuvel.</p>
+
+<div class="row">
+  <div class="col-md-6">
+    <!-- Help information-->
+    <h3>Help guides</h3>
+    {% for helpitem in helpitems %}
+    <div class="panel panel-default">
+      <div class="panel-heading information" data-toggle="collapse"
+           data-target="#{{helpitem.tag}}">{{helpitem.title}}</div>
+      <div id="{{helpitem.tag}}" class="information collapse">
+        {{helpitem.get_content_markdown|safe}}
+      </div>
+    </div>
+    {% endfor %}
+
+  </div>
+
+  <!-- Fill in the right column-->
+  <div class="col-md-6">
+    <!-- No content yet -->
+  </div>
+
+</div>
+
+
 
 {% endblock %}

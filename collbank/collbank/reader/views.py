@@ -991,7 +991,7 @@ class VloItemLoadXml(BasicPart):
     template_name = "reader/vloitem_uploaded.html"
 
     def is_vlo_editor(self):
-        allowed_groups = ['collbank_moderator', 'collbank_userplus']
+        allowed_groups = ['collbank_moderator', 'collbank_userplus', 'vloitem_editor']
         bResult = self.user_is_superuser()
         if not bResult:
             for group in allowed_groups:

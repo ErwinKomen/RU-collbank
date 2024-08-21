@@ -1956,9 +1956,15 @@ class FieldChoiceAdmin(admin.ModelAdmin):
         obj.save()
 
 
+class HelpItemAdmin(admin.ModelAdmin):
+    list_display = ['tag', 'title']
+
+
+
 # Models that serve others
 admin.site.register(FieldChoice, FieldChoiceAdmin)
 admin.site.register(HelpChoice)
+admin.site.register(HelpItem, HelpItemAdmin)
 
 # Models for the collection record
 admin.site.register(Title)
