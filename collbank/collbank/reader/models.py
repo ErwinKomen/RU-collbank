@@ -513,6 +513,7 @@ class VloItem(models.Model):
                 components = get_first(root, "Components", NS_find)
                 if not components is None:
                     crf = get_first(components, "OralHistoryInterviewCRF", NS_find)
+                    csd = get_first(components, "CorpusCollection_CSD", NS_find)
                     if not crf is None:
                         ID_element = get_first(crf, "ID", NS_find)
                         title_xml = crf.attrib.get("Title", "")
@@ -538,6 +539,18 @@ class VloItem(models.Model):
                             else:
                                 # Insert it as the second child of CRF, after the ID field
                                 crf.insert(1, newtitle)
+                    elif not csd is None:
+                        # This is probably a <CorpusCollection_CSD>: get the title
+                        title_element = get_first(csd, "title", NS_find)
+                        if not title_element is None:
+                            title_xml = title_element.text
+                            title_self = "" if instance.title is None else instance.title
+                            # See what needs to happen
+                            if title_self == "" and title_xml != "":
+                                # Copy the title from XML to the object
+                                print("VloItemRegister: copied <title> from XML to database")
+                                instance.title = title_xml
+                                instance.save()
 
                 # Returning to the header, get the <Resources> over there
                 resources = get_first(root, "Resources", NS_find)
@@ -592,6 +605,7 @@ class VloItem(models.Model):
                                 res_type.attrib['mimetype'] = lst_proxy_update[idx]['mimetype']
                                 res_type.text = lst_proxy_update[idx]['resourcetype']
 
+                # See if we 
 
             # Get the contents as text
             sContent = ET.tostring(root, pretty_print=True).decode("utf-8")
