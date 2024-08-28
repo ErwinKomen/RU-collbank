@@ -857,7 +857,7 @@ class VloItemEdit(BasicDetails):
                 ]
 
             # Is this userplus or superuser?
-            if context['is_app_userplus'] or context['is_app_moderator']:
+            if context['is_app_userplus'] or context['is_app_moderator'] or user_is_ingroup(self.request, "vloitem_editor"):
                 # If there is a file, we can add a button to upload it
                 if not instance.file.name is None and not context['object'] is None:
                     lhtml = []
