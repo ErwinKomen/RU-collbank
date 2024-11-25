@@ -795,13 +795,14 @@ class VloItemList(BasicList):
     model = VloItem
     listform = VloItemForm
     prefix = "vlo"
-    order_cols = ['user__username', 'abbr', 'vloname', 'created']
+    order_cols = ['user__username', 'abbr', 'vloname', '', 'created']
     order_default = order_cols
     order_heads = [
         {'name': 'User',    'order': 'o=1', 'type': 'str', 'custom': 'user',    'linkdetails': True},
         {'name': 'Abbr',    'order': 'o=2', 'type': 'str', 'custom': 'abbr',    'linkdetails': True},
         {'name': 'VLO name','order': 'o=3', 'type': 'str', 'custom': 'vloname', 'linkdetails': True, 'main': True},
-        {'name': 'Created', 'order': 'o=4', 'type': 'str', 'custom': 'created', 'linkdetails': True},
+        {'name': 'Status',  'order': '',    'type': 'str', 'custom': 'pubstatus', 'linkdetails': True},
+        {'name': 'Created', 'order': 'o=5', 'type': 'str', 'custom': 'created', 'linkdetails': True},
     ]
 
     def get_context_data(self, **kwargs):
@@ -821,6 +822,8 @@ class VloItemList(BasicList):
             sBack = instance.get_username()
         elif custom == "vloname":
             sBack = instance.get_vloname()
+        elif custom == "pubstatus":
+            sBack = instance.get_status()
         elif custom == "created":
             sBack = instance.get_created()
         return sBack, sTitle
@@ -903,7 +906,7 @@ class VloItemEdit(BasicDetails):
         return sBack
 
     def is_vlo_editor(self):
-        allowed_groups = ['collbank_moderator', 'collbank_userplus']
+        allowed_groups = ['collbank_moderator', 'collbank_userplus', 'vloitem_editor']
         bResult = self.user_is_superuser()
         if not bResult:
             for group in allowed_groups:
