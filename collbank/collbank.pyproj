@@ -4,7 +4,7 @@
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
     <Name>collbank</Name>
     <RootNamespace>collbank</RootNamespace>
-    <InterpreterId>MSBuild|collbank39|$(MSBuildProjectFullPath)</InterpreterId>
+    <InterpreterId>MSBuild|collbank39_dj42|$(MSBuildProjectFullPath)</InterpreterId>
     <WebBrowserPort>6505</WebBrowserPort>
     <SuppressConfigureTestFrameworkPrompt>true</SuppressConfigureTestFrameworkPrompt>
     <SuppressPackageInstallationPrompt>True</SuppressPackageInstallationPrompt>
@@ -193,19 +193,19 @@
     <Content Include="requirements.txt" />
   </ItemGroup>
   <ItemGroup>
-    <Interpreter Include="..\..\..\..\..\env\collbank2\">
-      <Id>collbank2</Id>
-      <Version>3.7</Version>
-      <Description>collbank2 (Python 3.7 (64-bit))</Description>
+    <Interpreter Include="..\..\..\..\..\env\collbank39\">
+      <Id>collbank39</Id>
+      <Version>3.9</Version>
+      <Description>collbank39 (Python 3.9 (64-bit))</Description>
       <InterpreterPath>Scripts\python.exe</InterpreterPath>
       <WindowsInterpreterPath>Scripts\pythonw.exe</WindowsInterpreterPath>
       <PathEnvironmentVariable>PYTHONPATH</PathEnvironmentVariable>
       <Architecture>X64</Architecture>
     </Interpreter>
-    <Interpreter Include="..\..\..\..\..\env\collbank39\">
-      <Id>collbank39</Id>
+    <Interpreter Include="..\..\..\..\..\env\collbank39_dj42\">
+      <Id>collbank39_dj42</Id>
       <Version>3.9</Version>
-      <Description>collbank39 (Python 3.9 (64-bit))</Description>
+      <Description>collbank39_dj42 (Python 3.9 (64-bit))</Description>
       <InterpreterPath>Scripts\python.exe</InterpreterPath>
       <WindowsInterpreterPath>Scripts\pythonw.exe</WindowsInterpreterPath>
       <PathEnvironmentVariable>PYTHONPATH</PathEnvironmentVariable>
