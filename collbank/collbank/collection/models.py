@@ -380,7 +380,7 @@ class PidService(models.Model):
         elif sAttempt != "-":
             return {'status': 'ok', 'pid': collection.pidname}
         # Getting here means that no PID has yet been made
-
+        # x = json.dumps(oData)
         # Create the URL through which this collection bank entry can be reached
         sSearch = "{}{}".format(REGISTRY_URL, collection.get_xmlfilename())
         oData = [{'type': 'URL', 'parsed_data': sSearch}]
@@ -390,8 +390,13 @@ class PidService(models.Model):
         if r.status_code >= 100 and r.status_code < 300:
             # Positive reply -- get the pid
             oResponse = json.loads(r.text)
-            sFullPid = oResponse['epic-pid']
-            return {'status': 'ok', 'pid': sFullPid}
+            # Safeguard for 'epic-pid'
+            if "epic-pid" in oResponse:
+                sFullPid = oResponse['epic-pid']
+                return {'status': 'ok', 'pid': sFullPid}
+            else:
+                msg = "Try again later. Right now we the persistant PID server returns code {}".format(r.status_code)
+                return dict(status="error", msg=msg)
         else:
             # There has been a problem -- return empty
             return {'status': 'error', 'msg': 'code {}'.format(r.status_code)}

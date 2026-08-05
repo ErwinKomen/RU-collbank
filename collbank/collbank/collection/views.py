@@ -57,257 +57,262 @@ bDebug = False
 def add_collection_xml(col_this, crp):
     """Add the collection information from [col_this] to XML element [crp]"""
 
-    # title (1-n)
-    add_element("1-n", col_this, "title", crp, field_name="collection12m_title", foreign="name")
-    # description (0-1)
-    add_element("0-1", col_this, "description", crp)
-    # owner (0-n)
-    add_element("0-n", col_this, "owner", crp, field_name="collection12m_owner", foreign="name")
-    # genre (0-n)
-    add_element("0-n", col_this, "genre", crp, field_name="collection12m_genre", foreign="name", fieldchoice=GENRE_NAME)
-    # languageDisorder(0-n)
-    add_element("0-n", col_this, "languageDisorder", crp, field_name="collection12m_languagedisorder", foreign="name")
-    # domain (0-n)
-    if col_this.collection12m_domain.count() > 0:
-        # Add the domains here
-        add_element("0-n", col_this, "name", crp, field_name="collection12m_domain", foreign="name", subname="domain")
-    # clarinCentre (0-1)
-    add_element("0-1", col_this, "clarinCentre", crp)
-    # PID (0-n)
-    add_element("0-n", col_this, "pid", crp, field_name="collection12m_pid", foreign="code", subname="PID")
-    # version (0-1)
-    add_element("0-1", col_this, "version", crp)
-    # resource (1-n)
-    for res_this in col_this.collection12m_resource.all():      # col_this.resource.all():
-        # Add the resource top-element
-        res = ET.SubElement(crp, "resource")
+    oErr = ErrHandle()
+    try:
+        # title (1-n)
+        add_element("1-n", col_this, "title", crp, field_name="collection12m_title", foreign="name")
         # description (0-1)
-        add_element("0-1", res_this, "description", res)
+        add_element("0-1", col_this, "description", crp)
+        # owner (0-n)
+        add_element("0-n", col_this, "owner", crp, field_name="collection12m_owner", foreign="name")
+        # genre (0-n)
+        add_element("0-n", col_this, "genre", crp, field_name="collection12m_genre", foreign="name", fieldchoice=GENRE_NAME)
+        # languageDisorder(0-n)
+        add_element("0-n", col_this, "languageDisorder", crp, field_name="collection12m_languagedisorder", foreign="name")
+        # domain (0-n)
+        if col_this.collection12m_domain.count() > 0:
+            # Add the domains here
+            add_element("0-n", col_this, "name", crp, field_name="collection12m_domain", foreign="name", subname="domain")
+        # clarinCentre (0-1)
+        add_element("0-1", col_this, "clarinCentre", crp)
+        # PID (0-n)
+        add_element("0-n", col_this, "pid", crp, field_name="collection12m_pid", foreign="code", subname="PID")
+        # version (0-1)
+        add_element("0-1", col_this, "version", crp)
+        # resource (1-n)
+        for res_this in col_this.collection12m_resource.all():      # col_this.resource.all():
+            # Add the resource top-element
+            res = ET.SubElement(crp, "resource")
+            # description (0-1)
+            add_element("0-1", res_this, "description", res)
 
-        # type (1) -- THIS MAY DISAPPEAR
-        # add_element("1", res_this, "type", res, fieldchoice =RESOURCE_TYPE)
-        # TODO: possibly divide this into DCtype and (optional) subtype
-        # DCtype (1)
-        add_element("1", res_this, "DCtype", res, fieldchoice =RESOURCE_TYPE, part=1)
-        # subtype (0-1)
-        add_element("0-1", res_this, "subtype", res, fieldchoice =RESOURCE_TYPE, part=2)
+            # type (1) -- THIS MAY DISAPPEAR
+            # add_element("1", res_this, "type", res, fieldchoice =RESOURCE_TYPE)
+            # TODO: possibly divide this into DCtype and (optional) subtype
+            # DCtype (1)
+            add_element("1", res_this, "DCtype", res, fieldchoice =RESOURCE_TYPE, part=1)
+            # subtype (0-1)
+            add_element("0-1", res_this, "subtype", res, fieldchoice =RESOURCE_TYPE, part=2)
 
-        # modality (1-n)
-        add_element("1-n", res_this, "modality", res, field_name="modalities", foreign="name", fieldchoice=RESOURCE_MODALITY )
-        # recording Environment (0-n)
-        add_element("0-n", res_this, "recordingEnvironment", res, field_name="recordingenvironments", foreign="name", fieldchoice=SPEECHCORPUS_RECORDINGENVIRONMENT)
-        # Recording conditions (0-n)
-        add_element("0-n", res_this, "recordingConditions", res, field_name="recordingconditions", foreign="name")
-        # channel (0-n)
-        add_element("0-n", res_this, "channel", res, field_name="channels", foreign="name", fieldchoice=SPEECHCORPUS_CHANNEL)
-        # socialContext (0-n)
-        add_element("0-n", res_this, "socialContext", res, field_name="socialcontexts", foreign="name", fieldchoice=SPEECHCORPUS_SOCIALCONTEXT)
-        # planningType (0-n)
-        add_element("0-n", res_this, "planningType", res, field_name="planningtypes", foreign="name", fieldchoice=SPEECHCORPUS_PLANNINGTYPE)
-        # interactivity (0-n)
-        add_element("0-n", res_this, "interactivity", res, field_name="interactivities", foreign="name", fieldchoice=SPEECHCORPUS_INTERACTIVITY)
-        # involvement (0-n)
-        add_element("0-n", res_this, "involvement", res, field_name="involvements", foreign="name", fieldchoice=SPEECHCORPUS_INVOLVEMENT)
-        # audience (0-n)
-        add_element("0-n", res_this, "audience", res, field_name="audiences", foreign="name", fieldchoice=SPEECHCORPUS_AUDIENCE)
-        # speechCorpus (0-1)
-        speech_this = res_this.speechCorpus
-        if speech_this != None:
-            # Set the sub-element
-            speech = ET.SubElement(res, "speechCorpus")
-            # Process the elements of the speech corpus            
-            add_element("0-n", speech_this, "conversationalType", speech, field_name="conversationaltypes", foreign="name", fieldchoice=SPEECHCORPUS_CONVERSATIONALTYPE)            
-            add_element("0-1", speech_this, "durationOfEffectiveSpeech", speech, foreign="name")
-            add_element("0-1", speech_this, "durationOfFullDatabase", speech, foreign="name")
-            add_element("0-1", speech_this, "numberOfSpeakers", speech, foreign="name")
-            add_element("0-1", speech_this, "speakerDemographics", speech, foreign="name")
-            # audioFormat (0-n)
-            for af_this in speech_this.audioformats.all():    # speech_this.audioFormat.all():
+            # modality (1-n)
+            add_element("1-n", res_this, "modality", res, field_name="modalities", foreign="name", fieldchoice=RESOURCE_MODALITY )
+            # recording Environment (0-n)
+            add_element("0-n", res_this, "recordingEnvironment", res, field_name="recordingenvironments", foreign="name", fieldchoice=SPEECHCORPUS_RECORDINGENVIRONMENT)
+            # Recording conditions (0-n)
+            add_element("0-n", res_this, "recordingConditions", res, field_name="recordingconditions", foreign="name")
+            # channel (0-n)
+            add_element("0-n", res_this, "channel", res, field_name="channels", foreign="name", fieldchoice=SPEECHCORPUS_CHANNEL)
+            # socialContext (0-n)
+            add_element("0-n", res_this, "socialContext", res, field_name="socialcontexts", foreign="name", fieldchoice=SPEECHCORPUS_SOCIALCONTEXT)
+            # planningType (0-n)
+            add_element("0-n", res_this, "planningType", res, field_name="planningtypes", foreign="name", fieldchoice=SPEECHCORPUS_PLANNINGTYPE)
+            # interactivity (0-n)
+            add_element("0-n", res_this, "interactivity", res, field_name="interactivities", foreign="name", fieldchoice=SPEECHCORPUS_INTERACTIVITY)
+            # involvement (0-n)
+            add_element("0-n", res_this, "involvement", res, field_name="involvements", foreign="name", fieldchoice=SPEECHCORPUS_INVOLVEMENT)
+            # audience (0-n)
+            add_element("0-n", res_this, "audience", res, field_name="audiences", foreign="name", fieldchoice=SPEECHCORPUS_AUDIENCE)
+            # speechCorpus (0-1)
+            speech_this = res_this.speechCorpus
+            if speech_this != None:
                 # Set the sub-element
-                af = ET.SubElement(speech, "audioFormat")
-                # speechCoding (0-1)
-                add_element("0-1", af_this, "speechCoding", af)
-                # samplingFrequency (0-1)
-                add_element("0-1", af_this, "samplingFrequency", af)
-                # compression (0-1)
-                add_element("0-1", af_this, "compression", af)
-                # bitResolution (0-1)
-                add_element("0-1", af_this, "bitResolution", af)
-        # writtenCorpus (0-1)
-        writ_this = res_this.writtenCorpus
-        if writ_this != None:
-            # Set the sub-element
-            writ = ET.SubElement(res, "writtenCorpus")
-            # Process the validation elements
-            add_element("0-n", writ_this, "characterEncoding", writ, field_name="charenc_writtencorpora", foreign="name", fieldchoice=CHARACTERENCODING)
-            # numberOfAuthors (0-1)
-            add_element("0-1", writ_this, "numberOfAuthors", writ)
-            # authorDemographics (0-1
-            add_element("0-1", writ_this, "authorDemographics", writ)
-        # totalSize (0-n)
-        for size_this in res_this.totalsize12m_resource.all():    #  res_this.totalSize.all():
-            # Start adding this sub-element
-            tot = ET.SubElement(res, "totalSize")
-            # Add the size part
-            add_element("1", size_this, "size", tot)
-            # Add the sizeUnit part
-            add_element("1", size_this, "sizeUnit", tot)
-        # annotation (0-n)
-        for ann_this in res_this.annotations.all():   #  res_this.annotation.all():
-            # Add this annotation element
-            ann = ET.SubElement(res, "annotation")
-            # type (1)
-            add_element("1", ann_this, "type", ann, fieldchoice=ANNOTATION_TYPE, alternative = 'othertype')
-            # mode (1)
-            add_element("1", ann_this, "mode", ann, fieldchoice=ANNOTATION_MODE)
-            # annotation_formats (1-n)
-            add_element("1-n", ann_this, "format", ann, field_name="annotation_formats", foreign="name", fieldchoice=ANNOTATION_FORMAT)
-        # media (0-n)
-        for med_this in res_this.media_items.all():   # res_this.medias.all():
-            # Add the media sub-element
-            med = ET.SubElement(res, "media")
-            # format (0-n)
-            add_element("0-n", med_this, "format", med, field_name="mediaformat12m_media", foreign="name", fieldchoice=MEDIA_FORMAT)
-    # provenance (0-n)
-    for prov_this in col_this.collection12m_provenance.all():   # col_this.provenance.all():
-        # Set the provenance sub-element
-        prov = ET.SubElement(crp, "provenance")
-        # temporal provenance (0-1)
-        if prov_this.temporalProvenance != None:
-            # Create a sub-element
-            temp = ET.SubElement(prov, "temporalProvenance")
-            # Fetch this element
-            temp_this = prov_this.temporalProvenance
-            # Start year and end-year
-            add_element("1", temp_this, "startYear", temp)
-            add_element("1", temp_this, "endYear", temp)
-        # Walk the geographic provenance
-        for geo_this in prov_this.g_provenances.all():    #  prov_this.geographicProvenance.all():
-            # Create sub-element
-            geo = ET.SubElement(prov, "geographicProvenance")
-            # place (0-n)
-            add_element("0-n", geo_this, "place", geo, field_name="cities", foreign="name")
-            # country (0-1)
-            cntry = geo_this.countryiso
-            # Use the new method with CountryIso
-            sEnglish = cntry.english
-            sAlpha2 = cntry.alpha2
-            # Set the values 
-            cntMain = ET.SubElement(geo, "Country")
-            cntMainName = ET.SubElement(cntMain, "CountryName")
-            cntMainCoding = ET.SubElement(cntMain, "CountryCoding")
-            cntMainName.text = sEnglish
-            cntMainCoding.text = sAlpha2
-    # linguality (0-1)
-    linguality_this = col_this.linguality
-    if linguality_this != None:
-        # Set the linguality sub-element
-        ling = ET.SubElement(crp, "linguality")
-        # Process the linguality elements
-        add_element("0-n", linguality_this, "lingualityType", ling, field_name="linguality_types", foreign="name", fieldchoice=LINGUALITY_TYPE)
-        add_element("0-n", linguality_this, "lingualityNativeness", ling, field_name="linguality_nativenesses", foreign="name", fieldchoice=LINGUALITY_NATIVENESS)
-        add_element("0-n", linguality_this, "lingualityAgeGroup", ling, field_name="linguality_agegroups",foreign="name", fieldchoice=LINGUALITY_AGEGROUP)
-        add_element("0-n", linguality_this, "lingualityStatus", ling, field_name="linguality_statuses", foreign="name", fieldchoice=LINGUALITY_STATUS)
-        add_element("0-n", linguality_this, "lingualityVariant", ling, field_name="linguality_variants", foreign="name", fieldchoice=LINGUALITY_VARIANT)
-        add_element("0-n", linguality_this, "multilingualityType", ling, field_name="multilinguality_types", foreign="name", fieldchoice=LINGUALITY_MULTI)
-    # language (1-n)
-    for lng_this in col_this.coll_languages.all():    #  col_this.language.all():
-        # (sLngName, sLngCode) = get_language(lng_this.name)
-        (sLngName, sLngCode) = get_language_code_name(lng_this)
-        # Validation
-        if sLngCode == "" or sLngCode is None:
-            bStop = True
-        else:
-            lngMain = ET.SubElement(crp, "Language")
-            lngMainName = ET.SubElement(lngMain, "LanguageName")
-            lngMainName.text = sLngName
-            lngMainCode = ET.SubElement(lngMain, "ISO639")
-            lngMainCodeVal = ET.SubElement(lngMainCode, "iso-639-3-code")
-            lngMainCodeVal.text = sLngCode
-    # relation (0-n)
-    # add_element("0-n", col_this, "relation", crp, foreign="name", fieldchoice=RELATION_NAME, subname="dc-relation")
-    for rel_this in col_this.collection12m_relation.all():    #  col_this.relation.all():
-        # sRelName = choice_english(RELATION_NAME, rel_this.name)
-        relMain = ET.SubElement(crp, "dc-relation")
-        relMainVal = ET.SubElement(relMain, "relation")
-        relMainVal.text = rel_this.name
-    # access (0-1)
-    access_this = col_this.access
-    if access_this != None:
-        # Set the access sub-element
-        acc = ET.SubElement(crp, "access")
-        # Process the access elements
-        # add_element("1", access_this, "name", acc)
-        add_element("0-n", access_this, "availability", acc, field_name="acc_availabilities", foreign="name", fieldchoice=ACCESS_AVAILABILITY)
-        add_element("0-n", access_this, "licenseName", acc, field_name="acc_licnames", foreign="name")
-        add_element("0-n", access_this, "licenseUrl", acc, field_name="acc_licurls", foreign="name", subname="licenseURL")
-        add_element("0-1", access_this, "nonCommercialUsageOnly", acc, foreign="name", fieldchoice=ACCESS_NONCOMMERCIAL)
-        add_element("0-n", access_this, "website", acc, field_name="acc_websites", foreign="name")
-        add_element("0-1", access_this, "ISBN", acc, foreign="name")
-        add_element("0-1", access_this, "ISLRN", acc, foreign="name")
-        add_element("0-n", access_this, "medium", acc, field_name="acc_mediums", foreign="format", fieldchoice=ACCESS_MEDIUM)
-        # contact (0-n)
-        for contact_this in access_this.acc_contacts.all():   #  access_this.contact.all():
-            # Add this contact
-            cnt = ET.SubElement(acc, "contact")
-            add_element("1", contact_this, "person", cnt)
-            add_element("1", contact_this, "address", cnt)
-            add_element("1", contact_this, "email", cnt)
-    # totalSize (0-n) -- NOTE: this is on the COLLECTION level; there also is totalsize on the RESOURCE level
-    if  col_this.collection12m_totalsize.count() > 0:   # col_this.totalSize != None:
-        for size_this in col_this.collection12m_totalsize.all():    #  col_this.totalSize.all():
-            # Start adding this sub-element (under CRP)
-            tot = ET.SubElement(crp, "totalSize")
-            # Add the size part
-            add_element("1", size_this, "size", tot)
-            # Add the sizeUnit part
-            add_element("1", size_this, "sizeUnit", tot)
-    # resourceCreator (0-n)
-    for rescrea_this in col_this.collection12m_resourcecreator.all():   #  col_this.resourceCreator.all():
-        # Add sub element
-        res = ET.SubElement(crp, "resourceCreator")
-        # Add the resource elements
-        add_element("0-n", rescrea_this, "organization", res, field_name="organizations", foreign="name")
-        add_element("0-n", rescrea_this, "person", res, field_name="persons", foreign="name")
-    # documentation (0-1)
-    doc_this = col_this.documentation
-    if doc_this != None:
-        # Set the sub-element
-        doc = ET.SubElement(crp, "documentation")
-        # Process the documentation elements
-        add_element("0-n", doc_this, "documentationType", doc, field_name="doc_types", foreign="format", fieldchoice=DOCUMENTATION_TYPE)
-        add_element("0-n", doc_this, "fileName", doc, field_name="doc_files", foreign="name")
-        add_element("0-n", doc_this, "url", doc, field_name="doc_urls", foreign="name")
-        # add_element("1-n", doc_this, "language", doc, foreign="name", fieldchoice="language.name")
-        for lng_this in doc_this.doc_languages.all():   #  doc_this.language.all():
+                speech = ET.SubElement(res, "speechCorpus")
+                # Process the elements of the speech corpus            
+                add_element("0-n", speech_this, "conversationalType", speech, field_name="conversationaltypes", foreign="name", fieldchoice=SPEECHCORPUS_CONVERSATIONALTYPE)            
+                add_element("0-1", speech_this, "durationOfEffectiveSpeech", speech, foreign="name")
+                add_element("0-1", speech_this, "durationOfFullDatabase", speech, foreign="name")
+                add_element("0-1", speech_this, "numberOfSpeakers", speech, foreign="name")
+                add_element("0-1", speech_this, "speakerDemographics", speech, foreign="name")
+                # audioFormat (0-n)
+                for af_this in speech_this.audioformats.all():    # speech_this.audioFormat.all():
+                    # Set the sub-element
+                    af = ET.SubElement(speech, "audioFormat")
+                    # speechCoding (0-1)
+                    add_element("0-1", af_this, "speechCoding", af)
+                    # samplingFrequency (0-1)
+                    add_element("0-1", af_this, "samplingFrequency", af)
+                    # compression (0-1)
+                    add_element("0-1", af_this, "compression", af)
+                    # bitResolution (0-1)
+                    add_element("0-1", af_this, "bitResolution", af)
+            # writtenCorpus (0-1)
+            writ_this = res_this.writtenCorpus
+            if writ_this != None:
+                # Set the sub-element
+                writ = ET.SubElement(res, "writtenCorpus")
+                # Process the validation elements
+                add_element("0-n", writ_this, "characterEncoding", writ, field_name="charenc_writtencorpora", foreign="name", fieldchoice=CHARACTERENCODING)
+                # numberOfAuthors (0-1)
+                add_element("0-1", writ_this, "numberOfAuthors", writ)
+                # authorDemographics (0-1
+                add_element("0-1", writ_this, "authorDemographics", writ)
+            # totalSize (0-n)
+            for size_this in res_this.totalsize12m_resource.all():    #  res_this.totalSize.all():
+                # Start adding this sub-element
+                tot = ET.SubElement(res, "totalSize")
+                # Add the size part
+                add_element("1", size_this, "size", tot)
+                # Add the sizeUnit part
+                add_element("1", size_this, "sizeUnit", tot)
+            # annotation (0-n)
+            for ann_this in res_this.annotations.all():   #  res_this.annotation.all():
+                # Add this annotation element
+                ann = ET.SubElement(res, "annotation")
+                # type (1)
+                add_element("1", ann_this, "type", ann, fieldchoice=ANNOTATION_TYPE, alternative = 'othertype')
+                # mode (1)
+                add_element("1", ann_this, "mode", ann, fieldchoice=ANNOTATION_MODE)
+                # annotation_formats (1-n)
+                add_element("1-n", ann_this, "format", ann, field_name="annotation_formats", foreign="name", fieldchoice=ANNOTATION_FORMAT)
+            # media (0-n)
+            for med_this in res_this.media_items.all():   # res_this.medias.all():
+                # Add the media sub-element
+                med = ET.SubElement(res, "media")
+                # format (0-n)
+                add_element("0-n", med_this, "format", med, field_name="mediaformat12m_media", foreign="name", fieldchoice=MEDIA_FORMAT)
+        # provenance (0-n)
+        for prov_this in col_this.collection12m_provenance.all():   # col_this.provenance.all():
+            # Set the provenance sub-element
+            prov = ET.SubElement(crp, "provenance")
+            # temporal provenance (0-1)
+            if prov_this.temporalProvenance != None:
+                # Create a sub-element
+                temp = ET.SubElement(prov, "temporalProvenance")
+                # Fetch this element
+                temp_this = prov_this.temporalProvenance
+                # Start year and end-year
+                add_element("1", temp_this, "startYear", temp)
+                add_element("1", temp_this, "endYear", temp)
+            # Walk the geographic provenance
+            for geo_this in prov_this.g_provenances.all():    #  prov_this.geographicProvenance.all():
+                # Create sub-element
+                geo = ET.SubElement(prov, "geographicProvenance")
+                # place (0-n)
+                add_element("0-n", geo_this, "place", geo, field_name="cities", foreign="name")
+                # country (0-1)
+                cntry = geo_this.countryiso
+                # Use the new method with CountryIso
+                sEnglish = cntry.english
+                sAlpha2 = cntry.alpha2
+                # Set the values 
+                cntMain = ET.SubElement(geo, "Country")
+                cntMainName = ET.SubElement(cntMain, "CountryName")
+                cntMainCoding = ET.SubElement(cntMain, "CountryCoding")
+                cntMainName.text = sEnglish
+                cntMainCoding.text = sAlpha2
+        # linguality (0-1)
+        linguality_this = col_this.linguality
+        if linguality_this != None:
+            # Set the linguality sub-element
+            ling = ET.SubElement(crp, "linguality")
+            # Process the linguality elements
+            add_element("0-n", linguality_this, "lingualityType", ling, field_name="linguality_types", foreign="name", fieldchoice=LINGUALITY_TYPE)
+            add_element("0-n", linguality_this, "lingualityNativeness", ling, field_name="linguality_nativenesses", foreign="name", fieldchoice=LINGUALITY_NATIVENESS)
+            add_element("0-n", linguality_this, "lingualityAgeGroup", ling, field_name="linguality_agegroups",foreign="name", fieldchoice=LINGUALITY_AGEGROUP)
+            add_element("0-n", linguality_this, "lingualityStatus", ling, field_name="linguality_statuses", foreign="name", fieldchoice=LINGUALITY_STATUS)
+            add_element("0-n", linguality_this, "lingualityVariant", ling, field_name="linguality_variants", foreign="name", fieldchoice=LINGUALITY_VARIANT)
+            add_element("0-n", linguality_this, "multilingualityType", ling, field_name="multilinguality_types", foreign="name", fieldchoice=LINGUALITY_MULTI)
+        # language (1-n)
+        for lng_this in col_this.coll_languages.all():    #  col_this.language.all():
             # (sLngName, sLngCode) = get_language(lng_this.name)
             (sLngName, sLngCode) = get_language_code_name(lng_this)
             # Validation
             if sLngCode == "" or sLngCode is None:
                 bStop = True
             else:
-                lngMain = ET.SubElement(doc, "Language")
+                lngMain = ET.SubElement(crp, "Language")
                 lngMainName = ET.SubElement(lngMain, "LanguageName")
                 lngMainName.text = sLngName
                 lngMainCode = ET.SubElement(lngMain, "ISO639")
                 lngMainCodeVal = ET.SubElement(lngMainCode, "iso-639-3-code")
                 lngMainCodeVal.text = sLngCode
-    # validation (0-1)
-    val_this = col_this.validation
-    if val_this != None:
-        # Set the sub-element
-        val = ET.SubElement(crp, "validation")
-        # Process the validation elements
-        add_element("0-1", val_this, "type", val, foreign="name", fieldchoice=VALIDATION_TYPE)
-        add_element("0-n", val_this, "method", val, field_name="validationmethods", foreign="name", fieldchoice=VALIDATION_METHOD)
-    # project (0-n)
-    for proj_this in col_this.collection12m_project.all():    #  col_this.project.all():
-        # Set the sub element
-        proj = ET.SubElement(crp, "project")
-        # Process the project properties
-        add_element("0-1", proj_this, "title", proj)
-        add_element("0-n", proj_this, "funder", proj, field_name="funders", foreign="name")
-        add_element("0-1", proj_this, "URL", proj, foreign="name", subname="url")
+        # relation (0-n)
+        # add_element("0-n", col_this, "relation", crp, foreign="name", fieldchoice=RELATION_NAME, subname="dc-relation")
+        for rel_this in col_this.collection12m_relation.all():    #  col_this.relation.all():
+            # sRelName = choice_english(RELATION_NAME, rel_this.name)
+            relMain = ET.SubElement(crp, "dc-relation")
+            relMainVal = ET.SubElement(relMain, "relation")
+            relMainVal.text = rel_this.name
+        # access (0-1)
+        access_this = col_this.access
+        if access_this != None:
+            # Set the access sub-element
+            acc = ET.SubElement(crp, "access")
+            # Process the access elements
+            # add_element("1", access_this, "name", acc)
+            add_element("0-n", access_this, "availability", acc, field_name="acc_availabilities", foreign="name", fieldchoice=ACCESS_AVAILABILITY)
+            add_element("0-n", access_this, "licenseName", acc, field_name="acc_licnames", foreign="name")
+            add_element("0-n", access_this, "licenseUrl", acc, field_name="acc_licurls", foreign="name", subname="licenseURL")
+            add_element("0-1", access_this, "nonCommercialUsageOnly", acc, foreign="name", fieldchoice=ACCESS_NONCOMMERCIAL)
+            add_element("0-n", access_this, "website", acc, field_name="acc_websites", foreign="name")
+            add_element("0-1", access_this, "ISBN", acc, foreign="name")
+            add_element("0-1", access_this, "ISLRN", acc, foreign="name")
+            add_element("0-n", access_this, "medium", acc, field_name="acc_mediums", foreign="format", fieldchoice=ACCESS_MEDIUM)
+            # contact (0-n)
+            for contact_this in access_this.acc_contacts.all():   #  access_this.contact.all():
+                # Add this contact
+                cnt = ET.SubElement(acc, "contact")
+                add_element("1", contact_this, "person", cnt)
+                add_element("1", contact_this, "address", cnt)
+                add_element("1", contact_this, "email", cnt)
+        # totalSize (0-n) -- NOTE: this is on the COLLECTION level; there also is totalsize on the RESOURCE level
+        if  col_this.collection12m_totalsize.count() > 0:   # col_this.totalSize != None:
+            for size_this in col_this.collection12m_totalsize.all():    #  col_this.totalSize.all():
+                # Start adding this sub-element (under CRP)
+                tot = ET.SubElement(crp, "totalSize")
+                # Add the size part
+                add_element("1", size_this, "size", tot)
+                # Add the sizeUnit part
+                add_element("1", size_this, "sizeUnit", tot)
+        # resourceCreator (0-n)
+        for rescrea_this in col_this.collection12m_resourcecreator.all():   #  col_this.resourceCreator.all():
+            # Add sub element
+            res = ET.SubElement(crp, "resourceCreator")
+            # Add the resource elements
+            add_element("0-n", rescrea_this, "organization", res, field_name="organizations", foreign="name")
+            add_element("0-n", rescrea_this, "person", res, field_name="persons", foreign="name")
+        # documentation (0-1)
+        doc_this = col_this.documentation
+        if doc_this != None:
+            # Set the sub-element
+            doc = ET.SubElement(crp, "documentation")
+            # Process the documentation elements
+            add_element("0-n", doc_this, "documentationType", doc, field_name="doc_types", foreign="format", fieldchoice=DOCUMENTATION_TYPE)
+            add_element("0-n", doc_this, "fileName", doc, field_name="doc_files", foreign="name")
+            add_element("0-n", doc_this, "url", doc, field_name="doc_urls", foreign="name")
+            # add_element("1-n", doc_this, "language", doc, foreign="name", fieldchoice="language.name")
+            for lng_this in doc_this.doc_languages.all():   #  doc_this.language.all():
+                # (sLngName, sLngCode) = get_language(lng_this.name)
+                (sLngName, sLngCode) = get_language_code_name(lng_this)
+                # Validation
+                if sLngCode == "" or sLngCode is None:
+                    bStop = True
+                else:
+                    lngMain = ET.SubElement(doc, "Language")
+                    lngMainName = ET.SubElement(lngMain, "LanguageName")
+                    lngMainName.text = sLngName
+                    lngMainCode = ET.SubElement(lngMain, "ISO639")
+                    lngMainCodeVal = ET.SubElement(lngMainCode, "iso-639-3-code")
+                    lngMainCodeVal.text = sLngCode
+        # validation (0-1)
+        val_this = col_this.validation
+        if val_this != None:
+            # Set the sub-element
+            val = ET.SubElement(crp, "validation")
+            # Process the validation elements
+            add_element("0-1", val_this, "type", val, foreign="name", fieldchoice=VALIDATION_TYPE)
+            add_element("0-n", val_this, "method", val, field_name="validationmethods", foreign="name", fieldchoice=VALIDATION_METHOD)
+        # project (0-n)
+        for proj_this in col_this.collection12m_project.all():    #  col_this.project.all():
+            # Set the sub element
+            proj = ET.SubElement(crp, "project")
+            # Process the project properties
+            add_element("0-1", proj_this, "title", proj)
+            add_element("0-n", proj_this, "funder", proj, field_name="funders", foreign="name")
+            add_element("0-1", proj_this, "URL", proj, foreign="name", subname="url")
+    except:
+        msg = oErr.get_error_message()
+        oErr.DoError("add_collection_xml")
     # There's no return value -- all has been added to [crp]
     return None
 
@@ -318,64 +323,69 @@ def add_element(optionality, col_this, el_name, crp, **kwargs):
     """
 
     foreign = ""
-    if "foreign" in kwargs: foreign = kwargs["foreign"]
-    field_choice = ""
-    if "fieldchoice" in kwargs: field_choice = kwargs["fieldchoice"]
-    field_name = el_name
-    if "field_name" in kwargs: field_name = kwargs["field_name"]
-    alternative = None
-    if "alternative" in kwargs: alternative = kwargs["alternative"]
+    oErr = ErrHandle()
+    try:
+        if "foreign" in kwargs: foreign = kwargs["foreign"]
+        field_choice = ""
+        if "fieldchoice" in kwargs: field_choice = kwargs["fieldchoice"]
+        field_name = el_name
+        if "field_name" in kwargs: field_name = kwargs["field_name"]
+        alternative = None
+        if "alternative" in kwargs: alternative = kwargs["alternative"]
 
-    col_this_el = getattr(col_this, field_name)
-    sub_name = el_name
-    if "subname" in kwargs: sub_name = kwargs["subname"]
-    if optionality == "0-1" or optionality == "1":
-        col_value = col_this_el
-        if optionality == "1" or col_value != None:
-            if foreign != "" and not isinstance(col_this_el, str):
-                col_value = getattr(col_this_el, foreign)
-            if field_choice != "": 
-                sBack = choice_english(field_choice, col_value)
-                if sBack == "other" and not alternative is None:
-                    # Get the value from the alternative field
-                    col_value = getattr(col_this, alternative)
-                else:
-                    col_value = sBack
-            # Make sure the value is a string
-            col_value = str(col_value)
-            # Do we need to discern parts?
-            if "part" in kwargs:
-                arPart = col_value.split(":")
-                iPart = kwargs["part"]
-                if iPart == 1:
-                    col_value = arPart[0]
-                elif iPart == 2:
-                    if len(arPart) == 2:
-                        col_value = arPart[1]
+        col_this_el = getattr(col_this, field_name)
+        sub_name = el_name
+        if "subname" in kwargs: sub_name = kwargs["subname"]
+        if optionality == "0-1" or optionality == "1":
+            col_value = col_this_el
+            if optionality == "1" or col_value != None:
+                if foreign != "" and not isinstance(col_this_el, str):
+                    col_value = getattr(col_this_el, foreign)
+                if field_choice != "": 
+                    sBack = choice_english(field_choice, col_value)
+                    if sBack == "other" and not alternative is None:
+                        # Get the value from the alternative field
+                        col_value = getattr(col_this, alternative)
                     else:
-                        col_value = ""
-            if col_value != "":
-                descr_element = ET.SubElement(crp, sub_name)
-                descr_element.text = col_value
-    elif optionality == "1-n" or optionality == "0-n":
-        # Test for obligatory foreign
-        if foreign == "": return False
-        for t in col_this_el.all():
-            col_value = getattr(t, foreign)
-            if field_choice != "": 
-                sBack = choice_english(field_choice, col_value)
-                if sBack == "other" and not alternative is None:
-                    # Get the value from the alternative field
-                    col_value = getattr(col_this, alternative)
+                        col_value = sBack
+                # Make sure the value is a string
+                col_value = str(col_value)
+                # Do we need to discern parts?
+                if "part" in kwargs:
+                    arPart = col_value.split(":")
+                    iPart = kwargs["part"]
+                    if iPart == 1:
+                        col_value = arPart[0]
+                    elif iPart == 2:
+                        if len(arPart) == 2:
+                            col_value = arPart[1]
+                        else:
+                            col_value = ""
+                if col_value != "":
+                    descr_element = ET.SubElement(crp, sub_name)
+                    descr_element.text = col_value
+        elif optionality == "1-n" or optionality == "0-n":
+            # Test for obligatory foreign
+            if foreign == "": return False
+            for t in col_this_el.all():
+                col_value = getattr(t, foreign)
+                if field_choice != "": 
+                    sBack = choice_english(field_choice, col_value)
+                    if sBack == "other" and not alternative is None:
+                        # Get the value from the alternative field
+                        col_value = getattr(col_this, alternative)
+                    else:
+                        col_value = sBack
+                # Make sure the value is a string
+                col_value = str(col_value)
+                if col_value == "(empty)": 
+                    col_value = "unknown"
                 else:
-                    col_value = sBack
-            # Make sure the value is a string
-            col_value = str(col_value)
-            if col_value == "(empty)": 
-                col_value = "unknown"
-            else:
-                title_element = ET.SubElement(crp, sub_name)
-                title_element.text = col_value
+                    title_element = ET.SubElement(crp, sub_name)
+                    title_element.text = col_value
+    except:
+        msg = oErr.get_error_message()
+        oErr.DoError("add_element")
     # Return positively
     return True
     
@@ -578,27 +588,31 @@ def publish_collection(coll_this, sUserName, sHomeUrl):
     # Create an object to return
     oBack = {'status': 'ok', 'msg': ''}
     # Make sure this record has a registered PID
-    coll_this.register_pid()
-    # Save the relation files
-    coll_this.save_relations()
-    # Get the XML text of this object
-    (bValid, sXmlText) = create_collection_xml(coll_this, sUserName, sHomeUrl)
-    if bValid:
-        # Get the full path to the registry file
-        fPublish = coll_this.get_publisfilename()
-        # Write it to a file in the XML directory
-        with open(fPublish, encoding="utf-8", mode="w") as f:  
-            f.write(sXmlText)
-
-        # Publish the .cmdi.xml
-        fPublish = coll_this.get_publisfilename("joai")
-        # Write it to a file in the XML directory
-        with open(fPublish, encoding="utf-8", mode="w") as f:  
-            f.write(sXmlText)
+    bResult = coll_this.register_pid()
+    if not bResult:
+        oBack['status'] = "error"
+        oBack['msg'] = "Sorry, cannot register this collection record?"
     else:
-        oBack['status'] = 'error'
-        oBack['msg'] = sXmlText
-        oBack['coll'] = coll_this
+        # Save the relation files
+        coll_this.save_relations()
+        # Get the XML text of this object
+        (bValid, sXmlText) = create_collection_xml(coll_this, sUserName, sHomeUrl)
+        if bValid:
+            # Get the full path to the registry file
+            fPublish = coll_this.get_publisfilename()
+            # Write it to a file in the XML directory
+            with open(fPublish, encoding="utf-8", mode="w") as f:  
+                f.write(sXmlText)
+
+            # Publish the .cmdi.xml
+            fPublish = coll_this.get_publisfilename("joai")
+            # Write it to a file in the XML directory
+            with open(fPublish, encoding="utf-8", mode="w") as f:  
+                f.write(sXmlText)
+        else:
+            oBack['status'] = 'error'
+            oBack['msg'] = sXmlText
+            oBack['coll'] = coll_this
     return oBack
 
 def treat_bom(sHtml):
